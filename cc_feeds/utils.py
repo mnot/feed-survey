@@ -33,13 +33,16 @@ def download_file(url: str, dest_path: str) -> None:
     response.raise_for_status()
     total_size = int(response.headers.get("content-length", 0))
 
-    with open(dest_path, "wb") as f_out, tqdm(
-        desc=os.path.basename(dest_path),
-        total=total_size,
-        unit="iB",
-        unit_scale=True,
-        unit_divisor=1024,
-    ) as progress_bar:
+    with (
+        open(dest_path, "wb") as f_out,
+        tqdm(
+            desc=os.path.basename(dest_path),
+            total=total_size,
+            unit="iB",
+            unit_scale=True,
+            unit_divisor=1024,
+        ) as progress_bar,
+    ):
         for data in response.iter_content(chunk_size=1024):
             written = f_out.write(data)
             progress_bar.update(written)
@@ -76,7 +79,22 @@ def get_tranco_list(top_n: Optional[int] = None) -> Set[str]:
 
 
 def get_domain(url: str) -> str:
-    return urlparse(url).netloc
+    """Fast extraction of domain from URL."""
+    try:
+        if "://" in url:
+            # Skip scheme and take netloc
+            netloc = (
+                url.split("://", 1)[1]
+                .split("/", 1)[0]
+                .split("?", 1)[0]
+                .split("#", 1)[0]
+            )
+            if ":" in netloc:  # Remove port
+                return netloc.split(":", 1)[0]
+            return netloc
+        return url.split("/", 1)[0]
+    except Exception:
+        return ""
 
 
 def get_latest_crawl_id() -> str:
