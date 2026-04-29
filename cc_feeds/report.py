@@ -11,8 +11,8 @@ try:
     from .utils import get_domain
 except (ImportError, ValueError):
     try:
-        from processor import Stats  # type: ignore
-        from utils import get_domain  # type: ignore
+        from processor import Stats  # type: ignore[import-not-found,no-redef]
+        from utils import get_domain  # type: ignore[import-not-found,no-redef]
     except ImportError:
         from cc_feeds.processor import Stats
         from cc_feeds.utils import get_domain

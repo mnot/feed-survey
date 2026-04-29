@@ -20,13 +20,21 @@ test: venv
 
 CRAWL_ID ?= CC-MAIN-2026-12
 OUTPUT_DIR = s3://mnot-cc-feeds/
+PATHS_PREFIX = s3://mnot-cc-feeds/paths/
 # Use := to ensure RUN_ID is fixed for the entire make execution
 RUN_ID := $(shell date +%Y%m%d-%H%M%S)
 
+MAP_TASKS ?= 400
+TEST_MAP_TASKS ?= 20
+
 .PHONY: emr
 emr: venv
-	$(VENV)/python mr_job.py -r emr -c mrjob.conf \
+	$(VENV)/python split_paths.py \
 		s3://commoncrawl/crawl-data/$(CRAWL_ID)/warc.paths.gz \
+		$(PATHS_PREFIX)$(CRAWL_ID)-$(RUN_ID)/ \
+		$(MAP_TASKS)
+	$(VENV)/python mr_job.py -r emr -c mrjob.conf \
+		$(PATHS_PREFIX)$(CRAWL_ID)-$(RUN_ID)/ \
 		--output-dir $(OUTPUT_DIR)$(CRAWL_ID)-$(RUN_ID)/ \
 		--no-read-logs --no-cat-output \
 		--jobconf mapreduce.job.reduces=20 \
@@ -71,6 +79,10 @@ TEST_CLUSTER_FILE = TEST_CLUSTER
 
 .PHONY: test-emr
 test-emr: venv
+	$(VENV)/python split_paths.py \
+		test/warc.paths.txt \
+		$(PATHS_PREFIX)test-$(RUN_ID)/ \
+		$(TEST_MAP_TASKS)
 	@if [ ! -s $(TEST_CLUSTER_FILE) ]; then \
 		echo "Starting new persistent cluster..."; \
 		$(VENV)/python mrjob_wrapper.py mrjob.tools.emr.create_cluster -c mrjob.conf 2>&1 | tee cluster_start.log; \
@@ -89,7 +101,7 @@ test-emr: venv
 		--output-dir $(OUTPUT_DIR)test-$(RUN_ID)/ \
 		--limit $(LIMIT) \
 		--topn 500000 \
-		s3://mnot-cc-feeds/warc.paths.txt
+		$(PATHS_PREFIX)test-$(RUN_ID)/
 	mkdir -p results/test-$(RUN_ID)
 	aws s3 sync $(OUTPUT_DIR)test-$(RUN_ID)/ results/test-$(RUN_ID)/
 	$(VENV)/python finalize.py results/test-$(RUN_ID)/ $(CRAWL_ID) results/test-$(RUN_ID)/report.html

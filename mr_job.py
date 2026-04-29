@@ -36,18 +36,18 @@ class CCFeedsJob(MRJob): # type: ignore[misc]
             sys.stderr.write("*" * 50 + "\n")
             sys.stderr.write("DEBUG: mapper_init starting\n")
             sys.path.insert(0, os.getcwd())
-            
+
             try:
                 # Try flat file first
                 import processor # type: ignore[import-not-found]
                 from processor import WarcProcessor
             except ImportError:
                 from cc_feeds.processor import WarcProcessor
-            
+
             self.processor = WarcProcessor(top_n=self.options.topn)
             self.count = 0
             self.processed_records = 0
-            
+
             # Explicitly set region to us-east-1 for Common Crawl
             self.s3 = boto3.client('s3', region_name='us-east-1')
             sys.stderr.write("DEBUG: mapper_init finished successfully\n")
@@ -95,10 +95,10 @@ class CCFeedsJob(MRJob): # type: ignore[misc]
                 
                 try:
                     self.s3.download_file(
-                        bucket, key_path, temp_path, 
+                        bucket, key_path, temp_path,
                         ExtraArgs={'RequestPayer': 'requester'}
                     )
-                    
+
                     with open(temp_path, "rb") as f:
                         with PythonIOStreamAdapter(f) as stream:
                             for record in ArchiveIterator(
@@ -124,10 +124,13 @@ class CCFeedsJob(MRJob): # type: ignore[misc]
 
     def json_safe(self, obj: Any) -> Any:
         import datetime
+        import time
         if isinstance(obj, set):
             return list(obj)
         if isinstance(obj, datetime.datetime):
             return obj.isoformat()
+        if isinstance(obj, time.struct_time):
+            return list(obj[:6])
         if isinstance(obj, dict):
             return {str(k): self.json_safe(v) for k, v in obj.items()}
         if isinstance(obj, list):
