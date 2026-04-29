@@ -14,8 +14,8 @@ except (ImportError, ValueError):
         from processor import Stats  # type: ignore
         from utils import get_domain  # type: ignore
     except ImportError:
-        from cc_feeds.processor import Stats  # type: ignore
-        from cc_feeds.utils import get_domain  # type: ignore
+        from cc_feeds.processor import Stats
+        from cc_feeds.utils import get_domain
 
 
 def format_number(value: Union[int, float]) -> str:
@@ -227,7 +227,7 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
         and res.get("valid")
         and not res.get("error")
     }
-    
+
     # Inject total discovery count from discovery_domain_counts into result for display
     for url, res in discovered_results.items():
         res["total_discovery_count"] = stats.discovery_domain_counts.get(url, 1)

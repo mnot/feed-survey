@@ -13,7 +13,15 @@ CACHE_DIR = os.path.expanduser("~/.cache/cc-feeds")
 
 def normalize_url(url: str) -> str:
     """Normalize URL to help matching between autodiscovery and processing."""
+    if not url:
+        return ""
     try:
+        # Fast path for simple URLs (no query/fragment)
+        if "?" not in url and "#" not in url:
+            # Still lower-case the scheme and domain if possible, or just lower the whole thing
+            # if we are sure it's ASCII (which CC URLs are).
+            return url.strip().lower().rstrip("/")
+
         parsed = urlparse(url)
         # Lowercase netloc, remove fragments, remove trailing slash from path
         path = parsed.path.rstrip("/")
@@ -51,9 +59,13 @@ def download_file(url: str, dest_path: str) -> None:
 def get_tranco_list(top_n: Optional[int] = None) -> Set[str]:
     """Download, unzip and return the Tranco top list as a set of domains."""
     # Check if the file was uploaded by mrjob to the current working directory
+    # or if it exists in the test directory
     local_csv = "top-1m.csv"
+    test_csv = "test/top-1m.csv"
     if os.path.exists(local_csv):
         csv_path = local_csv
+    elif os.path.exists(test_csv):
+        csv_path = test_csv
     else:
         # Fallback to cache directory (local development)
         os.makedirs(CACHE_DIR, exist_ok=True)
@@ -79,18 +91,25 @@ def get_tranco_list(top_n: Optional[int] = None) -> Set[str]:
 
 
 def get_domain(url: str) -> str:
-    """Fast extraction of domain from URL."""
+    """High-performance extraction of domain from URL."""
     try:
-        if "://" in url:
-            # Skip scheme and take netloc
-            netloc = (
-                url.split("://", 1)[1]
-                .split("/", 1)[0]
-                .split("?", 1)[0]
-                .split("#", 1)[0]
-            )
-            if ":" in netloc:  # Remove port
-                return netloc.split(":", 1)[0]
+        if url.startswith("http"):
+            # Skip scheme (http:// or https://)
+            start = url.find("//") + 2
+            # Find end of netloc
+            end = url.find("/", start)
+            if end == -1:
+                end = url.find("?", start)
+            if end == -1:
+                end = url.find("#", start)
+            if end == -1:
+                end = len(url)
+
+            netloc = url[start:end]
+            # Remove port if present
+            port_idx = netloc.find(":")
+            if port_idx != -1:
+                return netloc[:port_idx]
             return netloc
         return url.split("/", 1)[0]
     except Exception:

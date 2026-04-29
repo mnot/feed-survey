@@ -6,7 +6,7 @@ import importlib
 # Python 3.13 compatibility shim for mrjob < 0.7.5
 if "pipes" not in sys.modules:
     _pipes = types.ModuleType("pipes")
-    _pipes.quote = shlex.quote
+    setattr(_pipes, "quote", shlex.quote)
     sys.modules["pipes"] = _pipes
 
 if __name__ == "__main__":

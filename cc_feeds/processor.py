@@ -2,6 +2,8 @@ import hashlib
 import logging
 import math
 import pickle
+import re
+import sys
 import traceback
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Set, cast
@@ -10,19 +12,29 @@ from urllib.parse import urljoin
 import dateutil.parser
 import feedparser
 import lxml.html
+from fastwarc.warc import WarcRecordType
 from lxml import etree
 
+sys.stderr.write("DEBUG: processor.py module loading...\n")
+sys.stderr.flush()
+
 try:
+    from .fast_parser import FastFeedParser
     from .utils import get_domain, get_tranco_list, normalize_url
 except (ImportError, ValueError):
     try:
+        from fast_parser import FastFeedParser  # type: ignore
         from utils import get_domain, get_tranco_list, normalize_url  # type: ignore
     except ImportError:
-        from cc_feeds.utils import (  # type: ignore
+        from cc_feeds.fast_parser import FastFeedParser
+        from cc_feeds.utils import (
             get_domain,
             get_tranco_list,
             normalize_url,
         )
+
+sys.stderr.write("DEBUG: processor.py dependencies loaded\n")
+sys.stderr.flush()
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +54,9 @@ class Stats:
         self.pages_processed: int = 0
         self.total_entries: int = 0
         self.content_length_counts: Dict[int, int] = {}  # Binned content lengths
-        self.discovery_domain_counts: Dict[str, int] = {}  # feed_url -> total domains found on
+        self.discovery_domain_counts: Dict[str, int] = (
+            {}
+        )  # feed_url -> total domains found on
 
         # Discovery relation tracking
         self.discovery_rel_alternate: int = 0
@@ -76,10 +90,12 @@ class Stats:
         self.feeds_sniffed += other.feeds_sniffed
         self.pages_processed += other.pages_processed
         self.total_entries += other.total_entries
-        
+
         # Merge content length histogram
         for length, count in getattr(other, "content_length_counts", {}).items():
-            self.content_length_counts[length] = self.content_length_counts.get(length, 0) + count
+            self.content_length_counts[length] = (
+                self.content_length_counts.get(length, 0) + count
+            )
 
         self.discovery_rel_alternate += other.discovery_rel_alternate
         self.discovery_rel_feed += other.discovery_rel_feed
@@ -115,7 +131,9 @@ class Stats:
 
         # Merge domain counts
         for feed_url, count in getattr(other, "discovery_domain_counts", {}).items():
-            self.discovery_domain_counts[feed_url] = self.discovery_domain_counts.get(feed_url, 0) + count
+            self.discovery_domain_counts[feed_url] = (
+                self.discovery_domain_counts.get(feed_url, 0) + count
+            )
 
         for ct, count in other.content_type_counts.items():
             self.content_type_counts[ct] = self.content_type_counts.get(ct, 0) + count
@@ -146,17 +164,19 @@ class Stats:
             return cast(Stats, pickle.load(f_in))
 
     def add_site(self, domain: str) -> None:
-        """Add a site to the HLL counter and (optionally) the set."""
+        """Add a site to the HLL counter and the set."""
         if not domain:
             return
-        self.sites_seen.add(domain)  # Still keep for small runs/samples
+        self.sites_seen.add(domain)
 
-        # Deterministic hash for HLL
-        h = int(hashlib.md5(domain.encode("utf-8")).hexdigest()[:16], 16)
+        # Faster HLL hashing using CRC32 (stable and fast for non-crypto use)
+        import zlib
+
+        h = zlib.crc32(domain.encode("utf-8")) & 0xFFFFFFFF
+
         idx = h & (self.hll_m - 1)
-        # rho(w) is the number of leading zeros + 1 in the remaining 64-p bits
-        # If hash is 64 bits and p=12, w has 52 bits.
-        w_bits = 64 - self.hll_p
+        w_bits = 32 - self.hll_p
+        w = h >> self.hll_p
         rho = (w_bits - w.bit_length() + 1) if w > 0 else (w_bits + 1)
         self.hll_registers[idx] = max(self.hll_registers[idx], rho)
 
@@ -182,30 +202,93 @@ class WarcProcessor:
         )
         self.stats: Stats = Stats()
         self.stats.top_n = top_n
+        self.html_parser = lxml.html.HTMLParser(recover=True, encoding="utf-8")
+        self._scope_cache: Dict[str, bool] = {}
 
     def is_in_scope(self, domain: str) -> bool:
         if not self.top_n_domains:
             return True
-        # Check domain and subdomains if necessary, but Tranco is usually just domains
-        return domain in self.top_n_domains or (
-            domain.count(".") > 0 and domain.split(".", 1)[-1] in self.top_n_domains
-        )
+        if not domain:
+            return False
+
+        if domain in self._scope_cache:
+            return self._scope_cache[domain]
+
+        # Check domain and all parent domains (e.g., sub.example.com -> example.com)
+        in_scope = False
+        parts = domain.split(".")
+        for i in range(len(parts)):
+            if ".".join(parts[i:]) in self.top_n_domains:
+                in_scope = True
+                break
+
+        # Cap cache size to avoid memory issues
+        if len(self._scope_cache) < 50000:
+            self._scope_cache[domain] = in_scope
+        return in_scope
 
     def process_record(self, record: Any) -> None:
-        if record.headers.get("WARC-Type") != "response":
+        # 1. Immediate exit for non-responses (very fast)
+        if record.record_type != WarcRecordType.response:
             return
 
+        # 2. FAST METADATA FILTER (WARC-level)
+        # Common Crawl provides the identified payload type in WARC headers.
+        # This allows us to skip HTTP parsing for 80% of records.
+        warc_ct = record.headers.get("WARC-Identified-Payload-Type", "")
+        if warc_ct and not (
+            "text/html" in warc_ct
+            or "xml" in warc_ct
+            or "rss" in warc_ct
+            or "json" in warc_ct
+        ):
+            return
+
+        # 3. Target URI and Scope (Check before expensive HTTP parsing)
+        # Fetch URI once to avoid multiple decodes in fastwarc
         url = record.headers.get("WARC-Target-URI")
         if not url:
             return
 
-        # Fast domain extraction (used for both scope and site tracking)
         domain = get_domain(url)
         if not self.is_in_scope(domain):
             return
 
-        # Track latest crawl time using string comparison to avoid parsing every date
+        # 4. Lazy parse HTTP headers ONLY for potentially interesting records
+        record.parse_http()
+        h = record.http_headers
+        if not h:
+            return
+
+        # 5. CONTENT-TYPE RE-VERIFICATION (HTTP-level)
+        ct_header = h.get("Content-Type", "")
+
+        # Fast path: check for interesting types in the raw string
+        if not (
+            "text/html" in ct_header
+            or "xml" in ct_header
+            or "rss" in ct_header
+            or "json" in ct_header
+        ):
+            return
+
+        # Normalize content type for stats
+        ct_lower = ct_header.lower()
+        content_type = ct_lower.split(";")[0].strip()
+        if content_type:
+            self.stats.content_type_counts[content_type] = (
+                self.stats.content_type_counts.get(content_type, 0) + 1
+            )
+
+        # 6. General stats and date (only for in-scope interesting records)
+        self.stats.pages_seen += 1
+
+        # Capture request time once from WARC headers to avoid redundant decodes
         request_time_str = record.headers.get("WARC-Date")
+        self.stats.pages_processed += 1
+        if domain:
+            self.stats.add_site(domain)
+
         if request_time_str:
             if (
                 not self.stats.max_crawl_time_str
@@ -213,50 +296,22 @@ class WarcProcessor:
             ):
                 self.stats.max_crawl_time_str = request_time_str
 
-        # Update general stats
-        self.stats.pages_seen += 1
-        self.stats.pages_processed += 1
-
-        # Fast domain extraction and site tracking
-        if domain:
-            self.stats.add_site(domain)
-
-        # 1. Technical summary for relevant records
-        h = record.http_headers
-        if not h:
-            return
-
-        content_type_header = h.get("Content-Type", "")
-        content_type = content_type_header.split(";")[0].strip().lower()
-        if content_type:
-            self.stats.content_type_counts[content_type] = (
-                self.stats.content_type_counts.get(content_type, 0) + 1
-            )
-
-        # 2. Check for HTML/Feeds
+        # 7. Process based on type
         if "text/html" in content_type:
-            # User requested 12KB for every page (more than enough for most <head> sections)
-            content = record.reader.read(12288)
-            self._process_html(record, url, content)
+            # ONLY read a small snippet to find feed links
+            # NEVER use record.body as it triggers a full download of the entire record
+            try:
+                content = record.reader.read(12288)
+                self._process_html(record, url, content)
+            except Exception:
+                pass
             return
 
-        # 3. Check if this record itself is a feed
-        status_code: int = getattr(h, "status_code", 200)
-        ct_main = content_type.split(";")[0].strip().lower()
-        is_feed = (
-            "rss" in ct_main
-            or "atom" in ct_main
-            or "feed+json" in ct_main
-            or ct_main in ("application/xml", "text/xml")
-        )
-        if is_feed and status_code == 200:
-            import sys
-
-            sys.stderr.write(f"DEBUG: Processing feed record: {url}\n")
-            sys.stderr.flush()
-            # IMPORTANT: Normalize URL so it matches autodiscovery links later
+        # 7. Feed processing
+        status_code: int = h.status_code
+        if status_code == 200:
             normalized_url = normalize_url(url)
-            self._process_feed(record, normalized_url, status_code)
+            self._process_feed(record, normalized_url, status_code, request_time_str)
         elif "text/plain" in content_type or "application/octet-stream" in content_type:
             # Sniff the first few bytes for feed signatures (only if reader supports peek)
             try:
@@ -265,25 +320,34 @@ class WarcProcessor:
                     and self._guess_format(record.reader.peek(1024)) != "unknown"
                 ):
                     self.stats.feeds_sniffed += 1
-                    self._process_feed(record, url, status_code)
+                    self._process_feed(record, url, status_code, request_time_str)
             except (AttributeError, Exception):
                 pass
+
+    # Pre-compiled regex for fast link detection
+    _LINK_RE = re.compile(
+        b"<link\\s+[^>]*rel=[\"'](?:alternate|feed)[\"'][^>]*>", re.IGNORECASE
+    )
+    _FEED_TYPE_RE = re.compile(
+        b"type=[\"']application/(?:rss\\+xml|atom\\+xml|feed\\+json)[\"']",
+        re.IGNORECASE,
+    )
 
     def _process_html(self, record: Any, url: str, content: bytes) -> None:
         if not content:
             return
 
         try:
-
-            # FAST PRE-FILTER: Avoid expensive LXML parsing for pages without feed links
-            if (
-                b"rss+xml" not in content
-                and b"atom+xml" not in content
-                and b"feed+json" not in content
+            # FAST REGEX PRE-FILTER: Avoid LXML for pages without feed links
+            # We look for <link rel="alternate" ...> or <link rel="feed" ...>
+            # AND a feed-related content type
+            if not self._LINK_RE.search(content) or not self._FEED_TYPE_RE.search(
+                content
             ):
                 return
 
-            doc = lxml.html.fromstring(content)
+            # Faster snippet parsing using the shared HTMLParser
+            doc = lxml.html.fromstring(content, parser=self.html_parser)
             # Find both alternate and feed relations
             links = doc.xpath('//link[@rel="alternate" or @rel="feed"]')
             if not isinstance(links, list):
@@ -325,7 +389,7 @@ class WarcProcessor:
                 if feed_url not in self.stats.autodiscovery_links:
                     self.stats.autodiscovery_links[feed_url] = []
                     self.stats.discovery_domain_counts[feed_url] = 0
-                
+
                 self.stats.discovery_domain_counts[feed_url] += 1
                 if (
                     domain not in self.stats.autodiscovery_links[feed_url]
@@ -367,12 +431,29 @@ class WarcProcessor:
             pass
         return "unknown"
 
-    def _process_feed(self, record: Any, url: str, status_code: int) -> None:
-        request_time_str = record.headers.get("WARC-Date")
+    def _process_feed(
+        self,
+        record: Any,
+        url: str,
+        status_code: int,
+        request_time_str: Optional[str] = None,
+    ) -> None:
+        if not request_time_str:
+            request_time_str = record.headers.get("WARC-Date")
+
         if request_time_str:
-            request_time = dateutil.parser.parse(request_time_str)
-            if request_time.tzinfo is None:
-                request_time = request_time.replace(tzinfo=timezone.utc)
+            # Fast path for WARC-Date which is usually YYYY-MM-DDTHH:MM:SSZ
+            try:
+                if len(request_time_str) == 20 and request_time_str.endswith("Z"):
+                    request_time = datetime.strptime(
+                        request_time_str, "%Y-%m-%dT%H:%M:%SZ"
+                    ).replace(tzinfo=timezone.utc)
+                else:
+                    request_time = dateutil.parser.parse(request_time_str)
+                    if request_time.tzinfo is None:
+                        request_time = request_time.replace(tzinfo=timezone.utc)
+            except (ValueError, TypeError):
+                request_time = datetime.now(timezone.utc)
         else:
             request_time = datetime.now(timezone.utc)
 
@@ -398,14 +479,27 @@ class WarcProcessor:
 
         try:
             # Read the entire body for parsing
+            # FastWARC reader is a stream, we must read() it.
             content = record.reader.read()
+
             if not content:
                 return
 
-            parsed_data = feedparser.parse(content)
+            # Use FastFeedParser for high-performance parsing
+            parsed_data = FastFeedParser.parse(content)
 
-            if parsed_data.bozo:
-                self._handle_bozo(parsed_data)
+            if not parsed_data.get("valid"):
+                # Fallback to feedparser if fast parser fails
+                try:
+                    import feedparser
+
+                    parsed_data = feedparser.parse(content)
+                    if not parsed_data.get("feed"):
+                        return
+                    if parsed_data.bozo:
+                        self._handle_bozo(parsed_data)
+                except Exception:
+                    return
 
             # Track language from HTTP headers
             lang_header = record.http_headers.get("Content-Language")
@@ -415,10 +509,7 @@ class WarcProcessor:
                 feed_info["languages"].add(http_lang)
                 self.stats.lang_src_http += 1
 
-            if not parsed_data.bozo or parsed_data.entries:
-                self._analyze_parsed_feed(feed_info, parsed_data, content, request_time)
-            else:
-                self._handle_unparsable(feed_info, parsed_data)
+            self._analyze_parsed_feed(feed_info, parsed_data, content, request_time)
 
         except Exception as exc:  # pylint: disable=broad-except
             self._handle_process_error(feed_info, url, exc)
@@ -486,24 +577,43 @@ class WarcProcessor:
         request_time: datetime,
     ) -> None:
         feed_info["valid"] = True
-        feed_info["format"] = getattr(
-            parsed_data, "version", None
-        ) or self._guess_format(content)
-        feed_info["entries_count"] = len(parsed_data.entries)
-        self.stats.total_entries += len(parsed_data.entries)
+
+        # Handle both FastFeedParser (dict) and feedparser (obj)
+        if isinstance(parsed_data, dict):
+            feed_info["format"] = parsed_data.get("version") or self._guess_format(
+                content
+            )
+            entries_count = parsed_data.get("entries_count", 0)
+            feed_data = parsed_data.get("feed", {})
+            feed_info["extensions"] = parsed_data.get("extensions", set())
+            feed_info["has_content"] = parsed_data.get("has_content", False)
+            feed_info["has_summary"] = parsed_data.get("has_summary", False)
+        else:
+            feed_info["format"] = getattr(
+                parsed_data, "version", None
+            ) or self._guess_format(content)
+            entries_count = len(parsed_data.entries)
+            feed_data = parsed_data.feed
+            # Extract basic info for feedparser fallback
+            for entry in parsed_data.entries:
+                if "content" in entry:
+                    feed_info["has_content"] = True
+                if "summary" in entry:
+                    feed_info["has_summary"] = True
+
+        feed_info["entries_count"] = entries_count
+        self.stats.total_entries += entries_count
 
         # Title and Link
-        title = parsed_data.feed.get("title")
+        title = feed_data.get("title")
         if title:
             feed_info["title"] = title.strip()
-        link = parsed_data.feed.get("link")
+        link = feed_data.get("link")
         if link:
-            from utils import normalize_url
-
             feed_info["link"] = normalize_url(link)
 
         # Language from feed
-        feed_lang = parsed_data.feed.get("language")
+        feed_lang = feed_data.get("language")
         if feed_lang:
             feed_lang = feed_lang.lower()
             feed_info["lang_feed"] = feed_lang
@@ -515,22 +625,28 @@ class WarcProcessor:
                 self.stats.lang_mismatches += 1
 
         # Last updated
-        updated_parsed = parsed_data.feed.get("updated_parsed") or parsed_data.feed.get(
-            "published_parsed"
-        )
-        if updated_parsed:
-            updated_dt = datetime(
-                updated_parsed[0],
-                updated_parsed[1],
-                updated_parsed[2],
-                updated_parsed[3],
-                updated_parsed[4],
-                updated_parsed[5],
-                tzinfo=timezone.utc,
-            )
-            delta = request_time - updated_dt
-            if timedelta(0) <= delta < timedelta(days=7):
-                feed_info["updated_recently"] = True
+        updated_str = feed_data.get("updated") or feed_data.get("published")
+        if updated_str:
+            try:
+                # Fast path for ISO dates
+                if len(updated_str) >= 19 and updated_str[10] == "T":
+                    try:
+                        # Handle potential 'Z' or offset
+                        clean_iso = updated_str.replace("Z", "+00:00")
+                        updated_dt = datetime.fromisoformat(clean_iso)
+                    except ValueError:
+                        updated_dt = dateutil.parser.parse(updated_str)
+                else:
+                    updated_dt = dateutil.parser.parse(updated_str)
+
+                if updated_dt.tzinfo is None:
+                    updated_dt = updated_dt.replace(tzinfo=timezone.utc)
+
+                delta = request_time - updated_dt
+                if timedelta(0) <= delta < timedelta(days=7):
+                    feed_info["updated_recently"] = True
+            except (ValueError, TypeError):
+                pass
 
         # Entry analysis
         self._analyze_entries(feed_info, parsed_data, request_time)
@@ -542,44 +658,72 @@ class WarcProcessor:
     def _analyze_entries(
         self, feed_info: Dict[str, Any], parsed_data: Any, request_time: datetime
     ) -> None:
-        content_lengths = []
-        entry_langs = set()
-        for entry in parsed_data.entries:
-            # Language
-            lang = entry.get("language")
-            if lang:
-                lang = lang.lower()
-                entry_langs.add(lang)
-                feed_info["languages"].add(lang)
-                self.stats.lang_src_entry += 1
+        """Analyze entry dates and content structure."""
+        if isinstance(parsed_data, dict):
+            newest_date = parsed_data.get("newest_entry_date")
+            content_lengths = parsed_data.get("content_lengths", [])
+            entry_langs = parsed_data.get("entry_languages", set())
 
-            # Summary / Content
-            if entry.get("summary"):
-                feed_info["has_summary"] = True
-            if entry.get("content"):
-                feed_info["has_content"] = True
-                for content_obj in entry.content:
-                    if content_obj.value:
-                        content_lengths.append(len(content_obj.value))
+            # Update stats for languages
+            self.stats.lang_src_entry += len(entry_langs)
+            feed_info["languages"].update(entry_langs)
+        else:
+            # Fallback for feedparser
+            entries = parsed_data.get("entries", [])
+            content_lengths = []
+            entry_langs = set()
+            newest_date = None
+            for entry in entries:
+                # Language
+                lang = entry.get("language")
+                if lang:
+                    lang = lang.lower()
+                    entry_langs.add(lang)
+                    feed_info["languages"].add(lang)
+                    self.stats.lang_src_entry += 1
 
-            # Recency of entries
-            entry_updated = entry.get("updated_parsed") or entry.get("published_parsed")
-            if entry_updated:
-                # Track newest entry
-                if (
-                    not feed_info["newest_entry_date"]
-                    or entry_updated > feed_info["newest_entry_date"]
-                ):
-                    feed_info["newest_entry_date"] = entry_updated
+                # Summary / Content
+                if entry.get("summary"):
+                    feed_info["has_summary"] = True
+                if entry.get("content"):
+                    feed_info["has_content"] = True
+                    for content_obj in entry.content:
+                        if content_obj.value:
+                            content_lengths.append(len(content_obj.value))
 
-            # Extensions
-            self._analyze_extensions(feed_info, entry)
+                dt = entry.get("updated_parsed") or entry.get("published_parsed")
+                if dt:
+                    if not newest_date or dt > newest_date:
+                        newest_date = dt
 
+                # Extensions
+                self._analyze_extensions(feed_info, entry)
+
+        if newest_date:
+            try:
+                entry_dt = datetime(
+                    newest_date[0],
+                    newest_date[1],
+                    newest_date[2],
+                    newest_date[3],
+                    newest_date[4],
+                    newest_date[5],
+                    tzinfo=timezone.utc,
+                )
+                delta = request_time - entry_dt
+                if timedelta(0) <= delta < timedelta(days=7):
+                    feed_info["entry_recently"] = True
+            except Exception:
+                pass
+
+        feed_info["newest_entry_date"] = newest_date
         feed_info["content_lengths"] = content_lengths
         for length in content_lengths:
             # Bin to nearest 100 bytes to reduce histogram size
             binned = (length // 100) * 100
-            self.stats.content_length_counts[binned] = self.stats.content_length_counts.get(binned, 0) + 1
+            self.stats.content_length_counts[binned] = (
+                self.stats.content_length_counts.get(binned, 0) + 1
+            )
 
         if entry_langs:
             feed_info["lang_entries"].update(entry_langs)
@@ -588,9 +732,7 @@ class WarcProcessor:
             # Also check if entry languages differ from feed/http
             base_lang = feed_info["lang_feed"] or feed_info["lang_http"]
             if base_lang and any(l != base_lang for l in entry_langs):
-                if (
-                    len(entry_langs) == 1
-                ):  # If only one entry lang, but different from base
+                if len(entry_langs) == 1:
                     self.stats.lang_mismatches += 1
 
     def _analyze_extensions(self, feed_info: Dict[str, Any], entry: Any) -> None:

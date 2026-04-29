@@ -34,6 +34,24 @@ emr: venv
 	mkdir -p results/$(CRAWL_ID)-$(RUN_ID)
 	aws s3 sync $(OUTPUT_DIR)$(CRAWL_ID)-$(RUN_ID)/ results/$(CRAWL_ID)-$(RUN_ID)/
 
+.PHONY: emr-parallel
+emr-parallel: venv
+	@echo "Fetching WARC paths..."
+	aws s3 cp s3://commoncrawl/crawl-data/$(CRAWL_ID)/warc.paths.gz warc.paths.gz
+	@echo "Splitting paths for parallelism..."
+	mkdir -p path_chunks
+	zcat warc.paths.gz | split -l 1000 - path_chunks/chunk_
+	@echo "Launching MapReduce job with multiple input chunks..."
+	$(VENV)/python mr_job.py -r emr -c mrjob.conf \
+		path_chunks/chunk_* \
+		--output-dir $(OUTPUT_DIR)$(CRAWL_ID)-$(RUN_ID)/ \
+		--no-read-logs --no-cat-output \
+		--jobconf mapreduce.job.reduces=20 \
+		--topn 500000
+	mkdir -p results/$(CRAWL_ID)-$(RUN_ID)
+	aws s3 sync $(OUTPUT_DIR)$(CRAWL_ID)-$(RUN_ID)/ results/$(CRAWL_ID)-$(RUN_ID)/
+	rm -rf path_chunks warc.paths.gz
+
 WHEEL_S3_PATH = s3://mnot-cc-feeds/wheels/
 
 .PHONY: wheels
@@ -57,6 +75,7 @@ test-emr: venv
 		echo "Starting new persistent cluster..."; \
 		$(VENV)/python mrjob_wrapper.py mrjob.tools.emr.create_cluster -c mrjob.conf 2>&1 | tee cluster_start.log; \
 		grep -o "j-[A-Z0-9]*" cluster_start.log | head -n 1 > $(TEST_CLUSTER_FILE); \
+		rm cluster_start.log; \
 	fi; \
 	CLUSTER_ID=$$(cat $(TEST_CLUSTER_FILE)); \
 	if [ -z "$$CLUSTER_ID" ]; then \
