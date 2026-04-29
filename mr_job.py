@@ -291,6 +291,7 @@ class CCFeedsJob(MRJob): # type: ignore[misc]
                 
                 yield "summary", {
                     "pages_seen": final_stats.pages_seen,
+                    "max_crawl_time_str": final_stats.max_crawl_time_str,
                     "hll_registers": final_stats.hll_registers,
                     "content_types": final_stats.content_type_counts,
                     "content_length_counts": final_stats.content_length_counts,
