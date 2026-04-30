@@ -298,8 +298,9 @@
                 <div class="card-title">Successfully Parsed</div>
                 <div class="card-value">{{ (stats.feeds_with_content + stats.feeds_with_summary + stats.feeds_with_neither)|comma }}</div>
                 <div class="card-sub">
-                    <div class="row"><span>With autodiscovery link</span> <strong>{{ stats.feeds_with_autodiscovery|comma }}</strong></div>
-                    <div class="row"><span>Without autodiscovery link</span> <strong>{{ stats.feeds_without_autodiscovery|comma }}</strong></div>
+                    {% set total_parsed = stats.feeds_with_content + stats.feeds_with_summary + stats.feeds_with_neither %}
+                    <div class="row"><span>With autodiscovery link</span> <strong>{{ stats.feeds_with_autodiscovery|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.feeds_with_autodiscovery / total_parsed * 100 if total_parsed else 0) }}%)</span></strong></div>
+                    <div class="row"><span>Without autodiscovery link</span> <strong>{{ stats.feeds_without_autodiscovery|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.feeds_without_autodiscovery / total_parsed * 100 if total_parsed else 0) }}%)</span></strong></div>
                 </div>
             </div>
             <div class="card">
