@@ -8,13 +8,16 @@ from jinja2 import Environment, FileSystemLoader
 
 try:
     from .processor import Stats
+    from .quality import score_feed
     from .utils import get_domain
 except (ImportError, ValueError):
     try:
-        from processor import Stats  # type: ignore[import-not-found,no-redef]
-        from utils import get_domain  # type: ignore[import-not-found,no-redef]
+        from processor import Stats  # type: ignore[no-redef]
+        from quality import score_feed  # type: ignore[no-redef]
+        from utils import get_domain  # type: ignore[no-redef]
     except ImportError:
         from cc_feeds.processor import Stats
+        from cc_feeds.quality import score_feed
         from cc_feeds.utils import get_domain
 
 
@@ -394,26 +397,19 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
     entry_recency_cdf = _build_recency_cdf(feeds_with_entries, "newest_entry_date", now)
     oldest_entry_cdf  = _build_recency_cdf(feeds_with_entries, "oldest_entry_date", now)
 
-    # --- Quality distribution ---
+    # --- Quality distribution (recomputed at report time so algo changes are free) ---
     quality_hist: Dict[str, int] = {f"{i/10:.1f}–{(i+1)/10:.1f}": 0 for i in range(10)}
-    quality_scores = [
-        res["quality"]
-        for res in all_valid_results.values()
-        if isinstance(res.get("quality"), (int, float))
-    ]
-    for q in quality_scores:
+    quality_scores: List[float] = []
+    fmt_quality: Dict[str, List[float]] = {}
+    for res in all_valid_results.values():
+        q = score_feed(res, now)
+        quality_scores.append(q)
         bin_idx = min(int(q * 10), 9)
         label = f"{bin_idx/10:.1f}–{(bin_idx+1)/10:.1f}"
         quality_hist[label] += 1
-    mean_quality = sum(quality_scores) / len(quality_scores) if quality_scores else 0.0
-
-    # Quality breakdown per format
-    fmt_quality: Dict[str, List[float]] = {}
-    for res in all_valid_results.values():
         fmt = res.get("format") or "unknown"
-        q = res.get("quality")
-        if isinstance(q, (int, float)):
-            fmt_quality.setdefault(fmt, []).append(float(q))
+        fmt_quality.setdefault(fmt, []).append(q)
+    mean_quality = sum(quality_scores) / len(quality_scores) if quality_scores else 0.0
 
     format_quality_rows: List[Dict[str, Any]] = []
     for fmt, scores in fmt_quality.items():

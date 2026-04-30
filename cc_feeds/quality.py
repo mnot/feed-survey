@@ -30,9 +30,10 @@ import math
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-__all__ = ["score_feed", "WEIGHTS", "RECENCY_HALF_LIFE_DAYS"]
+__all__ = ["score_feed", "WEIGHTS", "RECENCY_HALF_LIFE_DAYS", "ENTRY_RECENCY_CUTOFF_DAYS"]
 
 RECENCY_HALF_LIFE_DAYS: float = 120.0
+ENTRY_RECENCY_CUTOFF_DAYS: float = 365.0   # no entry in this window → score 0
 
 WEIGHTS: Dict[str, float] = {
     "recency":          0.35,
@@ -60,6 +61,11 @@ def score_feed(
         return 0.0
 
     now = crawl_time or datetime.now(timezone.utc)
+
+    # Hard cutoff: no entry within the last year → dead feed, score 0
+    newest_age = _date_to_age_days(feed_info.get("newest_entry_date"), now)
+    if newest_age is None or newest_age > ENTRY_RECENCY_CUTOFF_DAYS:
+        return 0.0
 
     r = _recency_score(feed_info, now)
     c = _content_richness_score(feed_info)
@@ -89,6 +95,11 @@ def score_components(
         return {k: 0.0 for k in WEIGHTS}
 
     now = crawl_time or datetime.now(timezone.utc)
+
+    newest_age = _date_to_age_days(feed_info.get("newest_entry_date"), now)
+    if newest_age is None or newest_age > ENTRY_RECENCY_CUTOFF_DAYS:
+        return {k: 0.0 for k in WEIGHTS}
+
     return {
         "recency":          _recency_score(feed_info, now),
         "content_richness": _content_richness_score(feed_info),
