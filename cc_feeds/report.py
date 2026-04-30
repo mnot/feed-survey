@@ -354,8 +354,7 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
 
     # Duplicate detection
     duplicate_counts = _detect_duplicates(stats.multi_feed_pages, stats.feed_results)
-    duplicates_per_page_hist = make_histogram(duplicate_counts, bins="discovery")
-    duplicates_per_page_hist.pop("0", None)
+    pages_with_duplicates = len(duplicate_counts)
 
     # Stacked discovery data
     stacked_page = _build_stacked_data(stats, page_to_feeds, zero_pages)
@@ -536,7 +535,7 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
         total_sites_f=format_number(total_sites),
         sites_with_auto_f=format_number(len(site_to_feeds)),
         zero_sites_f=format_number(zero_sites),
-        duplicates_per_page_hist=duplicates_per_page_hist,
+        pages_with_duplicates=pages_with_duplicates,
     )
 
     with open(output_path, "w", encoding="utf-8") as f_out:
