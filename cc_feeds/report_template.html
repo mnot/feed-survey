@@ -336,7 +336,11 @@
             </div>
             <table>
                 {% for err, count in errors %}
-                <tr><td>{{ err }}</td><td>{{ count|comma }}</td></tr>
+                <tr>
+                    <td>{{ err }}</td>
+                    <td>{{ count|comma }}</td>
+                    <td style="color:var(--text-muted);padding-left:0.25rem;">{{ "%.1f"|format(count / stats.total_errors * 100 if stats.total_errors else 0) }}%</td>
+                </tr>
                 {% endfor %}
             </table>
         </div>
