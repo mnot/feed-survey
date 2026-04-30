@@ -131,7 +131,7 @@ def build_mock_stats() -> Stats:
                  "sv", "pl", "ar", "ko", "tr", "fi", "da", "nb", "cs", "hu"]
 
     tlds_feed = ["com", "net", "org", "io", "co.uk", "de", "fr", "jp"]
-    n_feeds = 2_100_000
+    n_feeds = 50_000
 
     for i in range(n_feeds):
         # Choose format

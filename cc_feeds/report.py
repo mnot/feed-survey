@@ -772,7 +772,8 @@ def _build_recency_cdf(
             pass
 
     ages.sort()
-    n = len(ages)
+    n = len(ages)              # feeds that have a date — the CDF denominator
+    no_date = total - n        # feeds excluded (no date available)
     labels: List[str] = []
     data: List[float] = []
     for days, label in _CDF_BREAKPOINTS:
@@ -784,7 +785,7 @@ def _build_recency_cdf(
                 lo = mid + 1
             else:
                 hi = mid
-        pct = round(lo / total * 100, 1) if total else 0.0
+        pct = round(lo / n * 100, 1) if n else 0.0
         labels.append(label)
         data.append(pct)
-    return {"labels": labels, "data": data}
+    return {"labels": labels, "data": data, "no_date": no_date}

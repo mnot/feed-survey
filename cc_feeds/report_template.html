@@ -452,14 +452,14 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Feed Recency (CDF)</div>
-                <div class="chart-sub">% of feeds whose <em>last update</em> date falls within the given age. Feeds with no date suppress the ceiling below 100%.</div>
+                <div class="chart-sub">% of feeds <em>with a last-update date</em> whose update falls within the given age.{% if feed_recency_cdf.no_date %} {{ feed_recency_cdf.no_date|comma }} feeds with no date excluded from denominator.{% endif %}</div>
                 <div class="chart-container">
                     <canvas id="feedRecencyCdf"></canvas>
                 </div>
             </div>
             <div class="chart-card">
                 <div class="chart-title">Newest Entry Recency (CDF)</div>
-                <div class="chart-sub">% of feeds <em>with at least one entry</em> whose most recent entry falls within the given age. {{ n_zero_entry|comma }} zero-entry feeds excluded from denominator.</div>
+                <div class="chart-sub">% of feeds <em>with at least one entry</em> whose most recent entry falls within the given age. {{ n_zero_entry|comma }} zero-entry feeds excluded from denominator.{% if entry_recency_cdf.no_date %} {{ entry_recency_cdf.no_date|comma }} have no entry date.{% endif %}</div>
                 <div class="chart-container">
                     <canvas id="entryRecencyCdf"></canvas>
                 </div>
@@ -473,7 +473,7 @@
                 <div class="chart-sub">
                     % of feeds <em>with at least one entry</em> whose oldest entry is at most the given age — i.e. how far back the feed's window reaches.
                     A client polling every N days will miss entries in feeds whose oldest entry is &lt; N days old when the poll fires.
-                    {{ n_zero_entry|comma }} zero-entry feeds excluded from denominator.
+                    {{ n_zero_entry|comma }} zero-entry feeds excluded from denominator.{% if oldest_entry_cdf.no_date %} {{ oldest_entry_cdf.no_date|comma }} have no oldest-entry date.{% endif %}
                 </div>
                 <div class="chart-container">
                     <canvas id="oldestEntryCdf"></canvas>
