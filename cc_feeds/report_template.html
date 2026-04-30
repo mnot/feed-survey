@@ -317,21 +317,6 @@
             </div>
         </div>
 
-        <!-- Quality distribution -->
-        <div class="chart-grid" style="margin-bottom: 2rem;">
-            <div class="chart-card">
-                <div class="chart-title">Feed Quality Distribution</div>
-                <div class="chart-sub">
-                    Score 0–1 per feed. Primary driver is entry recency (exponential decay,
-                    half-life 120 days). Invalid / unparseable feeds score 0 and are
-                    not shown here.
-                </div>
-                <div class="chart-container">
-                    <canvas id="qualityHistogram"></canvas>
-                </div>
-            </div>
-        </div>
-
         <!-- Feed processing errors (compact strip) -->
         {% if errors %}
         <div class="error-strip">
@@ -347,15 +332,52 @@
         </div>
         {% endif %}
 
+        <!-- Quality distribution + quality by format -->
+        <div class="chart-grid" style="margin-bottom: 2rem;">
+            <div class="chart-card">
+                <div class="chart-title">Feed Quality Distribution</div>
+                <div class="chart-sub">
+                    Score 0–1 per feed. Primary driver is entry recency (exponential decay,
+                    half-life 120 days). Invalid / unparseable feeds score 0 and are
+                    not shown here.
+                </div>
+                <div class="chart-container">
+                    <canvas id="qualityHistogram"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Quality by Format</div>
+                <div class="chart-sub">
+                    % of feeds in each quality tier per format, ordered by mean quality (↓).
+                    Dot = mean score. Normalised for population size so rare formats
+                    compare fairly against common ones.
+                </div>
+                <div class="chart-container">
+                    <canvas id="qualityByFormat"></canvas>
+                </div>
+            </div>
+        </div>
+
         <!-- Formats + Charsets -->
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Feed Formats</div>
                 <table class="data-table">
-                    <thead><tr><th>Format</th><th>Count</th></tr></thead>
+                    <thead><tr><th>Format</th><th>Count</th><th>Mean quality</th></tr></thead>
                     <tbody>
-                        {% for fmt, count in formats %}
-                        <tr><td><span class="badge badge-primary">{{ fmt }}</span></td><td>{{ count|comma }}</td></tr>
+                        {% for row in format_quality_rows %}
+                        <tr>
+                            <td><span class="badge badge-primary">{{ row.fmt }}</span></td>
+                            <td>{{ row.count|comma }}</td>
+                            <td>
+                                <span style="font-weight:700; color:
+                                    {% if row.mean >= 0.7 %}var(--success)
+                                    {% elif row.mean >= 0.4 %}var(--primary)
+                                    {% else %}var(--text-muted){% endif %};">
+                                    {{ "%.3f"|format(row.mean) }}
+                                </span>
+                            </td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -638,6 +660,60 @@
     new Chart(document.getElementById('feedRecencyCdf'),   { type:'line', data: makeCdfDataset(feedRecencyData,  '#6366f1'), options: cdfOpts });
     new Chart(document.getElementById('entryRecencyCdf'),  { type:'line', data: makeCdfDataset(entryRecencyData, '#10b981'), options: cdfOpts });
     new Chart(document.getElementById('oldestEntryCdf'),   { type:'line', data: makeCdfDataset(oldestEntryData,  '#f59e0b'), options: cdfOpts });
+
+    // ── Quality by format (horizontal stacked % bar + mean dot) ──────────────
+    const qByFmt = {{ format_quality_json|safe }};
+    // qByFmt is [{fmt, count, mean, low_pct, mid_pct, high_pct}, ...] ordered by mean desc
+    new Chart(document.getElementById('qualityByFormat'), {
+        type: 'bar',
+        data: {
+            labels: qByFmt.map(r => r.fmt),
+            datasets: [
+                { label: 'High (≥0.7)',   data: qByFmt.map(r => r.high_pct), backgroundColor: '#10b981' },
+                { label: 'Medium (0.4–0.7)', data: qByFmt.map(r => r.mid_pct),  backgroundColor: '#6366f1' },
+                { label: 'Low (<0.4)',    data: qByFmt.map(r => r.low_pct),  backgroundColor: '#e2e8f0' },
+                {
+                    label: 'Mean score',
+                    data: qByFmt.map(r => r.mean * 100),
+                    type: 'scatter',
+                    pointStyle: 'circle',
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    backgroundColor: '#f59e0b',
+                    borderColor: '#fff',
+                    borderWidth: 2,
+                    order: -1,   // draw on top
+                }
+            ]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true, position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => {
+                            if (ctx.datasetIndex === 3) {
+                                return ` Mean: ${(ctx.parsed.x / 100).toFixed(3)}`;
+                            }
+                            return ` ${ctx.dataset.label}: ${ctx.parsed.x.toFixed(1)}%`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    min: 0, max: 100,
+                    ticks: { callback: v => v + '%', font: { size: 11 } },
+                    grid: { display: false }
+                },
+                y: { stacked: true, ticks: { font: { size: 11 } } }
+            }
+        }
+    });
 
     // ── Quality histogram ─────────────────────────────────────────────────────
     const qualityData = {{ quality_hist|safe }};

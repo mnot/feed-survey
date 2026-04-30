@@ -394,6 +394,29 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
         quality_hist[label] += 1
     mean_quality = sum(quality_scores) / len(quality_scores) if quality_scores else 0.0
 
+    # Quality breakdown per format
+    fmt_quality: Dict[str, List[float]] = {}
+    for res in all_valid_results.values():
+        fmt = res.get("format") or "unknown"
+        q = res.get("quality")
+        if isinstance(q, (int, float)):
+            fmt_quality.setdefault(fmt, []).append(float(q))
+
+    format_quality_rows: List[Dict[str, Any]] = []
+    for fmt, scores in fmt_quality.items():
+        n = len(scores)
+        mean_q: float = sum(scores) / n
+        format_quality_rows.append({
+            "fmt":      fmt,
+            "count":    n,
+            "mean":     round(mean_q, 3),
+            "high_pct": round(sum(1 for s in scores if s >= 0.7) / n * 100, 1),
+            "mid_pct":  round(sum(1 for s in scores if 0.4 <= s < 0.7) / n * 100, 1),
+            "low_pct":  round(sum(1 for s in scores if s < 0.4) / n * 100, 1),
+        })
+    # Order by mean quality descending for the chart
+    format_quality_rows.sort(key=lambda r: cast(float, r["mean"]), reverse=True)
+
     # --- Sort & format ---
     formats   = sorted(agg["formats"].items(),   key=lambda x: x[1], reverse=True)
     languages = sorted(agg["languages"].items(), key=lambda x: x[1], reverse=True)
@@ -468,6 +491,8 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
         entry_recency_cdf=json.dumps(entry_recency_cdf),
         oldest_entry_cdf=json.dumps(oldest_entry_cdf),
         quality_hist=json.dumps(quality_hist),
+        format_quality_json=json.dumps(format_quality_rows),
+        format_quality_rows=format_quality_rows,
         total_pages_f=format_number(stats.pages_seen),
         pages_with_auto_f=format_number(
             stats.discovery_pages_count
