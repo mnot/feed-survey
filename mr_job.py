@@ -77,6 +77,8 @@ class CCFeedsJob(MRJob): # type: ignore[misc]
         if False: yield  # Ensure this is a generator
         
         try:
+            sys.stderr.write(f"INFO: starting WARC {self.count}: {raw_path}\n")
+            sys.stderr.flush()
             if os.path.exists(raw_path):
                 # Process local file with optimized stream
                 with open(raw_path, "rb") as f:
