@@ -277,6 +277,15 @@
                 <p class="chart-sub">Redundant format variants (same internal title &amp; link) linked from the same HTML page.</p>
                 <canvas id="duplicateFeedsHistogram"></canvas>
             </div>
+            <div class="chart-card">
+                <div class="chart-title">Quality: Autodiscovered vs. Not</div>
+                <p class="chart-sub">
+                    Distribution of quality scores (% of each group per decile).
+                    With autodiscovery: {{ autodiscovery_quality.n|comma }} feeds, mean <strong>{{ "%.3f"|format(autodiscovery_quality.mean) }}</strong>.
+                    Without: {{ no_autodiscovery_quality.n|comma }} feeds, mean <strong>{{ "%.3f"|format(no_autodiscovery_quality.mean) }}</strong>.
+                </p>
+                <canvas id="autodiscoveryQualityChart"></canvas>
+            </div>
         </div>
     </section>
 
@@ -606,6 +615,43 @@
             datasets: [{ data: Object.values(duplicateFeedsData), backgroundColor: 'rgba(239,68,68,0.5)', borderColor: '#ef4444', borderWidth: 1 }]
         },
         options: intYOpts
+    });
+
+    // ── Autodiscovery quality comparison ─────────────────────────────────────
+    const autoQual   = {{ autodiscovery_quality_json|safe }};
+    const noAutoQual = {{ no_autodiscovery_quality_json|safe }};
+    new Chart(document.getElementById('autodiscoveryQualityChart'), {
+        type: 'bar',
+        data: {
+            labels: autoQual.labels,
+            datasets: [
+                {
+                    label: 'With autodiscovery',
+                    data: autoQual.pct,
+                    backgroundColor: 'rgba(99,102,241,0.6)',
+                    borderColor: '#6366f1',
+                    borderWidth: 1,
+                },
+                {
+                    label: 'Without autodiscovery',
+                    data: noAutoQual.pct,
+                    backgroundColor: 'rgba(239,68,68,0.5)',
+                    borderColor: '#ef4444',
+                    borderWidth: 1,
+                },
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true, position: 'top' },
+                tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%` } }
+            },
+            scales: {
+                x: { title: { display: true, text: 'Quality score' } },
+                y: { title: { display: true, text: '% of group' }, min: 0 }
+            }
+        }
     });
 
     // ── Content profile ───────────────────────────────────────────────────────

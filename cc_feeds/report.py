@@ -426,6 +426,25 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
     # Order by mean quality descending for the chart
     format_quality_rows.sort(key=lambda r: cast(float, r["mean"]), reverse=True)
 
+    # --- Quality: with vs without autodiscovery ---
+    def _quality_dist(results: Dict[str, Any]) -> Dict[str, Any]:
+        """Percentage histogram + mean quality for a set of feed results."""
+        scores = [score_feed(res, now) for res in results.values()]
+        n = len(scores)
+        bins = [f"{i/10:.1f}–{(i+1)/10:.1f}" for i in range(10)]
+        hist = {b: 0 for b in bins}
+        for q in scores:
+            hist[f"{min(int(q*10),9)/10:.1f}–{(min(int(q*10),9)+1)/10:.1f}"] += 1
+        pct = {b: round(hist[b] / n * 100, 1) if n else 0.0 for b in bins}
+        mean = round(sum(scores) / n, 3) if n else 0.0
+        return {"labels": bins, "pct": list(pct.values()), "mean": mean, "n": n}
+
+    no_autodiscovery_results = {
+        url: res for url, res in all_valid_results.items() if url not in discovered_urls
+    }
+    autodiscovery_quality  = _quality_dist(discovered_results)
+    no_autodiscovery_quality = _quality_dist(no_autodiscovery_results)
+
     # --- Sort & format ---
     formats   = sorted(agg["formats"].items(),   key=lambda x: x[1], reverse=True)
     languages = sorted(agg["languages"].items(), key=lambda x: x[1], reverse=True)
@@ -503,6 +522,10 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
         quality_hist=json.dumps(quality_hist),
         format_quality_json=json.dumps(format_quality_rows),
         format_quality_rows=format_quality_rows,
+        autodiscovery_quality=autodiscovery_quality,
+        no_autodiscovery_quality=no_autodiscovery_quality,
+        autodiscovery_quality_json=json.dumps(autodiscovery_quality),
+        no_autodiscovery_quality_json=json.dumps(no_autodiscovery_quality),
         total_pages_f=format_number(stats.pages_seen),
         pages_with_auto_f=format_number(
             stats.discovery_pages_count
