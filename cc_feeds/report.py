@@ -381,6 +381,19 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
     entry_recency_cdf = _build_recency_cdf(all_valid_results, "newest_entry_date", now)
     oldest_entry_cdf  = _build_recency_cdf(all_valid_results, "oldest_entry_date", now)
 
+    # --- Quality distribution ---
+    quality_hist: Dict[str, int] = {f"{i/10:.1f}–{(i+1)/10:.1f}": 0 for i in range(10)}
+    quality_scores = [
+        res["quality"]
+        for res in all_valid_results.values()
+        if isinstance(res.get("quality"), (int, float))
+    ]
+    for q in quality_scores:
+        bin_idx = min(int(q * 10), 9)
+        label = f"{bin_idx/10:.1f}–{(bin_idx+1)/10:.1f}"
+        quality_hist[label] += 1
+    mean_quality = sum(quality_scores) / len(quality_scores) if quality_scores else 0.0
+
     # --- Sort & format ---
     formats   = sorted(agg["formats"].items(),   key=lambda x: x[1], reverse=True)
     languages = sorted(agg["languages"].items(), key=lambda x: x[1], reverse=True)
@@ -429,6 +442,8 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
         "content_types_collapsed": content_types_collapsed,
         "content_profile_dist": content_profile_dist,
         "lang_count_hist": lang_count_hist,
+        "quality_hist": quality_hist,
+        "mean_quality": round(mean_quality, 3),
     }
 
     env = Environment(loader=FileSystemLoader(os.path.dirname(__file__)))
@@ -452,6 +467,7 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
         feed_recency_cdf=json.dumps(feed_recency_cdf),
         entry_recency_cdf=json.dumps(entry_recency_cdf),
         oldest_entry_cdf=json.dumps(oldest_entry_cdf),
+        quality_hist=json.dumps(quality_hist),
         total_pages_f=format_number(stats.pages_seen),
         pages_with_auto_f=format_number(
             stats.discovery_pages_count

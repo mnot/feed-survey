@@ -19,13 +19,16 @@ sys.stderr.flush()
 
 try:
     from .fast_parser import FastFeedParser
+    from .quality import score_feed
     from .utils import get_domain, get_tranco_list, normalize_url
 except (ImportError, ValueError):
     try:
         from fast_parser import FastFeedParser  # type: ignore
+        from quality import score_feed  # type: ignore
         from utils import get_domain, get_tranco_list, normalize_url  # type: ignore
     except ImportError:
         from cc_feeds.fast_parser import FastFeedParser
+        from cc_feeds.quality import score_feed
         from cc_feeds.utils import (
             get_domain,
             get_tranco_list,
@@ -506,6 +509,7 @@ class WarcProcessor:
         except Exception as exc:  # pylint: disable=broad-except
             self._handle_process_error(feed_info, url, exc)
 
+        feed_info["quality"] = score_feed(feed_info, request_time)
         self.stats.feed_results[url] = feed_info
 
     def _init_feed_info(

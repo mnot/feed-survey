@@ -306,6 +306,30 @@
                 <div class="card-value">{{ stats.total_entries|comma }}</div>
                 <div class="card-sub">Individual feed entries found</div>
             </div>
+            <div class="card">
+                <div class="card-title">Mean Quality Score</div>
+                <div class="card-value">{{ "%.3f"|format(stats.mean_quality) }}</div>
+                <div class="card-sub">
+                    Weighted composite: recency (35%), content richness (25%),
+                    entry count (15%), entry metadata (15%), feed metadata (10%).
+                    Invalid feeds score 0.
+                </div>
+            </div>
+        </div>
+
+        <!-- Quality distribution -->
+        <div class="chart-grid" style="margin-bottom: 2rem;">
+            <div class="chart-card">
+                <div class="chart-title">Feed Quality Distribution</div>
+                <div class="chart-sub">
+                    Score 0–1 per feed. Primary driver is entry recency (exponential decay,
+                    half-life 120 days). Invalid / unparseable feeds score 0 and are
+                    not shown here.
+                </div>
+                <div class="chart-container">
+                    <canvas id="qualityHistogram"></canvas>
+                </div>
+            </div>
         </div>
 
         <!-- Feed processing errors (compact strip) -->
@@ -614,6 +638,26 @@
     new Chart(document.getElementById('feedRecencyCdf'),   { type:'line', data: makeCdfDataset(feedRecencyData,  '#6366f1'), options: cdfOpts });
     new Chart(document.getElementById('entryRecencyCdf'),  { type:'line', data: makeCdfDataset(entryRecencyData, '#10b981'), options: cdfOpts });
     new Chart(document.getElementById('oldestEntryCdf'),   { type:'line', data: makeCdfDataset(oldestEntryData,  '#f59e0b'), options: cdfOpts });
+
+    // ── Quality histogram ─────────────────────────────────────────────────────
+    const qualityData = {{ quality_hist|safe }};
+    new Chart(document.getElementById('qualityHistogram'), {
+        type: 'bar',
+        data: {
+            labels: Object.keys(qualityData),
+            datasets: [{
+                data: Object.values(qualityData),
+                backgroundColor: Object.keys(qualityData).map(k => {
+                    const v = parseFloat(k);
+                    if (v >= 0.7) return '#10b981';
+                    if (v >= 0.4) return '#6366f1';
+                    return '#e2e8f0';
+                }),
+                borderWidth: 0
+            }]
+        },
+        options: baseOpts
+    });
 
     // ── Content length ────────────────────────────────────────────────────────
     const contentLengthData = {{ content_length_hist|safe }};

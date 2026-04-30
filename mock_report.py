@@ -14,6 +14,7 @@ from datetime import datetime, timedelta, timezone
 from typing import List
 
 from cc_feeds.processor import Stats
+from cc_feeds.quality import score_feed
 from cc_feeds.report import generate_report
 
 CRAWL_ID = "CC-MAIN-2026-12"
@@ -208,6 +209,7 @@ def build_mock_stats() -> Stats:
             "link": page_url,
             "error": None,
         }
+        feed_info["quality"] = score_feed(feed_info, CRAWL_DATE)
         stats.feed_results[feed_url] = feed_info
 
         # ~60% of feeds have autodiscovery links
@@ -239,6 +241,7 @@ def build_mock_stats() -> Stats:
                     "title": f"Feed {i}", "link": page, "error": None,
                     "charset": "utf-8", "content_type": "application/atom+xml",
                 }
+            stats.feed_results[fu]["quality"] = score_feed(stats.feed_results[fu], CRAWL_DATE)
             if fu not in stats.autodiscovery_links:
                 stats.autodiscovery_links[fu] = [f"example{i}.com"]
                 stats.discovery_domain_counts[fu] = 1
