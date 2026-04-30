@@ -382,7 +382,7 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
 def _aggregate_feed_data(results: Dict[str, Any]) -> Dict[str, Any]:
     formats: Dict[str, int] = {}
     languages: Dict[str, int] = {}
-    extensions: Dict[str, int] = {}
+    extensions: Dict[Any, int] = {}
     entry_counts: List[int] = []
     last_updated_dates: List[Any] = []
     feeds_with_content: int = 0
@@ -430,7 +430,10 @@ def _aggregate_feed_data(results: Dict[str, Any]) -> Dict[str, Any]:
         entry_counts.append(entries)
 
         for ext in res.get("extensions", []):
-            extensions[ext] = extensions.get(ext, 0) + 1
+            # Extensions are (ns_uri, localname) tuples; after JSON round-trip they
+            # come back as lists – normalise to tuple so they are hashable dict keys.
+            ext_key = tuple(ext) if isinstance(ext, (list, tuple)) else ext
+            extensions[ext_key] = extensions.get(ext_key, 0) + 1
 
         if res.get("updated_date"):
             last_updated_dates.append(res["updated_date"])

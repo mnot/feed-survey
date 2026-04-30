@@ -16,7 +16,6 @@ classifiers = [
 dependencies = [
     "boto3",
     "fastwarc",
-    "feedparser",
     "beautifulsoup4",
     "jinja2",
     "requests",

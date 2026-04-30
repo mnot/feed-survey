@@ -10,7 +10,6 @@ from typing import Any, Dict, List, Optional, Set, cast
 from urllib.parse import urljoin
 
 import dateutil.parser
-import feedparser
 import lxml.html
 from fastwarc.warc import WarcRecordType
 from lxml import etree
@@ -489,17 +488,10 @@ class WarcProcessor:
             parsed_data = FastFeedParser.parse(content)
 
             if not parsed_data.get("valid"):
-                # Fallback to feedparser if fast parser fails
-                try:
-                    import feedparser
-
-                    parsed_data = feedparser.parse(content)
-                    if not parsed_data.get("feed"):
-                        return
-                    if parsed_data.bozo:
-                        self._handle_bozo(parsed_data)
-                except Exception:
-                    return
+                err = parsed_data.get("error", "parse failed")
+                err_type = type(err).__name__ if not isinstance(err, str) else "ParseError"
+                self.stats.error_types[err_type] = self.stats.error_types.get(err_type, 0) + 1
+                return
 
             # Track language from HTTP headers
             lang_header = record.http_headers.get("Content-Language")
@@ -543,22 +535,12 @@ class WarcProcessor:
             "updated_recently": False,
             "updated_date": None,
             "newest_entry_date": None,
+            "oldest_entry_date": None,
+            "all_languages": set(),
+            "content_type_profile": "unknown",
             "title": None,
             "link": None,
         }
-
-    def _handle_bozo(self, parsed_data: Any) -> None:
-        err_name = (
-            type(parsed_data.bozo_exception).__name__
-            if parsed_data.bozo_exception
-            else "BozoError"
-        )
-        self.stats.error_types[err_name] = self.stats.error_types.get(err_name, 0) + 1
-
-    def _handle_unparsable(self, feed_info: Dict[str, Any], parsed_data: Any) -> None:
-        feed_info["error"] = str(parsed_data.bozo_exception)
-        err_type = type(parsed_data.bozo_exception).__name__
-        self.stats.error_types[err_type] = self.stats.error_types.get(err_type, 0) + 1
 
     def _handle_process_error(
         self, feed_info: Dict[str, Any], url: str, exc: Exception
@@ -578,28 +560,14 @@ class WarcProcessor:
     ) -> None:
         feed_info["valid"] = True
 
-        # Handle both FastFeedParser (dict) and feedparser (obj)
-        if isinstance(parsed_data, dict):
-            feed_info["format"] = parsed_data.get("version") or self._guess_format(
-                content
-            )
-            entries_count = parsed_data.get("entries_count", 0)
-            feed_data = parsed_data.get("feed", {})
-            feed_info["extensions"] = parsed_data.get("extensions", set())
-            feed_info["has_content"] = parsed_data.get("has_content", False)
-            feed_info["has_summary"] = parsed_data.get("has_summary", False)
-        else:
-            feed_info["format"] = getattr(
-                parsed_data, "version", None
-            ) or self._guess_format(content)
-            entries_count = len(parsed_data.entries)
-            feed_data = parsed_data.feed
-            # Extract basic info for feedparser fallback
-            for entry in parsed_data.entries:
-                if "content" in entry:
-                    feed_info["has_content"] = True
-                if "summary" in entry:
-                    feed_info["has_summary"] = True
+        feed_data = parsed_data.get("feed", {})
+        feed_info["format"] = parsed_data.get("version") or self._guess_format(content)
+        entries_count = parsed_data.get("entries_count", 0)
+        feed_info["extensions"] = parsed_data.get("extensions", set())
+        feed_info["has_content"] = parsed_data.get("has_content", False)
+        feed_info["has_summary"] = parsed_data.get("has_summary", False)
+        feed_info["content_type_profile"] = parsed_data.get("content_type_profile", "unknown")
+        feed_info["all_languages"] = parsed_data.get("all_languages", set())
 
         feed_info["entries_count"] = entries_count
         self.stats.total_entries += entries_count
@@ -612,102 +580,73 @@ class WarcProcessor:
         if link:
             feed_info["link"] = normalize_url(link)
 
-        # Language from feed
+        # Language from feed element (xml:lang or <language> child)
         feed_lang = feed_data.get("language")
+        if not feed_lang:
+            # Fall back to first all_languages value if set (xml:lang on root)
+            all_langs = feed_info.get("all_languages", set())
+            if all_langs:
+                feed_lang = next(iter(all_langs))
         if feed_lang:
             feed_lang = feed_lang.lower()
             feed_info["lang_feed"] = feed_lang
             feed_info["languages"].add(feed_lang)
             self.stats.lang_src_feed += 1
 
-            # Check mismatch with HTTP
+            # Check mismatch with HTTP Content-Language
             if feed_info["lang_http"] and feed_info["lang_http"] != feed_lang:
                 self.stats.lang_mismatches += 1
 
-        # Last updated
-        updated_str = feed_data.get("updated") or feed_data.get("published")
-        if updated_str:
+        # Last updated — updated_parsed is already a [y,m,d,H,M,S,...] list
+        updated_parsed = feed_data.get("updated_parsed")
+        if updated_parsed:
             try:
-                # Fast path for ISO dates
-                if len(updated_str) >= 19 and updated_str[10] == "T":
-                    try:
-                        # Handle potential 'Z' or offset
-                        clean_iso = updated_str.replace("Z", "+00:00")
-                        updated_dt = datetime.fromisoformat(clean_iso)
-                    except ValueError:
-                        updated_dt = dateutil.parser.parse(updated_str)
-                else:
-                    updated_dt = dateutil.parser.parse(updated_str)
-
-                if updated_dt.tzinfo is None:
-                    updated_dt = updated_dt.replace(tzinfo=timezone.utc)
-
-                delta = request_time - updated_dt
-                if timedelta(0) <= delta < timedelta(days=7):
+                updated_dt = datetime(
+                    updated_parsed[0], updated_parsed[1], updated_parsed[2],
+                    updated_parsed[3], updated_parsed[4], updated_parsed[5],
+                    tzinfo=timezone.utc,
+                )
+                if timedelta(0) <= request_time - updated_dt < timedelta(days=7):
                     feed_info["updated_recently"] = True
-            except (ValueError, TypeError):
+            except (ValueError, TypeError, IndexError):
                 pass
+
+        feed_info["updated_date"] = updated_parsed
 
         # Entry analysis
         self._analyze_entries(feed_info, parsed_data, request_time)
-
-        feed_info["updated_date"] = parsed_data.get("feed", {}).get(
-            "updated_parsed"
-        ) or parsed_data.get("feed", {}).get("published_parsed")
 
     def _analyze_entries(
         self, feed_info: Dict[str, Any], parsed_data: Any, request_time: datetime
     ) -> None:
         """Analyze entry dates and content structure."""
-        if isinstance(parsed_data, dict):
-            newest_date = parsed_data.get("newest_entry_date")
-            content_lengths = parsed_data.get("content_lengths", [])
-            entry_langs = parsed_data.get("entry_languages", set())
+        newest_date = parsed_data.get("newest_entry_date")
+        oldest_date = parsed_data.get("oldest_entry_date")
+        content_lengths = parsed_data.get("content_lengths", [])
+        entry_langs = parsed_data.get("entry_languages", set())
+        all_langs = parsed_data.get("all_languages", set())
 
-            # Update stats for languages
+        if entry_langs:
             self.stats.lang_src_entry += len(entry_langs)
             feed_info["languages"].update(entry_langs)
-        else:
-            # Fallback for feedparser
-            entries = parsed_data.get("entries", [])
-            content_lengths = []
-            entry_langs = set()
-            newest_date = None
-            for entry in entries:
-                # Language
-                lang = entry.get("language")
-                if lang:
-                    lang = lang.lower()
-                    entry_langs.add(lang)
-                    feed_info["languages"].add(lang)
-                    self.stats.lang_src_entry += 1
+            feed_info["lang_entries"].update(entry_langs)
 
-                # Summary / Content
-                if entry.get("summary"):
-                    feed_info["has_summary"] = True
-                if entry.get("content"):
-                    feed_info["has_content"] = True
-                    for content_obj in entry.content:
-                        if content_obj.value:
-                            content_lengths.append(len(content_obj.value))
+        # Count feeds with more than one language anywhere in the document
+        if len(all_langs) > 1:
+            self.stats.lang_multiple_in_feed += 1
 
-                dt = entry.get("updated_parsed") or entry.get("published_parsed")
-                if dt:
-                    if not newest_date or dt > newest_date:
-                        newest_date = dt
-
-                # Extensions
-                self._analyze_extensions(feed_info, entry)
+        # Check if entry languages conflict with feed/http language
+        if entry_langs:
+            base_lang = feed_info["lang_feed"] or feed_info["lang_http"]
+            if base_lang and any(l != base_lang for l in entry_langs):
+                if len(entry_langs) == 1:
+                    self.stats.lang_mismatches += 1
 
         if newest_date:
             try:
                 entry_dt = datetime(
-                    newest_date[0],
-                    newest_date[1],
-                    newest_date[2],
-                    newest_date[3],
-                    newest_date[4],
-                    newest_date[5],
+                    newest_date[0], newest_date[1], newest_date[2],
+                    newest_date[3], newest_date[4], newest_date[5],
                     tzinfo=timezone.utc,
                 )
                 delta = request_time - entry_dt
@@ -717,6 +656,7 @@ class WarcProcessor:
                 pass
 
         feed_info["newest_entry_date"] = newest_date
+        feed_info["oldest_entry_date"] = oldest_date
         feed_info["content_lengths"] = content_lengths
         for length in content_lengths:
             # Bin to nearest 100 bytes to reduce histogram size
@@ -725,33 +665,3 @@ class WarcProcessor:
                 self.stats.content_length_counts.get(binned, 0) + 1
             )
 
-        if entry_langs:
-            feed_info["lang_entries"].update(entry_langs)
-            if len(entry_langs) > 1:
-                self.stats.lang_multiple_in_feed += 1
-            # Also check if entry languages differ from feed/http
-            base_lang = feed_info["lang_feed"] or feed_info["lang_http"]
-            if base_lang and any(l != base_lang for l in entry_langs):
-                if len(entry_langs) == 1:
-                    self.stats.lang_mismatches += 1
-
-    def _analyze_extensions(self, feed_info: Dict[str, Any], entry: Any) -> None:
-        standard_keys = {
-            "title",
-            "link",
-            "summary",
-            "content",
-            "published",
-            "updated",
-            "id",
-            "author",
-            "tags",
-            "links",
-            "title_detail",
-            "summary_detail",
-            "published_parsed",
-            "updated_parsed",
-        }
-        for key in entry.keys():
-            if key not in standard_keys:
-                feed_info["extensions"].add(key)

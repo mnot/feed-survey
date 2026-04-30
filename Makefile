@@ -51,7 +51,12 @@ wheels:
 	mkdir -p wheels
 	docker run --rm --platform linux/amd64 -v $(PWD)/wheels:/output amazonlinux:2023 /bin/bash -c "\
 		yum install -y gcc gcc-c++ python3.12-devel python3.12-pip libxml2-devel libxslt-devel zlib-devel lz4-devel brotli-devel && \
-		/usr/bin/python3.12 -m pip wheel --wheel-dir=/output mrjob fastwarc feedparser beautifulsoup4 lxml python-dateutil requests boto3"
+		/usr/bin/python3.12 -m pip wheel --wheel-dir=/output mrjob fastwarc beautifulsoup4 lxml python-dateutil requests boto3"
+
+.PHONY: mock_report
+mock_report: venv
+	$(VENV)/python mock_report.py mock_report.html
+	open mock_report.html
 
 .PHONY: upload-wheels
 upload-wheels: wheels
