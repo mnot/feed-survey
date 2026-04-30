@@ -333,6 +333,9 @@
             <div>
                 <div class="err-count">{{ stats.total_errors|comma }}</div>
                 <div class="err-label">parse errors</div>
+                {% if stats.feeds_sniffed %}
+                <div class="err-label" style="margin-top:0.2rem;">{{ "%.1f"|format(stats.total_errors / stats.feeds_sniffed * 100) }}% of {{ stats.feeds_sniffed|comma }} feeds</div>
+                {% endif %}
             </div>
             <table>
                 {% for err, count in errors %}

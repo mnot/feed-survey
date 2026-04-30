@@ -49,7 +49,7 @@ def build_mock_stats() -> Stats:
     # ── Crawl-level page stats ─────────────────────────────────────────────────
     stats.pages_seen = 4_800_000_000
     stats.pages_processed = 4_800_000_000
-    stats.feeds_sniffed = 12_000
+    stats.feeds_sniffed = 67_000
     stats.total_entries = 28_000_000
 
     # ── Content-type distribution ──────────────────────────────────────────────
@@ -86,10 +86,10 @@ def build_mock_stats() -> Stats:
 
     # ── Error types ────────────────────────────────────────────────────────────
     stats.error_types = {
-        "ParseError": 14_500,
-        "XMLSyntaxError": 8_200,
-        "UnicodeDecodeError": 3_100,
-        "ValueError": 1_400,
+        "ParseError": 1_100,
+        "XMLSyntaxError": 620,
+        "UnicodeDecodeError": 230,
+        "ValueError": 100,
     }
 
     # ── Content length histogram ───────────────────────────────────────────────
