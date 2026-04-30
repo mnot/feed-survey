@@ -112,6 +112,23 @@
         .error-strip td { padding: 0.15rem 0.75rem 0.15rem 0; color: var(--text-muted); }
         .error-strip td:first-child { color: var(--danger); font-weight: 600; }
 
+        /* Run context bar */
+        .run-context {
+            display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem;
+        }
+        .run-pill {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            background: #f1f5f9; border: 1px solid var(--border);
+            border-radius: 9999px; padding: 0.35rem 0.9rem;
+            font-size: 0.875rem; color: var(--text);
+        }
+        .run-pill .pill-icon { font-size: 1rem; }
+        .run-pill .pill-label { color: var(--text-muted); margin-right: 0.2rem; }
+        .run-pill .pill-value { font-weight: 700; }
+        .run-pill.pill-warning {
+            background: #fffbeb; border-color: #fcd34d; color: #92400e;
+        }
+
         /* Inline bar for collapsed content-type */
         .ct-bar-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
         .ct-bar-label { width: 9rem; font-size: 0.85rem; font-weight: 600; flex-shrink: 0; }
@@ -129,9 +146,28 @@
             <h1>Feed Analysis Report</h1>
             <p>Common Crawl Archive: <strong>{{ crawl_id }}</strong></p>
         </div>
-        <div class="card-sub" style="margin-top: 1rem;">
-            {% if stats.max_crawl_time %}Crawl ended {{ stats.max_crawl_time.strftime('%Y-%m-%d') }}{% endif %}
-            {% if stats.top_n %} &nbsp;·&nbsp; Filter: Top {{ stats.top_n|comma }} domains{% endif %}
+        <div class="run-context">
+            {% if stats.max_crawl_time %}
+            <div class="run-pill">
+                <span class="pill-icon">📅</span>
+                <span class="pill-label">Crawl ended</span>
+                <span class="pill-value">{{ stats.max_crawl_time.strftime('%Y-%m-%d') }}</span>
+            </div>
+            {% endif %}
+            {% if stats.top_n %}
+            <div class="run-pill pill-warning">
+                <span class="pill-icon">⚠️</span>
+                <span class="pill-label">Filtered to top</span>
+                <span class="pill-value">{{ stats.top_n|comma }} domains</span>
+                <span class="pill-label">(Tranco list)</span>
+            </div>
+            {% else %}
+            <div class="run-pill">
+                <span class="pill-icon">🌐</span>
+                <span class="pill-value">Full crawl</span>
+                <span class="pill-label">— no domain filter applied</span>
+            </div>
+            {% endif %}
         </div>
     </header>
 
