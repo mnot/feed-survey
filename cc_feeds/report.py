@@ -18,6 +18,55 @@ except (ImportError, ValueError):
         from cc_feeds.utils import get_domain
 
 
+# Known namespace URI → conventional prefix
+_NS_PREFIXES: Dict[str, str] = {
+    "http://purl.org/dc/elements/1.1/": "dc",
+    "http://purl.org/dc/terms/": "dcterms",
+    "http://search.yahoo.com/mrss/": "media",
+    "http://purl.org/rss/1.0/modules/content/": "content",
+    "http://purl.org/rss/1.0/modules/slash/": "slash",
+    "http://purl.org/rss/1.0/modules/syndication/": "sy",
+    "http://www.w3.org/2003/01/geo/wgs84_pos#": "geo",
+    "http://www.georss.org/georss/": "georss",
+    "http://schemas.google.com/g/2005#": "gd",
+    "http://wellformedweb.org/CommentAPI/": "wfw",
+    "http://webfeeds.org/rss/1.0": "webfeeds",
+    "http://purl.org/rss/1.0/modules/company/": "co",
+    "http://purl.org/rss/1.0/modules/event/": "ev",
+}
+
+# (max_age_days, label) pairs for recency CDFs – ordered oldest→newest so the
+# CDF reads left-to-right as "older threshold → higher coverage"
+_CDF_BREAKPOINTS: List[Tuple[int, str]] = [
+    (0,   "Today"),
+    (1,   "1 day"),
+    (3,   "3 days"),
+    (7,   "1 week"),
+    (14,  "2 weeks"),
+    (30,  "1 month"),
+    (90,  "3 months"),
+    (180, "6 months"),
+    (365, "1 year"),
+    (730, "2 years"),
+]
+
+
+def _format_extension(ext: Any) -> str:
+    """Format a (namespace_uri, localname) tuple as a readable prefix:local string."""
+    if isinstance(ext, (tuple, list)) and len(ext) == 2:
+        ns, local = str(ext[0]), str(ext[1])
+        prefix = _NS_PREFIXES.get(ns)
+        if prefix:
+            return f"{prefix}:{local}"
+        # Derive a short prefix from the URI
+        stripped = ns.rstrip("/#")
+        part = stripped.rsplit("/", 1)[-1].rsplit("#", 1)[-1]
+        if part:
+            return f"{part}:{local}"
+        return local
+    return str(ext)
+
+
 def format_number(value: Union[int, float]) -> str:
     return f"{value:,}"
 
@@ -216,24 +265,70 @@ def make_histogram(
 
 
 def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
-    # Discovery Histograms (including 0)
-    # ONLY reflect feeds found by autodiscovery
+    # --- Feed result sets ---
     discovered_urls = set(stats.autodiscovery_links.keys())
-    discovered_results = {
+
+    # All successfully parsed feeds (used for feed analysis section)
+    all_valid_results: Dict[str, Any] = {
         url: res
         for url, res in stats.feed_results.items()
-        if url in discovered_urls
-        and isinstance(res, dict)
-        and res.get("valid")
-        and not res.get("error")
+        if isinstance(res, dict) and res.get("valid") and not res.get("error")
     }
 
-    # Inject total discovery count from discovery_domain_counts into result for display
-    for url, res in discovered_results.items():
-        res["total_discovery_count"] = stats.discovery_domain_counts.get(url, 1)
+    # Autodiscovered subset (used for discovery charts)
+    discovered_results: Dict[str, Any] = {
+        url: res for url, res in all_valid_results.items() if url in discovered_urls
+    }
 
-    # Aggregate Data
-    agg = _aggregate_feed_data(discovered_results)
+    # Inject discovery count for display
+    for url, res in all_valid_results.items():
+        res["total_discovery_count"] = stats.discovery_domain_counts.get(url, 0)
+
+    # --- Aggregate over ALL valid feeds ---
+    agg = _aggregate_feed_data(all_valid_results)
+
+    feeds_with_autodiscovery = len(discovered_results)
+    feeds_without_autodiscovery = len(all_valid_results) - feeds_with_autodiscovery
+
+    # --- Content-type distribution (collapsed) ---
+    content_types_collapsed: Dict[str, int] = {
+        "HTML": 0, "Atom": 0, "RSS": 0, "JSON Feed": 0, "Other XML": 0, "Other": 0
+    }
+    for ct, count in stats.content_type_counts.items():
+        ct_l = ct.lower()
+        if "text/html" in ct_l or "application/xhtml" in ct_l:
+            content_types_collapsed["HTML"] += count
+        elif "atom" in ct_l:
+            content_types_collapsed["Atom"] += count
+        elif "rss" in ct_l:
+            content_types_collapsed["RSS"] += count
+        elif "feed+json" in ct_l or ("json" in ct_l and "html" not in ct_l):
+            content_types_collapsed["JSON Feed"] += count
+        elif "xml" in ct_l:
+            content_types_collapsed["Other XML"] += count
+        else:
+            content_types_collapsed["Other"] += count
+
+    # --- Content profile distribution ---
+    content_profile_dist: Dict[str, int] = {
+        "html": 0, "plain": 0, "xhtml": 0, "mixed": 0, "unknown": 0
+    }
+    for res in all_valid_results.values():
+        profile = res.get("content_type_profile", "unknown") or "unknown"
+        content_profile_dist[profile] = content_profile_dist.get(profile, 0) + 1
+
+    # --- Language count per feed histogram ---
+    lang_count_hist: Dict[str, int] = {"0": 0, "1": 0, "2": 0, "3+": 0}
+    for res in all_valid_results.values():
+        n = len(res.get("all_languages") or [])
+        if n == 0:
+            lang_count_hist["0"] += 1
+        elif n == 1:
+            lang_count_hist["1"] += 1
+        elif n == 2:
+            lang_count_hist["2"] += 1
+        else:
+            lang_count_hist["3+"] += 1
 
     # --- Discovery Mapping ---
     page_to_feeds = _build_page_map(stats)
@@ -244,27 +339,23 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
     zero_pages = max(0, total_pages - len(page_to_feeds))
 
     discovery_per_page_hist = make_histogram(discovery_page_counts, bins="discovery")
-    if "0" in discovery_per_page_hist:
-        del discovery_per_page_hist["0"]
+    discovery_per_page_hist.pop("0", None)
 
     discovery_site_counts = [len(f) for f in site_to_feeds.values()]
     total_sites = getattr(stats, "sites_seen_count", len(stats.sites_seen))
     zero_sites = max(0, total_sites - len(site_to_feeds))
 
     discovery_per_site_hist = make_histogram(discovery_site_counts, bins="discovery")
-    if "0" in discovery_per_site_hist:
-        del discovery_per_site_hist["0"]
+    discovery_per_site_hist.pop("0", None)
 
     # Duplicate detection
     duplicate_counts = _detect_duplicates(stats.multi_feed_pages, stats.feed_results)
     duplicates_per_page_hist = make_histogram(duplicate_counts, bins="discovery")
-    if "0" in duplicates_per_page_hist:
-        del duplicates_per_page_hist["0"]
+    duplicates_per_page_hist.pop("0", None)
 
     # Stacked discovery data
     stacked_page = _build_stacked_data(stats, page_to_feeds, zero_pages)
     stacked_site = _build_stacked_data(stats, site_to_feeds, zero_sites)
-
     for s in [stacked_page, stacked_site]:
         if "0" in s["labels"]:
             idx = s["labels"].index("0")
@@ -274,7 +365,7 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
             s["success_only"].pop(idx)
             s["other"].pop(idx)
 
-    # Prep data for template
+    # --- Crawl time reference ---
     max_crawl_time = None
     if stats.max_crawl_time_str:
         try:
@@ -283,42 +374,42 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
                 max_crawl_time = max_crawl_time.replace(tzinfo=timezone.utc)
         except Exception:
             pass
-
-    # Prep Histograms
-    content_length_hist = make_histogram(stats.content_length_counts, log_scale=True)
-    entry_counts_hist = make_histogram(agg["entry_counts"], bins="entries")
-    # Use the parsed max_crawl_time if available, otherwise now
     now = max_crawl_time or datetime.now(timezone.utc)
-    recency_labels = _get_recency_labels(now)
-    feed_recency_hist = _build_recency_histogram(
-        discovered_results, "updated_date", now, recency_labels
-    )
-    entry_recency_hist = _build_recency_histogram(
-        discovered_results, "newest_entry_date", now, recency_labels
-    )
 
-    # Sort data
-    formats = sorted(agg["formats"].items(), key=lambda item: item[1], reverse=True)
-    languages = sorted(agg["languages"].items(), key=lambda item: item[1], reverse=True)
-    extensions = sorted(
-        agg["extensions"].items(), key=lambda item: item[1], reverse=True
-    )
-    errors = sorted(stats.error_types.items(), key=lambda item: item[1], reverse=True)
+    # --- Recency CDFs (all valid feeds) ---
+    feed_recency_cdf  = _build_recency_cdf(all_valid_results, "updated_date", now)
+    entry_recency_cdf = _build_recency_cdf(all_valid_results, "newest_entry_date", now)
+    oldest_entry_cdf  = _build_recency_cdf(all_valid_results, "oldest_entry_date", now)
 
-    # Prep data for template
+    # --- Sort & format ---
+    formats   = sorted(agg["formats"].items(),   key=lambda x: x[1], reverse=True)
+    languages = sorted(agg["languages"].items(), key=lambda x: x[1], reverse=True)
+    errors    = sorted(stats.error_types.items(), key=lambda x: x[1], reverse=True)
+    total_errors = sum(c for _, c in errors)
+
+    # Extensions: format as prefix:local, deduplicate, top 15
+    ext_formatted: Dict[str, int] = {}
+    for ext, count in agg["extensions"].items():
+        label = _format_extension(ext)
+        ext_formatted[label] = ext_formatted.get(label, 0) + count
+    extensions = sorted(ext_formatted.items(), key=lambda x: x[1], reverse=True)[:15]
+
+    # --- Template data ---
     report_stats = {
         "pages_seen": stats.pages_seen,
         "max_crawl_time": max_crawl_time,
-        "sites_seen": getattr(stats, "sites_seen_count", len(stats.sites_seen)),
+        "sites_seen": total_sites,
         "feed_results_count": len(stats.feed_results),
+        "feeds_with_autodiscovery": feeds_with_autodiscovery,
+        "feeds_without_autodiscovery": feeds_without_autodiscovery,
         "formats": formats,
         "languages": languages,
         "extensions": extensions,
         "error_types": errors,
+        "total_errors": total_errors,
         "feeds_with_content": agg["feeds_with_content"],
         "feeds_with_summary": agg["feeds_with_summary"],
         "feeds_with_neither": agg["feeds_with_neither"],
-        "last_updated_dates": agg["last_updated_dates"],
         "pages_with_autodiscovery": getattr(
             stats, "discovery_pages_count", len(page_to_feeds)
         ),
@@ -335,9 +426,9 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
         "discovery_rel_feed": stats.discovery_rel_feed,
         "discovery_rel_both_page": stats.discovery_rel_both_page,
         "discovery_multi_rel_url": stats.discovery_multi_rel_url,
-        "content_types": sorted(
-            stats.content_type_counts.items(), key=lambda x: x[1], reverse=True
-        ),
+        "content_types_collapsed": content_types_collapsed,
+        "content_profile_dist": content_profile_dist,
+        "lang_count_hist": lang_count_hist,
     }
 
     env = Environment(loader=FileSystemLoader(os.path.dirname(__file__)))
@@ -358,8 +449,9 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
         charsets_per_format=agg["charsets_per_format"],
         content_length_hist=make_histogram(stats.content_length_counts, bins="natural"),
         entry_counts_hist=make_histogram(agg["entry_counts"], bins="entries"),
-        feed_recency_hist=feed_recency_hist,
-        entry_recency_hist=entry_recency_hist,
+        feed_recency_cdf=json.dumps(feed_recency_cdf),
+        entry_recency_cdf=json.dumps(entry_recency_cdf),
+        oldest_entry_cdf=json.dumps(oldest_entry_cdf),
         total_pages_f=format_number(stats.pages_seen),
         pages_with_auto_f=format_number(
             stats.discovery_pages_count
@@ -367,9 +459,7 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
             else len(stats.autodiscovery_links)
         ),
         zero_pages_f=format_number(zero_pages),
-        total_sites_f=format_number(
-            getattr(stats, "sites_seen_count", len(stats.sites_seen))
-        ),
+        total_sites_f=format_number(total_sites),
         sites_with_auto_f=format_number(len(site_to_feeds)),
         zero_sites_f=format_number(zero_sites),
         duplicates_per_page_hist=duplicates_per_page_hist,
@@ -600,54 +690,47 @@ def _build_stacked_data(
     return stacked
 
 
-def _get_recency_labels(_now: datetime) -> List[str]:
-    return [
-        "Today",
-        "Yesterday",
-        "2 days ago",
-        "3 days ago",
-        "4 days ago",
-        "5 days ago",
-        "6 days ago",
-        "Last week",
-        "Last month",
-        "Last year",
-        "Older",
-        "Unknown",
-    ]
+def _build_recency_cdf(
+    results: Dict[str, Any], key: str, now: datetime
+) -> Dict[str, Any]:
+    """
+    Build a CDF for recency data.
 
+    For each breakpoint in _CDF_BREAKPOINTS, computes the percentage of feeds
+    whose *key* date is at most that many days before *now*.  Feeds with no date
+    are included in the total (denominator) but never counted as covered, so
+    they suppress the curve toward 100 %.
 
-def _build_recency_histogram(
-    results: Dict[str, Any], key: str, now: datetime, labels: List[str]
-) -> Dict[str, int]:
-    hist = {label: 0 for label in labels}
+    Returns {"labels": [...], "data": [...]} suitable for a Chart.js line chart.
+    """
+    ages: List[int] = []
+    total = len(results)
     for info in results.values():
         val = info.get(key)
         if not val:
-            hist["Unknown"] += 1
             continue
         try:
             dt = datetime(
                 val[0], val[1], val[2], val[3], val[4], val[5], tzinfo=timezone.utc
             )
-            delta = now - dt
-            days = delta.days
-            if days < 0:
-                hist["Today"] += 1  # Future is today for this purpose
-            elif days == 0:
-                hist["Today"] += 1
-            elif days == 1:
-                hist["Yesterday"] += 1
-            elif days < 7:
-                hist[f"{days} days ago"] += 1
-            elif days < 14:
-                hist["Last week"] += 1
-            elif days < 31:
-                hist["Last month"] += 1
-            elif days < 365:
-                hist["Last year"] += 1
-            else:
-                hist["Older"] += 1
+            ages.append(max(0, (now - dt).days))
         except (ValueError, TypeError, IndexError):
-            hist["Unknown"] += 1
-    return hist
+            pass
+
+    ages.sort()
+    n = len(ages)
+    labels: List[str] = []
+    data: List[float] = []
+    for days, label in _CDF_BREAKPOINTS:
+        # bisect_right equivalent
+        lo, hi = 0, n
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if ages[mid] <= days:
+                lo = mid + 1
+            else:
+                hi = mid
+        pct = round(lo / total * 100, 1) if total else 0.0
+        labels.append(label)
+        data.append(pct)
+    return {"labels": labels, "data": data}

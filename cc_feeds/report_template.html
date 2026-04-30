@@ -19,573 +19,576 @@
             --warning: #f59e0b;
             --danger: #ef4444;
         }
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Outfit', sans-serif;
             background-color: var(--bg);
             color: var(--text);
             line-height: 1.5;
-            padding: 0;
         }
-        .app-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 3rem 2rem;
-        }
+        .app-container { max-width: 1200px; margin: 0 auto; padding: 3rem 2rem; }
         header {
             margin-bottom: 4rem;
             border-bottom: 2px solid var(--border);
             padding-bottom: 2rem;
         }
         .logo-group h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: var(--text);
-            letter-spacing: -0.025em;
-            margin-bottom: 0.5rem;
+            font-size: 2.5rem; font-weight: 800; color: var(--text);
+            letter-spacing: -0.025em; margin-bottom: 0.5rem;
         }
-        .logo-group p {
-            font-size: 1.125rem;
-            color: var(--text-muted);
-        }
-        
-        /* Section Styling */
-        section {
-            margin-bottom: 6rem;
-            padding-top: 2rem;
-        }
+        .logo-group p { font-size: 1.125rem; color: var(--text-muted); }
+
+        section { margin-bottom: 6rem; padding-top: 2rem; }
         .main-section-title {
-            font-size: 1.75rem;
-            font-weight: 800;
-            color: var(--text);
-            margin-bottom: 2rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 4px solid var(--primary);
-            width: fit-content;
+            font-size: 1.75rem; font-weight: 800; color: var(--text);
+            margin-bottom: 2rem; padding-bottom: 0.75rem;
+            border-bottom: 4px solid var(--primary); width: fit-content;
         }
-        
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem; margin-bottom: 2.5rem;
         }
         .card {
-            background: var(--card-bg);
-            padding: 1.5rem;
-            border-radius: 16px;
-            border: 1px solid var(--border);
+            background: var(--card-bg); padding: 1.5rem;
+            border-radius: 16px; border: 1px solid var(--border);
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         .card-title {
-            color: var(--text-muted);
-            font-size: 0.875rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.75rem;
+            color: var(--text-muted); font-size: 0.875rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;
         }
-        .card-value {
-            font-size: 2.25rem;
-            font-weight: 700;
-            color: var(--text);
-            margin-bottom: 0.5rem;
+        .card-value { font-size: 2.25rem; font-weight: 700; color: var(--text); margin-bottom: 0.5rem; }
+        .card-sub { font-size: 0.875rem; color: var(--text-muted); }
+        .card-sub .row {
+            display: flex; justify-content: space-between; margin-bottom: 0.2rem;
         }
-        .card-sub {
-            font-size: 0.875rem;
-            color: var(--text-muted);
+        .card-sub .divider {
+            margin-top: 0.5rem; border-top: 1px solid var(--border); padding-top: 0.5rem;
         }
-        
         .chart-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
+            gap: 2rem; margin-bottom: 2rem;
         }
         .chart-card {
-            background: var(--card-bg);
-            padding: 2rem;
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            background: var(--card-bg); padding: 2rem;
+            border-radius: 20px; border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
         }
-        .chart-container {
-            height: 300px;
-            position: relative;
-        }
-        .chart-title {
-            font-size: 1.125rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-        }
-        
+        .chart-container { height: 300px; position: relative; }
+        .chart-title { font-size: 1.125rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .chart-sub { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.25rem; }
         .table-container {
-            max-height: 500px;
-            overflow-y: auto;
-            border: 1px solid var(--border);
-            border-radius: 12px;
+            max-height: 400px; overflow-y: auto;
+            border: 1px solid var(--border); border-radius: 12px;
         }
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
         .data-table th {
-            position: sticky;
-            top: 0;
-            background: #f1f5f9;
-            z-index: 10;
-            text-align: left;
-            padding: 1rem;
-            font-weight: 700;
+            position: sticky; top: 0; background: #f1f5f9; z-index: 10;
+            text-align: left; padding: 0.75rem 1rem; font-weight: 700;
             border-bottom: 2px solid var(--border);
         }
-        .data-table td {
-            padding: 1rem;
-            border-bottom: 1px solid var(--border);
-        }
-        .data-table tr:hover {
-            background: #f8fafc;
-        }
+        .data-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
+        .data-table tr:hover { background: #f8fafc; }
         .badge {
-            padding: 0.25rem 0.6rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            background: var(--bg);
+            padding: 0.2rem 0.55rem; border-radius: 9999px;
+            font-size: 0.75rem; font-weight: 600; background: var(--bg);
         }
         .badge-primary { background: #e0e7ff; color: var(--primary); }
-        
-        canvas {
-            width: 100% !important;
-            height: 320px !important;
+        .badge-danger  { background: #fee2e2; color: var(--danger); }
+        canvas { width: 100% !important; height: 300px !important; }
+
+        /* Error summary strip */
+        .error-strip {
+            background: #fff5f5; border: 1px solid #fecaca;
+            border-radius: 12px; padding: 1rem 1.5rem;
+            margin-bottom: 2rem; display: flex; align-items: center; gap: 1.5rem;
+            flex-wrap: wrap;
         }
+        .error-strip .err-count { font-size: 1.5rem; font-weight: 700; color: var(--danger); }
+        .error-strip .err-label { font-size: 0.85rem; color: var(--text-muted); }
+        .error-strip table { font-size: 0.85rem; border-collapse: collapse; }
+        .error-strip td { padding: 0.15rem 0.75rem 0.15rem 0; color: var(--text-muted); }
+        .error-strip td:first-child { color: var(--danger); font-weight: 600; }
+
+        /* Inline bar for collapsed content-type */
+        .ct-bar-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
+        .ct-bar-label { width: 9rem; font-size: 0.85rem; font-weight: 600; flex-shrink: 0; }
+        .ct-bar-track {
+            flex: 1; background: var(--border); border-radius: 9999px; height: 10px;
+        }
+        .ct-bar-fill { height: 100%; border-radius: 9999px; }
+        .ct-bar-val { font-size: 0.8rem; color: var(--text-muted); width: 7rem; text-align: right; flex-shrink: 0; }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <header>
-            <div class="logo-group">
-                <h1>Feed Analysis Report</h1>
-                <p>Common Crawl Archive: <strong>{{ crawl_id }}</strong></p>
-            </div>
-            <div class="card-sub" style="margin-top: 1rem;">
-                Processed at {{ now }}
-                {% if stats.top_n %}| Filter: Top {{ stats.top_n|comma }} domains{% endif %}
-            </div>
-        </header>
+<div class="app-container">
+    <header>
+        <div class="logo-group">
+            <h1>Feed Analysis Report</h1>
+            <p>Common Crawl Archive: <strong>{{ crawl_id }}</strong></p>
+        </div>
+        <div class="card-sub" style="margin-top: 1rem;">
+            {% if stats.max_crawl_time %}Crawl ended {{ stats.max_crawl_time.strftime('%Y-%m-%d') }}{% endif %}
+            {% if stats.top_n %} &nbsp;·&nbsp; Filter: Top {{ stats.top_n|comma }} domains{% endif %}
+        </div>
+    </header>
 
-        <!-- THE CRAWL -->
-        <section id="crawl-section">
-            <h2 class="main-section-title">1. The Crawl</h2>
-            <div class="stats-grid">
-                <div class="card">
-                    <div class="card-title">Crawl responses scanned</div>
-                    <div class="card-value">{{ total_pages_f }}</div>
-                    <div class="card-sub">Total responses in sample</div>
-                </div>
-                <div class="card">
-                    <div class="card-title">Unique Domains</div>
-                    <div class="card-value">{{ total_sites_f }}</div>
-                    <div class="card-sub">Distinct sites in crawl</div>
-                </div>
-                <div class="card">
-                    <div class="card-title">Feeds Crawled</div>
-                    <div class="card-value">{{ stats.feed_results_count|comma }}</div>
-                    <div class="card-sub">{{ stats.feeds_sniffed|comma }} discovered via sniffing</div>
-                </div>
+    <!-- ═══════════════════════════════════════════════════════════ 1. THE CRAWL -->
+    <section id="crawl-section">
+        <h2 class="main-section-title">1. The Crawl</h2>
+        <div class="stats-grid">
+            <div class="card">
+                <div class="card-title">Crawl Responses Scanned</div>
+                <div class="card-value">{{ total_pages_f }}</div>
+                <div class="card-sub">Total HTTP responses in sample</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Unique Domains</div>
+                <div class="card-value">{{ total_sites_f }}</div>
+                <div class="card-sub">Distinct sites (HyperLogLog estimate)</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Feeds Crawled</div>
+                <div class="card-value">{{ stats.feed_results_count|comma }}</div>
+                <div class="card-sub">{{ stats.feeds_sniffed|comma }} discovered via content sniffing</div>
+            </div>
+        </div>
+
+        <!-- Content-Type distribution (collapsed) -->
+        <div class="chart-card" style="margin-bottom: 2rem;">
+            <div class="chart-title">Content-Type Distribution</div>
+            <div class="chart-sub">HTTP <code>Content-Type</code> header values, grouped by category.</div>
+            {% set total_ct = stats.content_types_collapsed.values()|sum %}
+            {% set html_count = stats.content_types_collapsed.get("HTML", 0) %}
+            {% set html_pct = (html_count / total_ct * 100) if total_ct else 0 %}
+            {% set non_html_total = total_ct - html_count %}
+            {% set ct_colors = {"HTML": "#94a3b8", "Atom": "#6366f1", "RSS": "#10b981", "JSON Feed": "#f59e0b", "Other XML": "#8b5cf6", "Other": "#e2e8f0"} %}
+
+            <!-- HTML callout -->
+            <div style="display:flex; align-items:center; gap:1.5rem; margin-bottom:1.25rem; padding:0.75rem 1rem; background:#f1f5f9; border-radius:10px;">
+                <div style="width:12px; height:12px; border-radius:50%; background:#94a3b8; flex-shrink:0;"></div>
+                <div style="flex:1; font-size:0.9rem; font-weight:600;">HTML</div>
+                <div style="font-size:0.85rem; color:var(--text-muted);">{{ html_count|comma }}</div>
+                <div style="font-size:0.85rem; color:var(--text-muted); width:5rem; text-align:right;">{{ '%.2f'|format(html_pct) }}% of total</div>
             </div>
 
+            <!-- Non-HTML types, bars scaled relative to each other -->
+            <div class="chart-sub" style="margin-bottom:0.75rem;">Non-HTML types (bars scaled relative to each other):</div>
+            {% for label, count in stats.content_types_collapsed.items() %}
+            {% if label != "HTML" %}
+            {% set pct_of_nonhtml = (count / non_html_total * 100) if non_html_total else 0 %}
+            {% set pct_of_total  = (count / total_ct * 100) if total_ct else 0 %}
+            <div class="ct-bar-row">
+                <div class="ct-bar-label">{{ label }}</div>
+                <div class="ct-bar-track">
+                    <div class="ct-bar-fill" style="width: {{ '%.1f'|format(pct_of_nonhtml) }}%; background: {{ ct_colors.get(label, '#6366f1') }};"></div>
+                </div>
+                <div class="ct-bar-val">{{ count|comma }} &nbsp;<span style="color:#aaa">({{ '%.4f'|format(pct_of_total) }}%)</span></div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════ 2. FEED AUTODISCOVERY -->
+    <section id="discovery-section">
+        <h2 class="main-section-title">2. Feed Autodiscovery</h2>
+        <div class="stats-grid">
+            <div class="card">
+                <div class="card-title">Pages with Feed Links</div>
+                <div class="card-value">{{ pages_with_auto_f }}</div>
+                <div class="card-sub">
+                    {{ "%.2f"|format(stats.pages_with_autodiscovery / stats.pages_seen * 100 if stats.pages_seen else 0) }}% of crawled pages
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">Sites with Feed Links</div>
+                <div class="card-value">{{ sites_with_auto_f }}</div>
+                <div class="card-sub">
+                    {{ "%.2f"|format(stats.sites_with_autodiscovery / stats.sites_seen * 100 if stats.sites_seen else 0) }}% of crawled sites (est. lower bound)
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">Discovery Relation Types</div>
+                <div class="card-value">{{ (stats.discovery_rel_alternate + stats.discovery_rel_feed)|comma }}</div>
+                <div class="card-sub">
+                    <div class="row"><span>rel="alternate"</span> <strong>{{ stats.discovery_rel_alternate|comma }}</strong></div>
+                    <div class="row"><span>rel="feed"</span> <strong>{{ stats.discovery_rel_feed|comma }}</strong></div>
+                    <div class="row divider"><span>Both on same page</span> <strong>{{ stats.discovery_rel_both_page|comma }}</strong></div>
+                    <div class="row"><span>Multi-rel URLs</span> <strong>{{ stats.discovery_multi_rel_url|comma }}</strong></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-grid">
             <div class="chart-card">
-                <div class="chart-title">Content-Type Distribution</div>
+                <div class="chart-title">Autodiscovery Links per Page</div>
+                <p class="chart-sub">Unique feed URLs per page (pages with zero links omitted: {{ zero_pages_f }}).</p>
+                <canvas id="feedsPerPageHistogram"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Autodiscovery Links per Site</div>
+                <p class="chart-sub">Unique feed URLs per site. Based on a sample of up to 100 domains per feed URL. Sites with zero links omitted: {{ zero_sites_f }}.</p>
+                <canvas id="feedsPerSiteHistogram"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-grid">
+            <div class="chart-card">
+                <div class="chart-title">Duplicate Feeds per Page</div>
+                <p class="chart-sub">Redundant format variants (same internal title &amp; link) linked from the same HTML page.</p>
+                <canvas id="duplicateFeedsHistogram"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═════════════════════════════════════════════════════════════ 3. FEEDS -->
+    <section id="feeds-section">
+        <h2 class="main-section-title">3. Feeds</h2>
+        <div class="stats-grid">
+            <div class="card">
+                <div class="card-title">Successfully Parsed</div>
+                <div class="card-value">{{ (stats.feeds_with_content + stats.feeds_with_summary + stats.feeds_with_neither)|comma }}</div>
+                <div class="card-sub">
+                    <div class="row"><span>With autodiscovery link</span> <strong>{{ stats.feeds_with_autodiscovery|comma }}</strong></div>
+                    <div class="row"><span>Without autodiscovery link</span> <strong>{{ stats.feeds_without_autodiscovery|comma }}</strong></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">Content Coverage</div>
+                <div class="card-value">{{ (stats.feeds_with_content + stats.feeds_with_summary)|comma }}</div>
+                <div class="card-sub">
+                    <div class="row"><span>Full content</span> <strong>{{ stats.feeds_with_content|comma }}</strong></div>
+                    <div class="row"><span>Summary only</span> <strong>{{ stats.feeds_with_summary|comma }}</strong></div>
+                    <div class="row"><span>Neither</span> <strong>{{ stats.feeds_with_neither|comma }}</strong></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">Total Entries</div>
+                <div class="card-value">{{ stats.total_entries|comma }}</div>
+                <div class="card-sub">Individual feed entries found</div>
+            </div>
+        </div>
+
+        <!-- Feed processing errors (compact strip) -->
+        {% if errors %}
+        <div class="error-strip">
+            <div>
+                <div class="err-count">{{ stats.total_errors|comma }}</div>
+                <div class="err-label">parse errors</div>
+            </div>
+            <table>
+                {% for err, count in errors %}
+                <tr><td>{{ err }}</td><td>{{ count|comma }}</td></tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- Formats + Charsets -->
+        <div class="chart-grid">
+            <div class="chart-card">
+                <div class="chart-title">Feed Formats</div>
+                <table class="data-table">
+                    <thead><tr><th>Format</th><th>Count</th></tr></thead>
+                    <tbody>
+                        {% for fmt, count in formats %}
+                        <tr><td><span class="badge badge-primary">{{ fmt }}</span></td><td>{{ count|comma }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Charset per Format</div>
+                <div class="chart-sub">Source: HTTP <code>Content-Type</code> header only.</div>
                 <div class="table-container">
                     <table class="data-table">
-                        <thead>
+                        <thead><tr><th>Format</th><th>Charset</th><th>Count</th></tr></thead>
+                        <tbody>
+                            {% for fmt, charsets in charsets_per_format.items() %}
+                            {% for charset, count in charsets.items()|sort(attribute='1', reverse=True) %}
                             <tr>
-                                <th>Header Value</th>
-                                <th>Count</th>
-                                <th>% of Total</th>
+                                {% if loop.first %}<td rowspan="{{ charsets|length }}"><span class="badge badge-primary">{{ fmt }}</span></td>{% endif %}
+                                <td><code>{{ charset or "unknown" }}</code></td>
+                                <td>{{ count|comma }}</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {% for ct, count in stats.content_types %}
-                            {% set is_feed = "rss" in ct or "atom" in ct or "feed+json" in ct %}
-                            <tr {% if is_feed %}style="background-color: rgba(99, 102, 241, 0.05); font-weight: 600;"{% endif %}>
-                                <td style="font-family: monospace; font-size: 0.8rem;">
-                                    {% if is_feed %}
-                                    <span style="color: var(--primary); margin-right: 0.5rem;">●</span>
-                                    {% endif %}
-                                    {{ ct or "(empty)" }}
-                                </td>
-                                <td style="font-weight: 700;">{{ count|comma }}</td>
-                                <td>{{ "%.3f"|format(count / stats.pages_seen * 100 if stats.pages_seen else 0) }}%</td>
-                            </tr>
+                            {% endfor %}
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
-        </section>
+        </div>
 
-        <!-- AUTODISCOVERY -->
-        <section id="discovery-section">
-            <h2 class="main-section-title">2. Feed Autodiscovery</h2>
-            <div class="stats-grid">
-                <div class="card">
-                    <div class="card-title">Pages with Feed Links</div>
-                    <div class="card-value">{{ pages_with_auto_f }}</div>
-                    <div class="card-sub">{{ "%.1f"|format(stats.pages_with_autodiscovery / stats.pages_seen * 100 if stats.pages_seen else 0) }}% prevalence</div>
-                </div>
-                <div class="card">
-                    <div class="card-title">Sites with Feeds links</div>
-                    <div class="card-value">{{ sites_with_auto_f }}</div>
-                    <div class="card-sub">{{ "%.1f"|format(stats.sites_with_autodiscovery / stats.sites_seen * 100 if stats.sites_seen else 0) }}% prevalence (est. lower bound)</div>
-                </div>
-                <div class="card">
-                    <div class="card-title">Discovery Relation Details</div>
-                    <div class="card-value">{{ (stats.discovery_rel_alternate + stats.discovery_rel_feed)|comma }}</div>
-                    <div class="card-sub">
-                        <div style="display: flex; justify-content: space-between;"><span>rel="alternate":</span> <strong>{{ stats.discovery_rel_alternate|comma }}</strong></div>
-                        <div style="display: flex; justify-content: space-between;"><span>rel="feed":</span> <strong>{{ stats.discovery_rel_feed|comma }}</strong></div>
-                        <div style="margin-top: 0.5rem; border-top: 1px solid var(--border); padding-top: 0.5rem; display: flex; justify-content: space-between;">
-                            <span>Both on Page:</span> <strong>{{ stats.discovery_rel_both_page|comma }}</strong>
-                        </div>
-                        <div style="display: flex; justify-content: space-between;"><span>Multi-rel URLs:</span> <strong>{{ stats.discovery_multi_rel_url|comma }}</strong></div>
-                    </div>
+        <!-- Content profile + Entry counts -->
+        <div class="chart-grid">
+            <div class="chart-card">
+                <div class="chart-title">Entry Content Profile</div>
+                <div class="chart-sub">Content type classification based on Atom <code>type</code> attribute and RSS element semantics.</div>
+                <canvas id="contentProfileChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Entry Counts per Feed</div>
+                <div class="chart-container">
+                    <canvas id="entriesHistogram"></canvas>
                 </div>
             </div>
+        </div>
 
-            <div class="chart-grid">
-                <div class="chart-card">
-                    <div class="chart-title">Autodiscovery Links per Page</div>
-                    <p class="card-sub" style="margin-bottom: 1rem;">
-                        Unique feed URLs per page. Omitting <strong>{{ zero_pages_f }}</strong> pages with no autodiscovery links.
-                    </p>
-                    <canvas id="feedsPerPageHistogram"></canvas>
-                </div>
-                <div class="chart-card">
-                    <div class="chart-title">Autodiscovery Links per Site</div>
-                    <p class="card-sub" style="margin-bottom: 1rem;">
-                        Unique feed URLs per site. Note: Based on a sample of up to 100 domains per feed URL. Omitting <strong>{{ zero_sites_f }}</strong> sites with no autodiscovery links.
-                    </p>
-                    <canvas id="feedsPerSiteHistogram"></canvas>
-                </div>
-            </div>
-
-            <div class="chart-grid">
-                <div class="chart-card">
-                    <div class="chart-title">Duplicate Feeds per Page</div>
-                    <p class="card-sub" style="margin-bottom: 1rem;">
-                        Number of redundant formats (same internal title/link) linked from the **same HTML page**. This identifies where sites provide multiple discovery links for the same content.
-                    </p>
-                    <canvas id="duplicateFeedsHistogram"></canvas>
-                </div>
-            </div>
-        </section>
-
-        <!-- FEEDS -->
-        <section id="feeds-section">
-            <h2 class="main-section-title">3. Autodiscovered Feeds</h2>
-            <div class="stats-grid">
-                <div class="card">
-                    <div class="card-title">Successfully Parsed Feeds</div>
-                    <div class="card-value">{{ (stats.feeds_with_content + stats.feeds_with_summary + stats.feeds_with_neither) | comma }}</div>
-                    <div class="card-sub">Successfully processed by feedparser</div>
-                </div>
-                <div class="card">
-                    <div class="card-title">Content Rich Feeds</div>
-                    <div class="card-value">{{ (stats.feeds_with_content + stats.feeds_with_summary) | comma }}</div>
-                    <div class="card-sub">Have summaries or full content</div>
-                </div>
-                <div class="card">
-                    <div class="card-title">Total Entries</div>
-                    <div class="card-value">{{ stats.total_entries|comma }}</div>
-                    <div class="card-sub">Individual entries found</div>
-                </div>
-            </div>
-
-            <div class="chart-grid">
-                <div class="chart-card">
-                    <div class="chart-title">Feed Formats</div>
+        <!-- Language table + stats + language-count histogram -->
+        <div class="chart-grid">
+            <div class="chart-card">
+                <div class="chart-title">Feed Languages</div>
+                <div class="table-container">
                     <table class="data-table">
-                        <thead><tr><th>Format</th><th>Count</th></tr></thead>
+                        <thead><tr><th>Language</th><th>Feeds</th></tr></thead>
                         <tbody>
-                            {% for fmt, count in formats %}
-                            <tr><td><span class="badge badge-primary">{{ fmt }}</span></td><td>{{ count|comma }}</td></tr>
+                            {% for lang, count in languages[:20] %}
+                            <tr><td>{{ lang }}</td><td>{{ count|comma }}</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
-                <div class="chart-card">
-                    <div class="chart-title">Charset per Format</div>
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead><tr><th>Format</th><th>Charsets</th></tr></thead>
-                            <tbody>
-                                {% for fmt, charsets in charsets_per_format.items() %}
-                                <tr>
-                                    <td><span class="badge badge-primary">{{ fmt }}</span></td>
-                                    <td>
-                                        {% for charset, count in charsets.items() %}
-                                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
-                                            <span><code>{{ charset or "unknown" }}</code></span>
-                                            <span class="badge">{{ count|comma }}</span>
-                                        </div>
-                                        {% endfor %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Language Tagging</div>
+                <div class="chart-sub">Language signals are read from <code>xml:lang</code> attributes (Atom) and <code>&lt;language&gt;</code> / <code>dc:language</code> elements (RSS).</div>
+                <canvas id="langCountChart"></canvas>
+                <div class="card-sub" style="margin-top: 1.5rem;">
+                    <div class="row"><span>HTTP <code>Content-Language</code></span> <strong>{{ stats.lang_src_http|comma }}</strong></div>
+                    <div class="row"><span>Feed-level language tag</span> <strong>{{ stats.lang_src_feed|comma }}</strong></div>
+                    <div class="row"><span>Entry-level language tag</span> <strong>{{ stats.lang_src_entry|comma }}</strong></div>
+                    <div class="row divider"><span style="color:var(--danger)">HTTP vs feed mismatch</span> <strong style="color:var(--danger)">{{ stats.lang_mismatches|comma }}</strong></div>
+                    <div class="row"><span>Multi-language feeds</span> <strong>{{ stats.lang_multiple_in_feed|comma }}</strong></div>
                 </div>
             </div>
+        </div>
 
-            <div class="chart-grid">
-                <div class="chart-card">
-                    <div class="chart-title">Feed Languages</div>
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead><tr><th>Language</th><th>Count</th></tr></thead>
-                            <tbody>
-                                {% for lang, count in languages[:15] %}
-                                <tr><td>{{ lang }}</td><td>{{ count|comma }}</td></tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-title">Feeds with Language Information</div>
-                    <div class="card-value">{{ (stats.lang_src_http + stats.lang_src_feed + stats.lang_src_entry)|comma }}</div>
-                    <div class="card-sub">
-                        <div style="display: flex; justify-content: space-between;"><span>HTTP Headers:</span> <strong>{{ stats.lang_src_http|comma }}</strong></div>
-                        <div style="display: flex; justify-content: space-between;"><span>Feed Level:</span> <strong>{{ stats.lang_src_feed|comma }}</strong></div>
-                        <div style="display: flex; justify-content: space-between;"><span>Entry Level:</span> <strong>{{ stats.lang_src_entry|comma }}</strong></div>
-                        <div style="margin-top: 0.5rem; border-top: 1px solid var(--border); padding-top: 0.5rem; display: flex; justify-content: space-between;">
-                            <span>Mismatches:</span> <strong style="color: var(--danger);">{{ stats.lang_mismatches|comma }}</strong>
-                        </div>
-                        <div style="display: flex; justify-content: space-between;"><span>Multi-Lang Feeds:</span> <strong>{{ stats.lang_multiple_in_feed|comma }}</strong></div>
-                    </div>
+        <!-- Recency CDFs -->
+        <div class="chart-grid">
+            <div class="chart-card">
+                <div class="chart-title">Feed Recency (CDF)</div>
+                <div class="chart-sub">% of feeds whose <em>last update</em> date falls within the given age. Feeds with no date suppress the ceiling below 100%.</div>
+                <div class="chart-container">
+                    <canvas id="feedRecencyCdf"></canvas>
                 </div>
             </div>
+            <div class="chart-card">
+                <div class="chart-title">Newest Entry Recency (CDF)</div>
+                <div class="chart-sub">% of feeds whose <em>most recent entry</em> date falls within the given age.</div>
+                <div class="chart-container">
+                    <canvas id="entryRecencyCdf"></canvas>
+                </div>
+            </div>
+        </div>
 
-            <div class="chart-grid">
-                <div class="chart-card">
-                    <div class="chart-title">Feed Processing Errors</div>
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead><tr><th>Error Category</th><th>Count</th></tr></thead>
-                            <tbody>
-                                {% for err, count in errors %}
-                                <tr><td style="color: var(--danger);">{{ err }}</td><td>{{ count|comma }}</td></tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+        <!-- Oldest entry CDF -->
+        <div class="chart-grid">
+            <div class="chart-card">
+                <div class="chart-title">Feed History Depth (CDF of Oldest Entry Age)</div>
+                <div class="chart-sub">
+                    % of feeds whose <em>oldest entry</em> is at most the given age — i.e. how far back the feed's window reaches.
+                    A client polling every N days will miss entries in feeds whose oldest entry is &lt; N days old when the poll fires.
+                </div>
+                <div class="chart-container">
+                    <canvas id="oldestEntryCdf"></canvas>
                 </div>
             </div>
+            <div class="chart-card">
+                <div class="chart-title">Entry Content Length</div>
+                <div class="chart-container">
+                    <canvas id="contentLengthHistogram"></canvas>
+                </div>
+            </div>
+        </div>
 
-            <div class="chart-grid">
-                <div class="chart-card">
-                    <div class="chart-title">Feed Recency</div>
-                    <div class="chart-container">
-                        <canvas id="feedRecencyHistogram"></canvas>
-                    </div>
-                </div>
-                <div class="chart-card">
-                    <div class="chart-title">Entry Recency</div>
-                    <div class="chart-container">
-                        <canvas id="entryRecencyHistogram"></canvas>
-                    </div>
+        <!-- Extensions -->
+        <div class="chart-grid">
+            <div class="chart-card">
+                <div class="chart-title">Top Feed Extensions</div>
+                <div class="chart-sub">Non-core namespace elements encountered across all feeds (top 15).</div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead><tr><th>Element</th><th>Feeds</th></tr></thead>
+                        <tbody>
+                            {% for ext, count in extensions %}
+                            <tr><td><code>{{ ext }}</code></td><td>{{ count|comma }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
+        </div>
+    </section>
+</div>
 
-            <div class="chart-grid">
-                <div class="chart-card">
-                    <div class="chart-title">Entry Counts per Feed</div>
-                    <div class="chart-container">
-                        <canvas id="entriesHistogram"></canvas>
-                    </div>
-                </div>
-                <div class="chart-card">
-                    <div class="chart-title">Entry Content Length</div>
-                    <div class="chart-container">
-                        <canvas id="contentLengthHistogram"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="chart-grid">
-                <div class="chart-card">
-                    <div class="chart-title">Feed Extension Usage</div>
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead><tr><th>Namespace/Element</th><th>Count</th></tr></thead>
-                            <tbody>
-                                {% for ext, count in extensions[:50] %}
-                                <tr><td><code>{{ ext }}</code></td><td>{{ count|comma }}</td></tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            </div>
-        </section>
-    </div>
-
-    <script>
-        const chartOptions = {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false, axis: 'x' },
-            plugins: { legend: { display: false } },
-            scales: {
-                x: {
-                    ticks: {
-                        maxRotation: 0,
-                        minRotation: 0,
-                        autoSkip: true,
-                        maxTicksLimit: 20,
-                        font: {
-                            size: 11,
-                            family: 'Inter, system-ui, sans-serif'
-                        }
-                    },
-                    grid: { display: false }
-                },
-                y: {
-                    beginAtZero: true,
-                    ticks: { 
-                        callback: v => v.toLocaleString(),
-                        font: {
-                            size: 11,
-                            family: 'Inter, system-ui, sans-serif'
-                        }
-                    }
-                }
+<script>
+    const baseOpts = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false } },
+        scales: {
+            x: {
+                ticks: { maxRotation: 0, minRotation: 0, autoSkip: true, maxTicksLimit: 16, font: { size: 11 } },
+                grid: { display: false }
+            },
+            y: {
+                beginAtZero: true,
+                ticks: { callback: v => v.toLocaleString(), font: { size: 11 } }
             }
+        }
+    };
+
+    // Deep-clone helper
+    const cloneOpts = o => JSON.parse(JSON.stringify(o));
+
+    // Integer-only y-axis (for duplicate counts)
+    const intYOpts = cloneOpts(baseOpts);
+    intYOpts.scales.y.ticks.stepSize = 1;
+    intYOpts.scales.y.ticks.callback = v => Number.isInteger(v) ? v.toLocaleString() : '';
+
+    // Rotated x-axis labels for recency
+    const rotOpts = cloneOpts(baseOpts);
+    rotOpts.scales.x.ticks.maxRotation = 45;
+    rotOpts.scales.x.ticks.minRotation = 45;
+
+    // CDF line-chart options
+    const cdfOpts = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false } },
+        scales: {
+            x: {
+                ticks: { maxRotation: 35, minRotation: 35, font: { size: 11 } },
+                grid: { display: false }
+            },
+            y: {
+                beginAtZero: true,
+                min: 0, max: 100,
+                ticks: { callback: v => v + '%', font: { size: 11 }, stepSize: 10 }
+            }
+        }
+    };
+
+    // Stacked bar options
+    const stackedOpts = {
+        ...cloneOpts(baseOpts),
+        plugins: { legend: { display: true, position: 'bottom' } },
+        scales: {
+            x: { ...cloneOpts(baseOpts).scales.x, stacked: true },
+            y: { ...cloneOpts(baseOpts).scales.y, stacked: true }
+        }
+    };
+
+    // ── Discovery charts ──────────────────────────────────────────────────────
+    const stackedPageData = {{ stacked_page_json|safe }};
+    new Chart(document.getElementById('feedsPerPageHistogram'), {
+        type: 'bar',
+        data: {
+            labels: stackedPageData.labels,
+            datasets: [
+                { label: 'Has Entries',   data: stackedPageData.has_entries,  backgroundColor: '#10b981' },
+                { label: 'Valid Only',    data: stackedPageData.valid_only,   backgroundColor: '#3b82f6' },
+                { label: 'Success Only',  data: stackedPageData.success_only, backgroundColor: '#6366f1' },
+                { label: 'Other / Failed',data: stackedPageData.other,        backgroundColor: '#e2e8f0' }
+            ]
+        },
+        options: stackedOpts
+    });
+
+    const stackedSiteData = {{ stacked_site_json|safe }};
+    new Chart(document.getElementById('feedsPerSiteHistogram'), {
+        type: 'bar',
+        data: {
+            labels: stackedSiteData.labels,
+            datasets: [
+                { label: 'Has Entries',   data: stackedSiteData.has_entries,  backgroundColor: '#10b981' },
+                { label: 'Valid Only',    data: stackedSiteData.valid_only,   backgroundColor: '#3b82f6' },
+                { label: 'Success Only',  data: stackedSiteData.success_only, backgroundColor: '#6366f1' },
+                { label: 'Other / Failed',data: stackedSiteData.other,        backgroundColor: '#e2e8f0' }
+            ]
+        },
+        options: stackedOpts
+    });
+
+    const duplicateFeedsData = {{ duplicates_per_page_hist|safe }};
+    new Chart(document.getElementById('duplicateFeedsHistogram'), {
+        type: 'bar',
+        data: {
+            labels: Object.keys(duplicateFeedsData),
+            datasets: [{ data: Object.values(duplicateFeedsData), backgroundColor: 'rgba(239,68,68,0.5)', borderColor: '#ef4444', borderWidth: 1 }]
+        },
+        options: intYOpts
+    });
+
+    // ── Content profile ───────────────────────────────────────────────────────
+    const profileData = {{ stats.content_profile_dist|tojson }};
+    new Chart(document.getElementById('contentProfileChart'), {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(profileData),
+            datasets: [{ data: Object.values(profileData),
+                backgroundColor: ['#10b981','#6366f1','#8b5cf6','#f59e0b','#e2e8f0'] }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: true, position: 'right' } }
+        }
+    });
+
+    // ── Entry counts ──────────────────────────────────────────────────────────
+    const entriesData = {{ entry_counts_hist|safe }};
+    new Chart(document.getElementById('entriesHistogram'), {
+        type: 'bar',
+        data: {
+            labels: Object.keys(entriesData),
+            datasets: [{ data: Object.values(entriesData), backgroundColor: 'rgba(99,102,241,0.5)', borderColor: '#6366f1', borderWidth: 1 }]
+        },
+        options: baseOpts
+    });
+
+    // ── Language count histogram ──────────────────────────────────────────────
+    const langCountData = {{ stats.lang_count_hist|tojson }};
+    new Chart(document.getElementById('langCountChart'), {
+        type: 'bar',
+        data: {
+            labels: Object.keys(langCountData).map(k => k === '0' ? 'No language' : k + (k==='3+' ? '' : ' language') + (k==='1'?'':'s')),
+            datasets: [{ data: Object.values(langCountData), backgroundColor: ['#e2e8f0','#6366f1','#8b5cf6','#c4b5fd'] }]
+        },
+        options: { ...cloneOpts(baseOpts), plugins: { legend: { display: false } } }
+    });
+
+    // ── Recency CDFs ──────────────────────────────────────────────────────────
+    const feedRecencyData   = {{ feed_recency_cdf|safe }};
+    const entryRecencyData  = {{ entry_recency_cdf|safe }};
+    const oldestEntryData   = {{ oldest_entry_cdf|safe }};
+
+    function makeCdfDataset(d, color) {
+        return {
+            labels: d.labels,
+            datasets: [{ data: d.data, borderColor: color, backgroundColor: color + '22',
+                         fill: true, tension: 0.3, pointRadius: 4 }]
         };
+    }
 
-        const recencyChartOptions = JSON.parse(JSON.stringify(chartOptions));
-        recencyChartOptions.scales.x.ticks.maxRotation = 90;
-        recencyChartOptions.scales.x.ticks.minRotation = 90;
+    new Chart(document.getElementById('feedRecencyCdf'),   { type:'line', data: makeCdfDataset(feedRecencyData,  '#6366f1'), options: cdfOpts });
+    new Chart(document.getElementById('entryRecencyCdf'),  { type:'line', data: makeCdfDataset(entryRecencyData, '#10b981'), options: cdfOpts });
+    new Chart(document.getElementById('oldestEntryCdf'),   { type:'line', data: makeCdfDataset(oldestEntryData,  '#f59e0b'), options: cdfOpts });
 
-        const feedRecencyData = {{ feed_recency_hist|safe }};
-        new Chart(document.getElementById('feedRecencyHistogram'), {
-            type: 'bar',
-            data: {
-                labels: Object.keys(feedRecencyData),
-                datasets: [{ data: Object.values(feedRecencyData), backgroundColor: '#6366f1' }]
-            },
-            options: recencyChartOptions
-        });
-
-        const entryRecencyData = {{ entry_recency_hist|safe }};
-        new Chart(document.getElementById('entryRecencyHistogram'), {
-            type: 'bar',
-            data: {
-                labels: Object.keys(entryRecencyData),
-                datasets: [{ data: Object.values(entryRecencyData), backgroundColor: '#10b981' }]
-            },
-            options: recencyChartOptions
-        });
-
-        const entriesData = {{ entry_counts_hist|safe }};
-        new Chart(document.getElementById('entriesHistogram'), {
-            type: 'bar',
-            data: {
-                labels: Object.keys(entriesData),
-                datasets: [{
-                    data: Object.values(entriesData),
-                    backgroundColor: 'rgba(99, 102, 241, 0.5)',
-                    borderColor: 'rgb(99, 102, 241)',
-                    borderWidth: 1
-                }]
-            },
-            options: chartOptions
-        });
-
-        const contentLengthData = {{ content_length_hist|safe }};
-        new Chart(document.getElementById('contentLengthHistogram'), {
-            type: 'bar',
-            data: {
-                labels: Object.keys(contentLengthData),
-                datasets: [{
-                    data: Object.values(contentLengthData),
-                    backgroundColor: 'rgba(16, 185, 129, 0.5)',
-                    borderColor: 'rgb(16, 185, 129)',
-                    borderWidth: 1
-                }]
-            },
-            options: chartOptions
-        });
-
-        const discoverySiteData = {{ discovery_per_site_hist|safe }};
-        const stackedSiteData = {{ stacked_site_json|safe }};
-        const duplicateFeedsData = {{ duplicates_per_page_hist|safe }};
-
-        new Chart(document.getElementById('duplicateFeedsHistogram'), {
-            type: 'bar',
-            data: {
-                labels: Object.keys(duplicateFeedsData),
-                datasets: [{
-                    data: Object.values(duplicateFeedsData),
-                    backgroundColor: 'rgba(239, 68, 68, 0.5)',
-                    borderColor: 'rgb(239, 68, 68)',
-                    borderWidth: 1
-                }]
-            },
-            options: chartOptions
-        });
-
-        new Chart(document.getElementById('feedsPerSiteHistogram'), {
-            type: 'bar',
-            data: {
-                labels: stackedSiteData.labels,
-                datasets: [
-                    { label: 'Has Entries', data: stackedSiteData.has_entries, backgroundColor: '#10b981' },
-                    { label: 'Valid Only', data: stackedSiteData.valid_only, backgroundColor: '#3b82f6' },
-                    { label: 'Success Only', data: stackedSiteData.success_only, backgroundColor: '#6366f1' },
-                    { label: 'Other / Failed', data: stackedSiteData.other, backgroundColor: '#e2e8f0' }
-                ]
-            },
-            options: {
-                ...chartOptions,
-                plugins: { legend: { display: true, position: 'bottom' } },
-                scales: { 
-                    x: { ...chartOptions.scales.x, stacked: true }, 
-                    y: { ...chartOptions.scales.y, stacked: true } 
-                }
-            }
-        });
-
-        const stackedPageData = {{ stacked_page_json|safe }};
-        new Chart(document.getElementById('feedsPerPageHistogram'), {
-            type: 'bar',
-            data: {
-                labels: stackedPageData.labels,
-                datasets: [
-                    { label: 'Has Entries', data: stackedPageData.has_entries, backgroundColor: '#10b981' },
-                    { label: 'Valid Only', data: stackedPageData.valid_only, backgroundColor: '#3b82f6' },
-                    { label: 'Success Only', data: stackedPageData.success_only, backgroundColor: '#6366f1' },
-                    { label: 'Other / Failed', data: stackedPageData.other, backgroundColor: '#e2e8f0' }
-                ]
-            },
-            options: {
-                ...chartOptions,
-                plugins: { legend: { display: true, position: 'bottom' } },
-                scales: { 
-                    x: { ...chartOptions.scales.x, stacked: true }, 
-                    y: { ...chartOptions.scales.y, stacked: true } 
-                }
-            }
-        });
-    </script>
+    // ── Content length ────────────────────────────────────────────────────────
+    const contentLengthData = {{ content_length_hist|safe }};
+    new Chart(document.getElementById('contentLengthHistogram'), {
+        type: 'bar',
+        data: {
+            labels: Object.keys(contentLengthData),
+            datasets: [{ data: Object.values(contentLengthData), backgroundColor: 'rgba(16,185,129,0.5)', borderColor: '#10b981', borderWidth: 1 }]
+        },
+        options: baseOpts
+    });
+</script>
 </body>
 </html>
