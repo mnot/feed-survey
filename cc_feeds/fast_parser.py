@@ -78,6 +78,9 @@ class FastFeedParser:
                 events=("start", "end"),
                 recover=False,
                 resolve_entities=False,
+                no_network=True,       # never fetch external DTDs or entities
+                load_dtd=False,        # don't load DTDs at all
+                dtd_validation=False,  # don't validate against DTD
             )
 
             event, root_elem = next(context)
