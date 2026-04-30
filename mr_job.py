@@ -9,6 +9,7 @@ if "pipes" not in sys.modules:
 
 import io
 import os
+import signal
 import traceback
 from typing import Any, Dict, List, Optional, cast, Generator, Tuple
 
@@ -104,26 +105,39 @@ class CCFeedsJob(MRJob): # type: ignore[misc]
                     temp_path = tmp.name
                 
                 try:
-                    self.s3.download_file(
-                        bucket, key_path, temp_path,
-                        ExtraArgs={'RequestPayer': 'requester'}
-                    )
+                    # Hard 5-minute timeout for the entire WARC download+process cycle.
+                    # Covers S3 download stalls that boto3 retries can't fix in time.
+                    def _warc_timeout(signum: int, frame: object) -> None:
+                        raise TimeoutError(f"WARC timed out: {raw_path}")
+                    old_handler = signal.signal(signal.SIGALRM, _warc_timeout)
+                    signal.alarm(300)
+                    try:
+                        self.s3.download_file(
+                            bucket, key_path, temp_path,
+                            ExtraArgs={'RequestPayer': 'requester'}
+                        )
 
-                    with open(temp_path, "rb") as f:
-                        with PythonIOStreamAdapter(f) as stream:
-                            for record in ArchiveIterator(
-                                stream,
-                                record_types=WarcRecordType.response,
-                                parse_http=False,
-                            ):
-                                self.processed_records += 1
-                                self.processor.process_record(record)
+                        with open(temp_path, "rb") as f:
+                            with PythonIOStreamAdapter(f) as stream:
+                                for record in ArchiveIterator(
+                                    stream,
+                                    record_types=WarcRecordType.response,
+                                    parse_http=False,
+                                ):
+                                    self.processed_records += 1
+                                    self.processor.process_record(record)
 
-                                # Progress heartbeat
-                                if self.processed_records % 1000 == 0:
-                                    self.increment_counter("status", "records_processed", 1000)
-                                    sites_count = len(self.processor.stats.sites_seen)
-                                    self.set_status(f"File {self.count}: {raw_path} | {self.processed_records} recs | {sites_count} sites")
+                                    # Progress heartbeat
+                                    if self.processed_records % 1000 == 0:
+                                        self.increment_counter("status", "records_processed", 1000)
+                                        sites_count = len(self.processor.stats.sites_seen)
+                                        self.set_status(f"File {self.count}: {raw_path} | {self.processed_records} recs | {sites_count} sites")
+                    except TimeoutError as te:
+                        sys.stderr.write(f"WARNING: {te}\n")
+                        sys.stderr.flush()
+                    finally:
+                        signal.alarm(0)
+                        signal.signal(signal.SIGALRM, old_handler)
                 finally:
                     if os.path.exists(temp_path):
                         os.remove(temp_path)
