@@ -480,9 +480,10 @@ class WarcProcessor:
             return
 
         try:
-            # Read the entire body for parsing
-            # FastWARC reader is a stream, we must read() it.
-            content = record.reader.read()
+            # Cap at 10 MB — no legitimate feed is larger, and oversized
+            # bodies (e.g. content:encoded with huge embedded HTML) can make
+            # lxml's iterparse very slow.
+            content = record.reader.read(10 * 1024 * 1024)
 
             if not content:
                 return

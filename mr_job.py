@@ -48,8 +48,16 @@ class CCFeedsJob(MRJob): # type: ignore[misc]
             self.count = 0
             self.processed_records = 0
 
-            # Explicitly set region to us-east-1 for Common Crawl
-            self.s3 = boto3.client('s3', region_name='us-east-1')
+            from botocore.config import Config
+            self.s3 = boto3.client(
+                "s3",
+                region_name="us-east-1",
+                config=Config(
+                    read_timeout=120,
+                    connect_timeout=30,
+                    retries={"max_attempts": 3, "mode": "standard"},
+                ),
+            )
             sys.stderr.write("DEBUG: mapper_init finished successfully\n")
         except Exception as exc:
             sys.stderr.write(f"FATAL: mapper_init failed: {exc}\n")
