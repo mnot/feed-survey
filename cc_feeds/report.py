@@ -376,10 +376,22 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
             pass
     now = max_crawl_time or datetime.now(timezone.utc)
 
-    # --- Recency CDFs (all valid feeds) ---
+    # --- Recency CDFs ---
+    # Feed recency uses all valid feeds (a zero-entry feed can still have a
+    # feed-level updated date, so its absence is meaningful).
+    # Entry-based CDFs use only feeds that actually have entries — a zero-entry
+    # feed cannot have an entry date, so including it would wrongly suppress the
+    # curve. We report the excluded count in the chart subtitle instead.
+    feeds_with_entries = {
+        url: res
+        for url, res in all_valid_results.items()
+        if (res.get("entries_count") or 0) > 0
+    }
+    n_zero_entry = len(all_valid_results) - len(feeds_with_entries)
+
     feed_recency_cdf  = _build_recency_cdf(all_valid_results, "updated_date", now)
-    entry_recency_cdf = _build_recency_cdf(all_valid_results, "newest_entry_date", now)
-    oldest_entry_cdf  = _build_recency_cdf(all_valid_results, "oldest_entry_date", now)
+    entry_recency_cdf = _build_recency_cdf(feeds_with_entries, "newest_entry_date", now)
+    oldest_entry_cdf  = _build_recency_cdf(feeds_with_entries, "oldest_entry_date", now)
 
     # --- Quality distribution ---
     quality_hist: Dict[str, int] = {f"{i/10:.1f}–{(i+1)/10:.1f}": 0 for i in range(10)}
@@ -490,6 +502,7 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
         feed_recency_cdf=json.dumps(feed_recency_cdf),
         entry_recency_cdf=json.dumps(entry_recency_cdf),
         oldest_entry_cdf=json.dumps(oldest_entry_cdf),
+        n_zero_entry=n_zero_entry,
         quality_hist=json.dumps(quality_hist),
         format_quality_json=json.dumps(format_quality_rows),
         format_quality_rows=format_quality_rows,

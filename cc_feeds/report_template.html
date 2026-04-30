@@ -459,7 +459,7 @@
             </div>
             <div class="chart-card">
                 <div class="chart-title">Newest Entry Recency (CDF)</div>
-                <div class="chart-sub">% of feeds whose <em>most recent entry</em> date falls within the given age.</div>
+                <div class="chart-sub">% of feeds <em>with at least one entry</em> whose most recent entry falls within the given age. {{ n_zero_entry|comma }} zero-entry feeds excluded from denominator.</div>
                 <div class="chart-container">
                     <canvas id="entryRecencyCdf"></canvas>
                 </div>
@@ -471,8 +471,9 @@
             <div class="chart-card">
                 <div class="chart-title">Feed History Depth (CDF of Oldest Entry Age)</div>
                 <div class="chart-sub">
-                    % of feeds whose <em>oldest entry</em> is at most the given age — i.e. how far back the feed's window reaches.
+                    % of feeds <em>with at least one entry</em> whose oldest entry is at most the given age — i.e. how far back the feed's window reaches.
                     A client polling every N days will miss entries in feeds whose oldest entry is &lt; N days old when the poll fires.
+                    {{ n_zero_entry|comma }} zero-entry feeds excluded from denominator.
                 </div>
                 <div class="chart-container">
                     <canvas id="oldestEntryCdf"></canvas>
