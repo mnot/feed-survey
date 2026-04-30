@@ -38,16 +38,17 @@ _NS_PREFIXES: Dict[str, str] = {
 # (max_age_days, label) pairs for recency CDFs – ordered oldest→newest so the
 # CDF reads left-to-right as "older threshold → higher coverage"
 _CDF_BREAKPOINTS: List[Tuple[int, str]] = [
-    (0,   "Today"),
-    (1,   "1 day"),
-    (3,   "3 days"),
-    (7,   "1 week"),
-    (14,  "2 weeks"),
-    (30,  "1 month"),
-    (90,  "3 months"),
-    (180, "6 months"),
-    (365, "1 year"),
-    (730, "2 years"),
+    (0,    "Today"),
+    (1,    "1 day"),
+    (3,    "3 days"),
+    (7,    "1 week"),
+    (14,   "2 weeks"),
+    (30,   "1 month"),
+    (90,   "3 months"),
+    (180,  "6 months"),
+    (365,  "1 year"),
+    (730,  "2 years"),
+    (10000, "All"),   # sentinel — catches everything, always 100 %
 ]
 
 
