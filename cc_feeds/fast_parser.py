@@ -62,11 +62,21 @@ class FastFeedParser:
             "_content_types_seen": set(),
         }
 
+        # Quick sanity check: real XML/feed content starts with '<' (possibly
+        # after a BOM or whitespace).  Binary or non-XML responses that slipped
+        # through the content-type filter would cause lxml's recovery mode to
+        # spin for minutes trying to find XML structure in garbage bytes.
+        stripped = content.lstrip()
+        if not stripped or stripped[0:1] not in (b"<", b"\xef"):  # '<' or UTF-8 BOM
+            result["error"] = "Not XML"
+            result.pop("_content_types_seen", None)
+            return result
+
         try:
             context = etree.iterparse(
                 io.BytesIO(content),
                 events=("start", "end"),
-                recover=True,
+                recover=False,
                 resolve_entities=False,
             )
 
