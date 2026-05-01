@@ -49,7 +49,7 @@ homepage = "https://github.com/mnot/cc-feeds"
 cc-feeds = "cc_feeds.main:main"
 cc-feeds-job = "cc_feeds.emr.job:main"
 cc-feeds-finalize = "cc_feeds.emr.finalize:main"
-cc-feeds-mock-report = "cc_feeds.mock_report:main"
+cc-feeds-mock-report = "cc_feeds.report.mock:main"
 cc-feeds-split-paths = "cc_feeds.emr.split_paths:main"
 
 

@@ -55,7 +55,7 @@ wheels:
 
 .PHONY: mock_report
 mock_report: venv
-	$(VENV)/python -m cc_feeds.mock_report mock_report.html
+	$(VENV)/python -m cc_feeds.report.mock mock_report.html
 	open mock_report.html
 
 .PHONY: upload-wheels

@@ -1,259 +1,22 @@
 import json
 import os
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union, cast
+from typing import Any, Dict, List, cast
 
 import dateutil.parser
 from jinja2 import Environment, FileSystemLoader
 
 from cc_feeds.analysis import Stats
+from cc_feeds.report.aggregate import aggregate_feed_data
+from cc_feeds.report.discovery import (
+    build_page_map,
+    build_site_map,
+    build_stacked_data,
+    detect_duplicates,
+)
+from cc_feeds.report.formatting import format_extension, format_number
+from cc_feeds.report.histograms import build_recency_cdf, make_histogram
 from cc_feeds.report.quality import score_feed
-
-# Known namespace URI → conventional prefix
-_NS_PREFIXES: Dict[str, str] = {
-    "http://purl.org/dc/elements/1.1/": "dc",
-    "http://purl.org/dc/terms/": "dcterms",
-    "http://search.yahoo.com/mrss/": "media",
-    "http://purl.org/rss/1.0/modules/content/": "content",
-    "http://purl.org/rss/1.0/modules/slash/": "slash",
-    "http://purl.org/rss/1.0/modules/syndication/": "sy",
-    "http://www.w3.org/2003/01/geo/wgs84_pos#": "geo",
-    "http://www.georss.org/georss/": "georss",
-    "http://schemas.google.com/g/2005#": "gd",
-    "http://wellformedweb.org/CommentAPI/": "wfw",
-    "http://webfeeds.org/rss/1.0": "webfeeds",
-    "http://purl.org/rss/1.0/modules/company/": "co",
-    "http://purl.org/rss/1.0/modules/event/": "ev",
-}
-
-# (max_age_days, label) pairs for recency CDFs – ordered oldest→newest so the
-# CDF reads left-to-right as "older threshold → higher coverage"
-_CDF_BREAKPOINTS: List[Tuple[int, str]] = [
-    (0, "Today"),
-    (1, "1 day"),
-    (3, "3 days"),
-    (7, "1 week"),
-    (14, "2 weeks"),
-    (30, "1 month"),
-    (90, "3 months"),
-    (180, "6 months"),
-    (365, "1 year"),
-    (730, "2 years"),
-    (10000, "All"),  # sentinel — catches everything, always 100 %
-]
-
-
-def _format_extension(ext: Any) -> str:
-    """Format a (namespace_uri, localname) tuple as a readable prefix:local string."""
-    if isinstance(ext, (tuple, list)) and len(ext) == 2:
-        ns, local = str(ext[0]), str(ext[1])
-        prefix = _NS_PREFIXES.get(ns)
-        if prefix:
-            return f"{prefix}:{local}"
-        # Derive a short prefix from the URI
-        stripped = ns.rstrip("/#")
-        part = stripped.rsplit("/", 1)[-1].rsplit("#", 1)[-1]
-        if part:
-            return f"{part}:{local}"
-        return local
-    return str(ext)
-
-
-def format_number(value: Union[int, float]) -> str:
-    return f"{value:,}"
-
-
-def make_histogram(
-    data: Union[Sequence[Any], Dict[Any, int]],
-    bins: Optional[str] = None,
-    log_scale: bool = False,
-) -> Dict[str, int]:
-    if not data:
-        return {}
-
-    if isinstance(data, dict):
-        counts = data
-    else:
-        counts = {}
-        for item in data:
-            counts[item] = counts.get(item, 0) + 1
-
-    if not counts:
-        return {}
-
-    if bins == "natural":
-        # 0, -127, -254, -511, -1023, etc.
-        labels = ["0", "-127", "-254", "-511", "-1023"]
-        nat_thresholds = [0, 127, 254, 511, 1023]
-
-        # Add higher buckets dynamically up to max_val
-        max_val = max(counts.keys()) if counts else 0
-        curr = 1024
-        while curr <= max_val:
-            labels.append(f"-{curr*2//1024}k")
-            nat_thresholds.append(curr * 2 - 1)
-            curr *= 2
-
-        hist = {label: 0 for label in labels}
-        for val, count in counts.items():
-            if val == 0:
-                hist["0"] += count
-                continue
-            for i, nat_t in enumerate(nat_thresholds):
-                if i == 0:
-                    continue  # Handled val == 0
-                if val <= nat_t:
-                    hist[labels[i]] += count
-                    break
-        return hist
-
-    if log_scale:
-        # Log-like buckets for content length
-        labels = [
-            "0-100",
-            "100-500",
-            "500-1k",
-            "1k-5k",
-            "5k-10k",
-            "10k-50k",
-            "50k-100k",
-            "100k-500k",
-            "500k+",
-        ]
-        log_thresholds: List[Union[int, float]] = [
-            100,
-            500,
-            1000,
-            5000,
-            10000,
-            50000,
-            100000,
-            500000,
-            float("inf"),
-        ]
-        hist = {label: 0 for label in labels}
-        for val, count in counts.items():
-            for i, log_t in enumerate(log_thresholds):
-                if val < log_t:
-                    hist[labels[i]] += count
-                    break
-        return hist
-
-    if bins == "discovery":
-        # 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, -15, -20, -50, -100, 100+
-        labels = (
-            ["0"]
-            + [str(i) for i in range(1, 11)]
-            + [
-                "-15",
-                "-20",
-                "-50",
-                "-100",
-                "100+",
-            ]
-        )
-        hist = {label: 0 for label in labels}
-        for val, count in counts.items():
-            if val == 0:
-                hist["0"] += count
-            elif val <= 10:
-                hist[str(val)] += count
-            elif val <= 15:
-                hist["-15"] += count
-            elif val <= 20:
-                hist["-20"] += count
-            elif val <= 50:
-                hist["-50"] += count
-            elif val <= 100:
-                hist["-100"] += count
-            else:
-                hist["100+"] += count
-        return hist
-
-    if bins == "entries":
-        # High granularity for lower end
-        labels = [
-            "0",
-            "1",
-            "2",
-            "3",
-            "4",
-            "5",
-            "6",
-            "7",
-            "8",
-            "9",
-            "10",
-            "11-15",
-            "16-20",
-            "21-30",
-            "31-50",
-            "51-100",
-            "100+",
-        ]
-        hist = {label: 0 for label in labels}
-        for val, count in counts.items():
-            if val == 0:
-                hist["0"] += count
-            elif val == 1:
-                hist["1"] += count
-            elif val == 2:
-                hist["2"] += count
-            elif val == 3:
-                hist["3"] += count
-            elif val == 4:
-                hist["4"] += count
-            elif val == 5:
-                hist["5"] += count
-            elif val == 6:
-                hist["6"] += count
-            elif val == 7:
-                hist["7"] += count
-            elif val == 8:
-                hist["8"] += count
-            elif val == 9:
-                hist["9"] += count
-            elif val == 10:
-                hist["10"] += count
-            elif val <= 15:
-                hist["11-15"] += count
-            elif val <= 20:
-                hist["16-20"] += count
-            elif val <= 30:
-                hist["21-30"] += count
-            elif val <= 50:
-                hist["31-50"] += count
-            elif val <= 100:
-                hist["51-100"] += count
-            else:
-                hist["100+"] += count
-        return hist
-
-    # Default simple histogram
-    max_val = max(counts.keys())
-    if max_val == 0:
-        return {"0": sum(counts.values())}
-    bin_size = max(1, max_val // 10)
-    hist = {}
-    for val, count in counts.items():
-        bin_idx = val // bin_size
-        low = bin_idx * bin_size
-        high = (bin_idx + 1) * bin_size - 1
-        if low == high:
-            label = str(low)
-        else:
-            label = f"-{high//1024}k" if high >= 1024 else f"-{high}"
-        hist[label] = hist.get(label, 0) + count
-    return dict(
-        sorted(
-            hist.items(),
-            key=lambda item: (
-                int(item[0].lstrip("-").rstrip("k+")) * 1024
-                if "k" in item[0]
-                else int(item[0].lstrip("-").rstrip("+"))
-            ),
-        )
-    )
 
 
 def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
@@ -277,7 +40,7 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
         res["total_discovery_count"] = stats.discovery_domain_counts.get(url, 0)
 
     # --- Aggregate over ALL valid feeds ---
-    agg = _aggregate_feed_data(all_valid_results)
+    agg = aggregate_feed_data(all_valid_results)
 
     feeds_with_autodiscovery = len(discovered_results)
     feeds_without_autodiscovery = len(all_valid_results) - feeds_with_autodiscovery
@@ -332,8 +95,8 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
             lang_count_hist["3+"] += 1
 
     # --- Discovery Mapping ---
-    page_to_feeds = _build_page_map(stats)
-    site_to_feeds = _build_site_map(stats)
+    page_to_feeds = build_page_map(stats)
+    site_to_feeds = build_site_map(stats)
 
     discovery_page_counts = [len(f) for f in page_to_feeds.values()]
     total_pages = stats.pages_seen
@@ -350,7 +113,7 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
     discovery_per_site_hist.pop("0", None)
 
     # Duplicate detection
-    duplicate_counts = _detect_duplicates(stats.multi_feed_pages, stats.feed_results)
+    duplicate_counts = detect_duplicates(stats.multi_feed_pages, stats.feed_results)
     pages_with_duplicates = len(duplicate_counts)
     multi_feed_pages_total = len(stats.multi_feed_pages)
     duplicate_prevalence_pct = (
@@ -360,8 +123,8 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
     )
 
     # Stacked discovery data
-    stacked_page = _build_stacked_data(stats, page_to_feeds, zero_pages)
-    stacked_site = _build_stacked_data(stats, site_to_feeds, zero_sites)
+    stacked_page = build_stacked_data(stats, page_to_feeds, zero_pages)
+    stacked_site = build_stacked_data(stats, site_to_feeds, zero_sites)
     for s in [stacked_page, stacked_site]:
         if "0" in s["labels"]:
             idx = s["labels"].index("0")
@@ -395,9 +158,9 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
     }
     n_zero_entry = len(all_valid_results) - len(feeds_with_entries)
 
-    feed_recency_cdf = _build_recency_cdf(all_valid_results, "updated_date", now)
-    entry_recency_cdf = _build_recency_cdf(feeds_with_entries, "newest_entry_date", now)
-    oldest_entry_cdf = _build_recency_cdf(feeds_with_entries, "oldest_entry_date", now)
+    feed_recency_cdf = build_recency_cdf(all_valid_results, "updated_date", now)
+    entry_recency_cdf = build_recency_cdf(feeds_with_entries, "newest_entry_date", now)
+    oldest_entry_cdf = build_recency_cdf(feeds_with_entries, "oldest_entry_date", now)
 
     # --- Quality distribution (recomputed at report time so algo changes are free) ---
     quality_hist: Dict[str, int] = {f"{i/10:.1f}–{(i+1)/10:.1f}": 0 for i in range(10)}
@@ -458,7 +221,7 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
     # Extensions: format as prefix:local, deduplicate, top 15
     ext_formatted: Dict[str, int] = {}
     for ext, count in agg["extensions"].items():
-        label = _format_extension(ext)
+        label = format_extension(ext)
         ext_formatted[label] = ext_formatted.get(label, 0) + count
     extensions = sorted(ext_formatted.items(), key=lambda x: x[1], reverse=True)[:15]
 
@@ -547,271 +310,3 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
 
     with open(output_path, "w", encoding="utf-8") as f_out:
         f_out.write(html)
-
-
-def _aggregate_feed_data(results: Dict[str, Any]) -> Dict[str, Any]:
-    formats: Dict[str, int] = {}
-    languages: Dict[str, int] = {}
-    extensions: Dict[Any, int] = {}
-    entry_counts: List[int] = []
-    last_updated_dates: List[Any] = []
-    feeds_with_content: int = 0
-    feeds_with_summary: int = 0
-    feeds_with_neither: int = 0
-    charsets_per_format: Dict[str, Dict[str, int]] = {}
-
-    # Unique stats
-    total_entries: int = 0
-    lang_src_http: int = 0
-    lang_src_feed: int = 0
-    lang_src_entry: int = 0
-    lang_mismatches: int = 0
-    lang_multiple_in_feed: int = 0
-
-    for res in results.values():
-        res = cast(Dict[str, Any], res)
-        if not res.get("valid"):
-            continue
-
-        fmt = res.get("format") or "unknown"
-        formats[fmt] = formats.get(fmt, 0) + 1
-
-        # Track charset per format
-        charset = res.get("charset") or "unknown"
-        if fmt not in charsets_per_format:
-            charsets_per_format[fmt] = {}
-        charsets_per_format[fmt][charset] = charsets_per_format[fmt].get(charset, 0) + 1
-
-        if res.get("languages"):
-            for lang in res["languages"]:
-                languages[lang] = languages.get(lang, 0) + 1
-        else:
-            languages["unknown"] = languages.get("unknown", 0) + 1
-
-        if res.get("has_content"):
-            feeds_with_content += 1
-        elif res.get("has_summary"):
-            feeds_with_summary += 1
-        else:
-            feeds_with_neither += 1
-
-        entries = res.get("entries_count", 0)
-        total_entries += entries
-        entry_counts.append(entries)
-
-        for ext in res.get("extensions", []):
-            # Extensions are (ns_uri, localname) tuples; after JSON round-trip they
-            # come back as lists – normalise to tuple so they are hashable dict keys.
-            ext_key = tuple(ext) if isinstance(ext, (list, tuple)) else ext
-            extensions[ext_key] = extensions.get(ext_key, 0) + 1
-
-        if res.get("updated_date"):
-            last_updated_dates.append(res["updated_date"])
-
-        # Language source tracking (Unique per feed)
-        http_l = res.get("lang_http")
-        feed_l = res.get("lang_feed")
-        entry_ls = res.get("lang_entries", [])
-
-        if http_l:
-            lang_src_http += 1
-        if feed_l:
-            lang_src_feed += 1
-            if http_l and http_l != feed_l:
-                lang_mismatches += 1
-
-        if entry_ls:
-            lang_src_entry += 1  # How many feeds have entry-level lang
-            if len(entry_ls) > 1:
-                lang_multiple_in_feed += 1
-
-            # Mismatch between entry lang and feed/http lang
-            base_l = feed_l or http_l
-            if base_l and any(l != base_l for l in entry_ls):
-                if len(entry_ls) == 1:
-                    if (
-                        not feed_l
-                    ):  # Only add to mismatches if we haven't already counted mismatch between http and feed
-                        lang_mismatches += 1
-                else:
-                    # Multiple entry langs already imply some mismatch or at least complex structure
-                    # We'll count it as a mismatch if any differ from the primary
-                    lang_mismatches += 1
-
-    return {
-        "formats": formats,
-        "languages": languages,
-        "extensions": extensions,
-        "entry_counts": entry_counts,
-        "last_updated_dates": last_updated_dates,
-        "feeds_with_content": feeds_with_content,
-        "feeds_with_summary": feeds_with_summary,
-        "feeds_with_neither": feeds_with_neither,
-        "charsets_per_format": charsets_per_format,
-        "total_entries": total_entries,
-        "lang_src_http": lang_src_http,
-        "lang_src_feed": lang_src_feed,
-        "lang_src_entry": lang_src_entry,
-        "lang_mismatches": lang_mismatches,
-        "lang_multiple_in_feed": lang_multiple_in_feed,
-    }
-
-
-def _build_page_map(stats: Stats) -> Dict[str, Set[str]]:
-    page_to_feeds: Dict[str, Set[str]] = {}
-    for feed_url, domains in stats.autodiscovery_links.items():
-        for domain_or_url in domains:
-            if domain_or_url not in page_to_feeds:
-                page_to_feeds[domain_or_url] = set()
-            page_to_feeds[domain_or_url].add(feed_url)
-    return page_to_feeds
-
-
-def _build_site_map(stats: Stats) -> Dict[str, Set[str]]:
-    site_to_feeds: Dict[str, Set[str]] = {}
-    for feed_url, domains in stats.autodiscovery_links.items():
-        for domain in domains:
-            if domain not in site_to_feeds:
-                site_to_feeds[domain] = set()
-            site_to_feeds[domain].add(feed_url)
-    return site_to_feeds
-
-
-def _detect_duplicates(
-    multi_feed_pages: Dict[str, List[str]], feed_results: Dict[str, Any]
-) -> List[int]:
-    duplicate_counts = []
-    for page_url, feed_urls in multi_feed_pages.items():
-        # Map (link, title) to feed URLs
-        link_to_feeds: Dict[Tuple[Optional[str], Optional[str]], Set[str]] = {}
-        for url in feed_urls:
-            res = feed_results.get(url)
-            if not isinstance(res, dict):
-                continue
-            link = res.get("link")
-            title = res.get("title")
-            if link or title:
-                key = (link, title)
-                if key not in link_to_feeds:
-                    link_to_feeds[key] = set()
-                link_to_feeds[key].add(url)
-
-        # Count duplicates: If a link has 3 feeds, that's 2 duplicates.
-        page_dups = 0
-        for feeds in link_to_feeds.values():
-            if len(feeds) > 1:
-                page_dups += len(feeds) - 1
-        if page_dups > 0:
-            duplicate_counts.append(page_dups)
-    return duplicate_counts
-
-
-def _build_stacked_data(
-    stats: Stats, mapping: Dict[str, Set[str]], zero_count: int
-) -> Dict[str, Any]:
-    # bins: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11-15, 16-20, 21-50, 51-100, 100+
-    labels = [str(i) for i in range(11)] + [
-        "11-15",
-        "16-20",
-        "21-50",
-        "51-100",
-        "100+",
-    ]
-    thresholds: List[Union[int, float]] = list(range(11)) + [
-        16,
-        21,
-        51,
-        101,
-        float("inf"),
-    ]
-    stacked: Dict[str, Any] = {
-        "labels": labels,
-        "has_entries": [0] * len(labels),
-        "valid_only": [0] * len(labels),
-        "success_only": [0] * len(labels),
-        "other": [0] * len(labels),
-    }
-    stacked["other"][0] = zero_count
-
-    for feeds in mapping.values():
-        count = len(feeds)
-        bin_idx = -1
-        for i, threshold in enumerate(thresholds):
-            if i < 11:
-                if count == threshold:
-                    bin_idx = i
-                    break
-            elif count < threshold:
-                bin_idx = i
-                break
-        if bin_idx != -1:
-            has_entries = False
-            valid_only = False
-            success_only = False
-
-            for feed_url in feeds:
-                res = stats.feed_results.get(feed_url, {})
-                if res.get("entries_count", 0) > 0:
-                    has_entries = True
-                    break
-                if res.get("valid"):
-                    valid_only = True
-                elif res.get("status", 0) < 400 and res.get("status", 0) > 0:
-                    success_only = True
-
-            if has_entries:
-                stacked["has_entries"][bin_idx] += 1
-            elif valid_only:
-                stacked["valid_only"][bin_idx] += 1
-            elif success_only:
-                stacked["success_only"][bin_idx] += 1
-            else:
-                stacked["other"][bin_idx] += 1
-    return stacked
-
-
-def _build_recency_cdf(
-    results: Dict[str, Any], key: str, now: datetime
-) -> Dict[str, Any]:
-    """
-    Build a CDF for recency data.
-
-    For each breakpoint in _CDF_BREAKPOINTS, computes the percentage of feeds
-    whose *key* date is at most that many days before *now*.  Feeds with no date
-    are included in the total (denominator) but never counted as covered, so
-    they suppress the curve toward 100 %.
-
-    Returns {"labels": [...], "data": [...]} suitable for a Chart.js line chart.
-    """
-    ages: List[int] = []
-    total = len(results)
-    for info in results.values():
-        val = info.get(key)
-        if not val:
-            continue
-        try:
-            dt = datetime(
-                val[0], val[1], val[2], val[3], val[4], val[5], tzinfo=timezone.utc
-            )
-            ages.append(max(0, (now - dt).days))
-        except (ValueError, TypeError, IndexError):
-            pass
-
-    ages.sort()
-    n = len(ages)  # feeds that have a date — the CDF denominator
-    no_date = total - n  # feeds excluded (no date available)
-    labels: List[str] = []
-    data: List[float] = []
-    for days, label in _CDF_BREAKPOINTS:
-        # bisect_right equivalent
-        lo, hi = 0, n
-        while lo < hi:
-            mid = (lo + hi) // 2
-            if ages[mid] <= days:
-                lo = mid + 1
-            else:
-                hi = mid
-        pct = round(lo / n * 100, 1) if n else 0.0
-        labels.append(label)
-        data.append(pct)
-    return {"labels": labels, "data": data, "no_date": no_date}

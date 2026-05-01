@@ -1,0 +1,114 @@
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
+
+from cc_feeds.analysis import Stats
+
+
+def build_page_map(stats: Stats) -> Dict[str, Set[str]]:
+    page_to_feeds: Dict[str, Set[str]] = {}
+    for feed_url, domains in stats.autodiscovery_links.items():
+        for domain_or_url in domains:
+            if domain_or_url not in page_to_feeds:
+                page_to_feeds[domain_or_url] = set()
+            page_to_feeds[domain_or_url].add(feed_url)
+    return page_to_feeds
+
+
+def build_site_map(stats: Stats) -> Dict[str, Set[str]]:
+    site_to_feeds: Dict[str, Set[str]] = {}
+    for feed_url, domains in stats.autodiscovery_links.items():
+        for domain in domains:
+            if domain not in site_to_feeds:
+                site_to_feeds[domain] = set()
+            site_to_feeds[domain].add(feed_url)
+    return site_to_feeds
+
+
+def detect_duplicates(
+    multi_feed_pages: Dict[str, List[str]], feed_results: Dict[str, Any]
+) -> List[int]:
+    duplicate_counts = []
+    for feed_urls in multi_feed_pages.values():
+        link_to_feeds: Dict[Tuple[Optional[str], Optional[str]], Set[str]] = {}
+        for url in feed_urls:
+            res = feed_results.get(url)
+            if not isinstance(res, dict):
+                continue
+            link = res.get("link")
+            title = res.get("title")
+            if link or title:
+                key = (link, title)
+                if key not in link_to_feeds:
+                    link_to_feeds[key] = set()
+                link_to_feeds[key].add(url)
+
+        page_dups = 0
+        for feeds in link_to_feeds.values():
+            if len(feeds) > 1:
+                page_dups += len(feeds) - 1
+        if page_dups > 0:
+            duplicate_counts.append(page_dups)
+    return duplicate_counts
+
+
+def build_stacked_data(
+    stats: Stats, mapping: Dict[str, Set[str]], zero_count: int
+) -> Dict[str, Any]:
+    labels = [str(i) for i in range(11)] + [
+        "11-15",
+        "16-20",
+        "21-50",
+        "51-100",
+        "100+",
+    ]
+    thresholds: List[Union[int, float]] = list(range(11)) + [
+        16,
+        21,
+        51,
+        101,
+        float("inf"),
+    ]
+    stacked: Dict[str, Any] = {
+        "labels": labels,
+        "has_entries": [0] * len(labels),
+        "valid_only": [0] * len(labels),
+        "success_only": [0] * len(labels),
+        "other": [0] * len(labels),
+    }
+    stacked["other"][0] = zero_count
+
+    for feeds in mapping.values():
+        count = len(feeds)
+        bin_idx = -1
+        for idx, threshold in enumerate(thresholds):
+            if idx < 11:
+                if count == threshold:
+                    bin_idx = idx
+                    break
+            elif count < threshold:
+                bin_idx = idx
+                break
+        if bin_idx == -1:
+            continue
+
+        has_entries = False
+        valid_only = False
+        success_only = False
+        for feed_url in feeds:
+            res = stats.feed_results.get(feed_url, {})
+            if res.get("entries_count", 0) > 0:
+                has_entries = True
+                break
+            if res.get("valid"):
+                valid_only = True
+            elif res.get("status", 0) < 400 and res.get("status", 0) > 0:
+                success_only = True
+
+        if has_entries:
+            stacked["has_entries"][bin_idx] += 1
+        elif valid_only:
+            stacked["valid_only"][bin_idx] += 1
+        elif success_only:
+            stacked["success_only"][bin_idx] += 1
+        else:
+            stacked["other"][bin_idx] += 1
+    return stacked
