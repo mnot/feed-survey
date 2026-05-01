@@ -53,9 +53,9 @@ class CCFeedsJob(MRJob): # type: ignore[misc]
                 "s3",
                 region_name="us-east-1",
                 config=Config(
-                    read_timeout=30,    # fail fast — signals can't interrupt C-level socket.recv
-                    connect_timeout=10,
-                    retries={"max_attempts": 1, "mode": "standard"},  # one attempt, no retries
+                    read_timeout=120,
+                    connect_timeout=30,
+                    retries={"max_attempts": 3, "mode": "standard"},
                 ),
             )
             sys.stderr.write("DEBUG: mapper_init finished successfully\n")
