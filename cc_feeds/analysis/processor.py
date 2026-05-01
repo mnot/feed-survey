@@ -126,7 +126,13 @@ def _interesting_http_content_type(content_type_header: str) -> bool:
 
 def _interesting_content_type(content_type_header: str) -> bool:
     content_type = content_type_header.lower()
-    return "text/html" in content_type or "xml" in content_type or "rss" in content_type
+    return (
+        "text/html" in content_type
+        or "xml" in content_type
+        or "rss" in content_type
+        or "text/plain" in content_type
+        or "application/octet-stream" in content_type
+    )
 
 
 def _normalized_content_type(content_type_header: str) -> str:

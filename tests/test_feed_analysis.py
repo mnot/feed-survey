@@ -43,7 +43,7 @@ def test_feed_analyzer_parse_error() -> None:
     assert stats.error_types == {"ParseError": 1}
 
 
-def test_feed_analyzer_empty_response_is_counted() -> None:
+def test_feed_empty_counted() -> None:
     stats = Stats()
     analyzer = FeedAnalyzer(stats)
 
@@ -90,7 +90,7 @@ def test_feed_analyzer_valid_feed() -> None:
     assert stats.total_entries == 1
 
 
-def test_entry_language_does_not_become_feed_language() -> None:
+def test_entry_lang_not_feed_lang() -> None:
     stats = Stats()
     analyzer = FeedAnalyzer(stats)
     content = b"""<?xml version="1.0"?>

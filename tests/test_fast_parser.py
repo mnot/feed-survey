@@ -32,7 +32,7 @@ def test_parse_atom_feed() -> None:
     assert result["error"] is None
 
 
-def test_atom_feed_link_prefers_alternate_over_self() -> None:
+def test_atom_link_prefers_alt() -> None:
     result = FastFeedParser.parse(b"""<?xml version="1.0"?>
         <feed xmlns="http://www.w3.org/2005/Atom">
           <title>Example Atom</title>
@@ -45,7 +45,7 @@ def test_atom_feed_link_prefers_alternate_over_self() -> None:
     assert result["feed"]["link"] == "https://example.com/"
 
 
-def test_atom_xhtml_content_counts_descendant_text() -> None:
+def test_atom_xhtml_text_len() -> None:
     result = FastFeedParser.parse(b"""<?xml version="1.0"?>
         <feed xmlns="http://www.w3.org/2005/Atom">
           <title>Example Atom</title>
@@ -65,7 +65,7 @@ def test_atom_xhtml_content_counts_descendant_text() -> None:
     assert result["content_lengths"][0] >= len("hello world")
 
 
-def test_atom_summary_type_contributes_to_content_profile() -> None:
+def test_atom_summary_profile() -> None:
     result = FastFeedParser.parse(b"""<?xml version="1.0"?>
         <feed xmlns="http://www.w3.org/2005/Atom">
           <title>Example Atom</title>
@@ -82,7 +82,7 @@ def test_atom_summary_type_contributes_to_content_profile() -> None:
     assert result["content_type_profile"] == "html"
 
 
-def test_atom_updated_date_preferred_over_published() -> None:
+def test_atom_updated_preferred() -> None:
     result = FastFeedParser.parse(b"""<?xml version="1.0"?>
         <feed xmlns="http://www.w3.org/2005/Atom">
           <title>Example Atom</title>
@@ -126,7 +126,7 @@ def test_parse_rss2() -> None:
     assert _date_prefix(result["newest_entry_date"]) == [2026, 1, 3]
 
 
-def test_rss_description_with_markup_counts_as_html() -> None:
+def test_rss_desc_html_profile() -> None:
     result = FastFeedParser.parse(b"""<?xml version="1.0"?>
         <rss version="2.0">
           <channel>
@@ -144,7 +144,7 @@ def test_rss_description_with_markup_counts_as_html() -> None:
     assert result["content_type_profile"] == "html"
 
 
-def test_rss_channel_last_build_date_preferred_over_pub_date() -> None:
+def test_rss_last_build_preferred() -> None:
     result = FastFeedParser.parse(b"""<?xml version="1.0"?>
         <rss version="2.0">
           <channel>
@@ -159,7 +159,7 @@ def test_rss_channel_last_build_date_preferred_over_pub_date() -> None:
     assert _date_prefix(result["feed"]["updated_parsed"]) == [2026, 1, 3]
 
 
-def test_rss_channel_dc_date_sets_feed_updated_date() -> None:
+def test_rss_dc_date_feed_date() -> None:
     result = FastFeedParser.parse(b"""<?xml version="1.0"?>
         <rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
           <channel>
