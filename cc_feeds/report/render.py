@@ -1,7 +1,7 @@
 import json
 import os
 from datetime import datetime, timezone
-from typing import Any, Dict, List, cast
+from typing import Any, Dict
 
 import dateutil.parser
 from jinja2 import Environment, FileSystemLoader
@@ -16,7 +16,7 @@ from cc_feeds.report.discovery import (
 )
 from cc_feeds.report.formatting import format_extension, format_number
 from cc_feeds.report.histograms import build_recency_cdf, make_histogram
-from cc_feeds.report.quality import score_feed
+from cc_feeds.report.quality_summary import build_quality_summary
 
 
 def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
@@ -84,12 +84,12 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
     # --- Language count per feed histogram ---
     lang_count_hist: Dict[str, int] = {"0": 0, "1": 0, "2": 0, "3+": 0}
     for res in all_valid_results.values():
-        n = len(res.get("all_languages") or [])
-        if n == 0:
+        language_count = len(res.get("all_languages") or [])
+        if language_count == 0:
             lang_count_hist["0"] += 1
-        elif n == 1:
+        elif language_count == 1:
             lang_count_hist["1"] += 1
-        elif n == 2:
+        elif language_count == 2:
             lang_count_hist["2"] += 1
         else:
             lang_count_hist["3+"] += 1
@@ -125,14 +125,14 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
     # Stacked discovery data
     stacked_page = build_stacked_data(stats, page_to_feeds, zero_pages)
     stacked_site = build_stacked_data(stats, site_to_feeds, zero_sites)
-    for s in [stacked_page, stacked_site]:
-        if "0" in s["labels"]:
-            idx = s["labels"].index("0")
-            s["labels"].pop(idx)
-            s["has_entries"].pop(idx)
-            s["valid_only"].pop(idx)
-            s["success_only"].pop(idx)
-            s["other"].pop(idx)
+    for stacked in [stacked_page, stacked_site]:
+        if "0" in stacked["labels"]:
+            idx = stacked["labels"].index("0")
+            stacked["labels"].pop(idx)
+            stacked["has_entries"].pop(idx)
+            stacked["valid_only"].pop(idx)
+            stacked["success_only"].pop(idx)
+            stacked["other"].pop(idx)
 
     # --- Crawl time reference ---
     max_crawl_time = None
@@ -141,7 +141,7 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
             max_crawl_time = dateutil.parser.parse(stats.max_crawl_time_str)
             if max_crawl_time.tzinfo is None:
                 max_crawl_time = max_crawl_time.replace(tzinfo=timezone.utc)
-        except Exception:
+        except (TypeError, ValueError, OverflowError):
             pass
     now = max_crawl_time or datetime.now(timezone.utc)
 
@@ -162,55 +162,9 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
     entry_recency_cdf = build_recency_cdf(feeds_with_entries, "newest_entry_date", now)
     oldest_entry_cdf = build_recency_cdf(feeds_with_entries, "oldest_entry_date", now)
 
-    # --- Quality distribution (recomputed at report time so algo changes are free) ---
-    quality_hist: Dict[str, int] = {f"{i/10:.1f}–{(i+1)/10:.1f}": 0 for i in range(10)}
-    quality_scores: List[float] = []
-    fmt_quality: Dict[str, List[float]] = {}
-    for res in all_valid_results.values():
-        q = score_feed(res, now)
-        quality_scores.append(q)
-        bin_idx = min(int(q * 10), 9)
-        label = f"{bin_idx/10:.1f}–{(bin_idx+1)/10:.1f}"
-        quality_hist[label] += 1
-        fmt = res.get("format") or "unknown"
-        fmt_quality.setdefault(fmt, []).append(q)
-    mean_quality = sum(quality_scores) / len(quality_scores) if quality_scores else 0.0
-
-    format_quality_rows: List[Dict[str, Any]] = []
-    for fmt, scores in fmt_quality.items():
-        n = len(scores)
-        mean_q: float = sum(scores) / n
-        format_quality_rows.append(
-            {
-                "fmt": fmt,
-                "count": n,
-                "mean": round(mean_q, 3),
-                "high_pct": round(sum(1 for s in scores if s >= 0.7) / n * 100, 1),
-                "mid_pct": round(sum(1 for s in scores if 0.4 <= s < 0.7) / n * 100, 1),
-                "low_pct": round(sum(1 for s in scores if s < 0.4) / n * 100, 1),
-            }
-        )
-    # Order by mean quality descending for the chart
-    format_quality_rows.sort(key=lambda r: cast(float, r["mean"]), reverse=True)
-
-    # --- Quality: with vs without autodiscovery ---
-    def _quality_dist(results: Dict[str, Any]) -> Dict[str, Any]:
-        """Percentage histogram + mean quality for a set of feed results."""
-        scores = [score_feed(res, now) for res in results.values()]
-        n = len(scores)
-        bins = [f"{i/10:.1f}–{(i+1)/10:.1f}" for i in range(10)]
-        hist = {b: 0 for b in bins}
-        for q in scores:
-            hist[f"{min(int(q*10),9)/10:.1f}–{(min(int(q*10),9)+1)/10:.1f}"] += 1
-        pct = {b: round(hist[b] / n * 100, 1) if n else 0.0 for b in bins}
-        mean = round(sum(scores) / n, 3) if n else 0.0
-        return {"labels": bins, "pct": list(pct.values()), "mean": mean, "n": n}
-
-    no_autodiscovery_results = {
-        url: res for url, res in all_valid_results.items() if url not in discovered_urls
-    }
-    autodiscovery_quality = _quality_dist(discovered_results)
-    no_autodiscovery_quality = _quality_dist(no_autodiscovery_results)
+    quality = build_quality_summary(
+        all_valid_results, discovered_results, discovered_urls, now
+    )
 
     # --- Sort & format ---
     formats = sorted(agg["formats"].items(), key=lambda x: x[1], reverse=True)
@@ -260,8 +214,8 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
         "content_types_collapsed": content_types_collapsed,
         "content_profile_dist": content_profile_dist,
         "lang_count_hist": lang_count_hist,
-        "quality_hist": quality_hist,
-        "mean_quality": round(mean_quality, 3),
+        "quality_hist": quality["hist"],
+        "mean_quality": round(quality["mean"], 3),
     }
 
     env = Environment(loader=FileSystemLoader(os.path.dirname(__file__)))
@@ -286,13 +240,13 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
         entry_recency_cdf=json.dumps(entry_recency_cdf),
         oldest_entry_cdf=json.dumps(oldest_entry_cdf),
         n_zero_entry=n_zero_entry,
-        quality_hist=json.dumps(quality_hist),
-        format_quality_json=json.dumps(format_quality_rows),
-        format_quality_rows=format_quality_rows,
-        autodiscovery_quality=autodiscovery_quality,
-        no_autodiscovery_quality=no_autodiscovery_quality,
-        autodiscovery_quality_json=json.dumps(autodiscovery_quality),
-        no_autodiscovery_quality_json=json.dumps(no_autodiscovery_quality),
+        quality_hist=json.dumps(quality["hist"]),
+        format_quality_json=json.dumps(quality["format_rows"]),
+        format_quality_rows=quality["format_rows"],
+        autodiscovery_quality=quality["autodiscovery"],
+        no_autodiscovery_quality=quality["no_autodiscovery"],
+        autodiscovery_quality_json=json.dumps(quality["autodiscovery"]),
+        no_autodiscovery_quality_json=json.dumps(quality["no_autodiscovery"]),
         total_pages_f=format_number(stats.pages_seen),
         pages_with_auto_f=format_number(
             stats.discovery_pages_count

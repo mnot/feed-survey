@@ -1,0 +1,90 @@
+from datetime import datetime
+from typing import Any, Dict, List, cast
+
+from cc_feeds.report.quality import score_feed
+
+
+def build_quality_summary(
+    all_valid_results: Dict[str, Any],
+    discovered_results: Dict[str, Any],
+    discovered_urls: set[str],
+    now: datetime,
+) -> Dict[str, Any]:
+    quality_hist: Dict[str, int] = {
+        f"{idx/10:.1f}–{(idx+1)/10:.1f}": 0 for idx in range(10)
+    }
+    quality_scores: List[float] = []
+    format_scores: Dict[str, List[float]] = {}
+
+    for result in all_valid_results.values():
+        score = score_feed(result, now)
+        quality_scores.append(score)
+        bin_idx = min(int(score * 10), 9)
+        label = f"{bin_idx/10:.1f}–{(bin_idx+1)/10:.1f}"
+        quality_hist[label] += 1
+
+        feed_format = result.get("format") or "unknown"
+        format_scores.setdefault(feed_format, []).append(score)
+
+    no_autodiscovery_results = {
+        url: result
+        for url, result in all_valid_results.items()
+        if url not in discovered_urls
+    }
+
+    return {
+        "hist": quality_hist,
+        "mean": _mean(quality_scores),
+        "format_rows": _format_quality_rows(format_scores),
+        "autodiscovery": _quality_dist(discovered_results, now),
+        "no_autodiscovery": _quality_dist(no_autodiscovery_results, now),
+    }
+
+
+def _format_quality_rows(format_scores: Dict[str, List[float]]) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    for feed_format, scores in format_scores.items():
+        count = len(scores)
+        rows.append(
+            {
+                "fmt": feed_format,
+                "count": count,
+                "mean": round(_mean(scores), 3),
+                "high_pct": round(
+                    sum(1 for score in scores if score >= 0.7) / count * 100, 1
+                ),
+                "mid_pct": round(
+                    sum(1 for score in scores if 0.4 <= score < 0.7) / count * 100,
+                    1,
+                ),
+                "low_pct": round(
+                    sum(1 for score in scores if score < 0.4) / count * 100, 1
+                ),
+            }
+        )
+    rows.sort(key=lambda row: cast(float, row["mean"]), reverse=True)
+    return rows
+
+
+def _quality_dist(results: Dict[str, Any], now: datetime) -> Dict[str, Any]:
+    scores = [score_feed(result, now) for result in results.values()]
+    count = len(scores)
+    bins = [f"{idx/10:.1f}–{(idx+1)/10:.1f}" for idx in range(10)]
+    hist = {bin_label: 0 for bin_label in bins}
+    for score in scores:
+        bin_idx = min(int(score * 10), 9)
+        hist[f"{bin_idx/10:.1f}–{(bin_idx+1)/10:.1f}"] += 1
+    pct = {
+        bin_label: round(hist[bin_label] / count * 100, 1) if count else 0.0
+        for bin_label in bins
+    }
+    return {
+        "labels": bins,
+        "pct": list(pct.values()),
+        "mean": round(_mean(scores), 3),
+        "n": count,
+    }
+
+
+def _mean(scores: List[float]) -> float:
+    return sum(scores) / len(scores) if scores else 0.0

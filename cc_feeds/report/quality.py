@@ -72,18 +72,18 @@ def score_feed(
     if newest_age is None or newest_age > ENTRY_RECENCY_CUTOFF_DAYS:
         return 0.0
 
-    r = _recency_score(feed_info, now)
-    c = _content_richness_score(feed_info)
-    n = _entry_count_score(feed_info)
-    m = _entry_metadata_score(feed_info)
-    f = _feed_metadata_score(feed_info)
+    recency = _recency_score(feed_info, now)
+    content_richness = _content_richness_score(feed_info)
+    entry_count = _entry_count_score(feed_info)
+    entry_metadata = _entry_metadata_score(feed_info)
+    feed_metadata = _feed_metadata_score(feed_info)
 
     raw = (
-        WEIGHTS["recency"] * r
-        + WEIGHTS["content_richness"] * c
-        + WEIGHTS["entry_count"] * n
-        + WEIGHTS["entry_metadata"] * m
-        + WEIGHTS["feed_metadata"] * f
+        WEIGHTS["recency"] * recency
+        + WEIGHTS["content_richness"] * content_richness
+        + WEIGHTS["entry_count"] * entry_count
+        + WEIGHTS["entry_metadata"] * entry_metadata
+        + WEIGHTS["feed_metadata"] * feed_metadata
     )
     return round(min(max(raw, 0.0), 1.0), 4)
 
@@ -179,8 +179,8 @@ def _content_richness_score(feed_info: Dict[str, Any]) -> float:
 
 def _entry_count_score(feed_info: Dict[str, Any]) -> float:
     """Linear ramp from 0 → 1, saturating at 20 entries."""
-    n = feed_info.get("entries_count") or 0
-    return min(n / 20.0, 1.0)
+    entries_count = feed_info.get("entries_count") or 0
+    return min(entries_count / 20.0, 1.0)
 
 
 def _entry_metadata_score(feed_info: Dict[str, Any]) -> float:

@@ -42,11 +42,11 @@ def _random_date(rng: random.Random, min_days_ago: int, max_days_ago: int) -> Li
 
 
 def _add_hll_site(stats: Stats, domain: str) -> None:
-    h = zlib.crc32(domain.encode("utf-8")) & 0xFFFFFFFF
-    idx = h & (stats.hll_m - 1)
+    hash_value = zlib.crc32(domain.encode("utf-8")) & 0xFFFFFFFF
+    idx = hash_value & (stats.hll_m - 1)
     w_bits = 32 - stats.hll_p
-    w = h >> stats.hll_p
-    rho = (w_bits - w.bit_length() + 1) if w > 0 else (w_bits + 1)
+    shifted_hash = hash_value >> stats.hll_p
+    rho = (w_bits - shifted_hash.bit_length() + 1) if shifted_hash > 0 else (w_bits + 1)
     stats.hll_registers[idx] = max(stats.hll_registers[idx], rho)
 
 
@@ -173,12 +173,12 @@ def build_mock_stats() -> Stats:
 
     for i in range(n_feeds):
         # Choose format
-        r = rng.random()
+        format_roll = rng.random()
         cumulative = 0.0
         fmt = "rss20"
         for name, weight in formats:
             cumulative += weight
-            if r < cumulative:
+            if format_roll < cumulative:
                 fmt = name
                 break
 
@@ -314,7 +314,7 @@ def build_mock_stats() -> Stats:
 
 def main() -> None:
     output_path = sys.argv[1] if len(sys.argv) > 1 else "mock_report.html"
-    print(f"Building mock stats… ", end="", flush=True)
+    print("Building mock stats… ", end="", flush=True)
     stats = build_mock_stats()
     n_feeds = len(stats.feed_results)
     n_auto = len(stats.autodiscovery_links)
