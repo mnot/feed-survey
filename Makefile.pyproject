@@ -12,11 +12,13 @@
 # clean_py
 #     Clean Python-related temporary files
 # tidy_py
-#     Run isort and black on Python files in $PROJECT
+#     Run isort and black on Python files in $PYTHON_TARGETS
 # lint_py
-#     Run pylint on $PROJECT, and validate pyproject.toml
+#     Run pylint on $PYTHON_TARGETS, and validate pyproject.toml
 # typecheck_py
-#     Run mypy on $PROJECT
+#     Run mypy on $PYTHON_TARGETS
+# test_py
+#     Run pytest
 # bump-calver
 #     Bump the __version__ in $PROJECT/__init__.py using calver (https://calver.org/)
 # bump-semver[-major,-minor,-micro]
@@ -34,6 +36,7 @@
 
 
 PY?=python
+PYTHON_TARGETS?=$(PROJECT)
 VERSIONING?=semver-micro
 YEAR=`date +%Y`
 MONTH=`date +%m`
@@ -47,17 +50,21 @@ clean_py: clean-venv
 
 .PHONY: tidy_py
 tidy_py: venv
-	$(VENV)/isort $(PROJECT)
-	$(VENV)/black $(PROJECT)
+	$(VENV)/isort $(PYTHON_TARGETS)
+	$(VENV)/black $(PYTHON_TARGETS)
 
 .PHONY: lint_py
 lint_py: venv
-	PYTHONPATH=$(VENV) $(VENV)/pylint --output-format=colorized $(PROJECT)
+	PYTHONPATH=$(VENV) $(VENV)/pylint --output-format=colorized $(PYTHON_TARGETS)
 	$(VENV)/validate-pyproject pyproject.toml
 
 .PHONY: typecheck_py
 typecheck_py: venv
-	PYTHONPATH=$(VENV) $(VENV)/python -m mypy $(PROJECT)
+	PYTHONPATH=$(VENV) $(VENV)/python -m mypy $(PYTHON_TARGETS)
+
+.PHONY: test_py
+test_py: venv
+	PYTHONPATH=$(VENV) $(VENV)/python -m pytest
 
 ## Release
 

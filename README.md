@@ -9,7 +9,7 @@ A high-performance, distributed tool to analyze the prevalence and quality of RS
 ## Key Features
 
 - **Distributed MapReduce**: Built on `mrjob` for seamless scaling from a few instances to hundreds of nodes on AWS EMR.
-- **Python 3.12 Optimized**: Uses modern Python syntax and efficient libraries (`fastwarc`, `lxml`) for maximum throughput.
+- **Python 3.12 on EMR**: Uses modern Python syntax and efficient libraries (`fastwarc`, `lxml`) for maximum throughput.
 - **Automatic Result Sync**: The build system automatically syncs results from S3 back to your local machine upon completion.
 - **Tranco Filtering**: Built-in support for filtering analysis to the Tranco Top-1M high-traffic domains.
 
@@ -41,8 +41,8 @@ pip install -e ".[dev]"
 You can run the analysis on your own machine for debugging. This uses the `local` runner and does not require AWS.
 
 ```bash
-# Process a local list of WARC paths.
-python -m cc_feeds.emr.job -r local test/warc.paths.txt --output-dir ./local-results/
+# Run a one-WARC local analysis and render test_report.html.
+make local-report
 ```
 
 ### 3. Run a Smoke Test (EMR)
@@ -71,6 +71,8 @@ Control the cluster size and instance types.
 - **`MAP_TASKS`**: Number of WARC path chunks for a full run. The default is higher than the worker count so slow WARC files have less impact on overall progress.
 - **`OUTPUT_DIR`**: The S3 bucket where results and logs will be stored.
 
+Run `make help` for the local development, report, EMR, and wheel targets.
+
 ## Project Structure
 
 - `cc_feeds/emr/`: EMR orchestration, WARC input, and MapReduce wire-format code.
@@ -84,10 +86,14 @@ Control the cluster size and instance types.
 
 ## Local Development & Testing
 
-You can run the processing logic locally for debugging without launching a cluster:
+Useful local development targets:
+
 ```bash
-# Process a single WARC file locally
-PYTHONPATH=. .venv/bin/python -m cc_feeds.emr.job local test/warc.paths.txt --output-dir ./local-results/
+make test
+make typecheck
+make lint
+make mock-report
+make check
 ```
 
 ## Cost Notes

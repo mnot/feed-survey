@@ -1,5 +1,22 @@
 PROJECT = cc_feeds
+PYTHON_TARGETS = cc_feeds tests
 
+.PHONY: help
+help:
+	@echo "Common targets:"
+	@echo "  make test          Run fast unit tests"
+	@echo "  make tidy          Format Python code"
+	@echo "  make typecheck     Run mypy over package and tests"
+	@echo "  make lint          Run pylint over package and tests"
+	@echo "  make check         Run test, typecheck, lint, and mock report render"
+	@echo "  make mock-report   Render a synthetic report at MOCK_REPORT"
+	@echo "  make local-report  Run a one-WARC local analysis report"
+	@echo "  make test-emr      Run an EMR smoke test"
+	@echo "  make emr           Run the full EMR analysis"
+	@echo "  make report RESULTS_DIR=results/...  Re-render a saved EMR result"
+	@echo "  make wheels        Build EMR dependency wheels"
+	@echo "  make upload-wheels Build and upload EMR dependency wheels"
+	@echo "  make clean         Remove local generated Python artifacts and venv"
 
 .PHONY: clean
 clean: clean_py
@@ -14,7 +31,13 @@ typecheck: typecheck_py
 tidy: tidy_py
 
 .PHONY: test
-test: venv
+test: test_py
+
+.PHONY: check
+check: test typecheck lint mock-report
+
+.PHONY: local-report
+local-report: venv
 	PYTHONPATH=$(VENV) $(VENV)/python -m $(PROJECT).main --limit=1 --topn=1000 --crawl-id=CC-MAIN-2024-18 --output=test_report.html
 
 CRAWL_ID ?= CC-MAIN-2026-12
@@ -45,6 +68,8 @@ emr: venv
 	@echo "Report generated at results/$(CRAWL_ID)-$(RUN_ID)/report.html"
 
 WHEEL_S3_PATH = s3://mnot-cc-feeds/wheels/
+MOCK_REPORT ?= mock_report.html
+RESULTS_DIR ?=
 
 .PHONY: wheels
 wheels:
@@ -53,10 +78,10 @@ wheels:
 		yum install -y gcc gcc-c++ python3.12-devel python3.12-pip libxml2-devel libxslt-devel zlib-devel lz4-devel brotli-devel && \
 		/usr/bin/python3.12 -m pip wheel --wheel-dir=/output mrjob fastwarc beautifulsoup4 lxml python-dateutil requests boto3"
 
-.PHONY: mock_report
-mock_report: venv
-	$(VENV)/python -m cc_feeds.report.mock mock_report.html
-	open mock_report.html
+.PHONY: mock-report mock_report
+mock-report mock_report: venv
+	$(VENV)/python -m cc_feeds.report.mock $(MOCK_REPORT)
+	@echo "Report generated at $(MOCK_REPORT)"
 
 .PHONY: upload-wheels
 upload-wheels: wheels
@@ -87,5 +112,11 @@ test-emr: venv
 .PHONY: results/%/report.html
 results/%/report.html: venv
 	$(VENV)/python -m cc_feeds.emr.finalize results/$*/ $(CRAWL_ID) $@
+
+.PHONY: report
+report: venv
+	@test -n "$(RESULTS_DIR)" || (echo "Usage: make report RESULTS_DIR=results/test-YYYYMMDD-HHMMSS" && exit 1)
+	$(VENV)/python -m cc_feeds.emr.finalize $(RESULTS_DIR) $(CRAWL_ID) $(RESULTS_DIR)/report.html
+	@echo "Report generated at $(RESULTS_DIR)/report.html"
 
 include Makefile.pyproject

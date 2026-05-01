@@ -31,13 +31,14 @@ This document contains information for developers who want to modify or extend `
 Run the fast local checks before committing changes:
 
 ```bash
-pytest
+make test
 make typecheck
 make lint
-python -m cc_feeds.report.mock /tmp/cc-feeds-mock-report.html
+make mock-report
 ```
 
-`make test` runs a small local Common Crawl analysis and may need network access.
+`make check` runs all of the above. `make local-report` runs a small local
+Common Crawl analysis and may need network access.
 Use `make test-emr` for an end-to-end cloud smoke test after changes that affect
 EMR packaging, WARC processing, or report finalization.
 
