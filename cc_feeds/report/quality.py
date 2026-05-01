@@ -67,9 +67,11 @@ def score_feed(
 
     now = crawl_time or datetime.now(timezone.utc)
 
-    # Hard cutoff: no entry within the last year → dead feed, score 0
-    newest_age = _date_to_age_days(feed_info.get("newest_entry_date"), now)
-    if newest_age is None or newest_age > ENTRY_RECENCY_CUTOFF_DAYS:
+    # Hard cutoff: no usable recency signal within the last year → dead feed.
+    # Prefer entry recency when present; otherwise fall back to feed-level
+    # updated date so sparse but active feeds are not forced to zero.
+    recency_age = _recency_age_days(feed_info, now)
+    if recency_age is None or recency_age > ENTRY_RECENCY_CUTOFF_DAYS:
         return 0.0
 
     recency = _recency_score(feed_info, now)
@@ -101,8 +103,8 @@ def score_components(
 
     now = crawl_time or datetime.now(timezone.utc)
 
-    newest_age = _date_to_age_days(feed_info.get("newest_entry_date"), now)
-    if newest_age is None or newest_age > ENTRY_RECENCY_CUTOFF_DAYS:
+    recency_age = _recency_age_days(feed_info, now)
+    if recency_age is None or recency_age > ENTRY_RECENCY_CUTOFF_DAYS:
         return {k: 0.0 for k in WEIGHTS}
 
     return {
@@ -134,6 +136,13 @@ def _date_to_age_days(date_list: Optional[List[int]], now: datetime) -> Optional
         return max(0.0, (now - dt).total_seconds() / 86400.0)
     except (TypeError, ValueError, IndexError):
         return None
+
+
+def _recency_age_days(feed_info: Dict[str, Any], now: datetime) -> Optional[float]:
+    age = _date_to_age_days(feed_info.get("newest_entry_date"), now)
+    if age is not None:
+        return age
+    return _date_to_age_days(feed_info.get("updated_date"), now)
 
 
 def _recency_score(feed_info: Dict[str, Any], now: datetime) -> float:
