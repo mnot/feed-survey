@@ -5,7 +5,7 @@ import sys
 from datetime import datetime
 from typing import Any, Dict, Iterator, Tuple
 
-from cc_feeds.processor import Stats
+from cc_feeds.analysis import Stats
 from cc_feeds.report import generate_report
 
 

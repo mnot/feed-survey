@@ -12,6 +12,7 @@ install_mrjob_pipes_compat()
 from mrjob.job import MRJob
 from mrjob.protocol import JSONProtocol
 
+from cc_feeds.analysis import WarcProcessor
 from cc_feeds.emr.stats_wire import (
     feed_record,
     json_safe,
@@ -22,7 +23,6 @@ from cc_feeds.emr.stats_wire import (
     summary_record,
 )
 from cc_feeds.emr.warc_source import create_s3_client, iter_response_records
-from cc_feeds.processor import WarcProcessor
 
 # ABSOLUTE FIRST LINE LOGGING
 sys.stderr.write("DEBUG: Python interpreter started successfully\n")

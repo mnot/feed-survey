@@ -15,6 +15,7 @@ import tempfile
 from typing import List
 
 import boto3
+from botocore.exceptions import ClientError
 
 
 def read_paths(source: str) -> List[str]:
@@ -24,7 +25,7 @@ def read_paths(source: str) -> List[str]:
         s3 = boto3.client("s3", region_name="us-east-1")
         try:
             resp = s3.get_object(Bucket=bucket, Key=key, RequestPayer="requester")
-        except Exception:  # pylint: disable=broad-exception-caught
+        except ClientError:
             resp = s3.get_object(Bucket=bucket, Key=key)
         data = resp["Body"].read()
         if key.endswith(".gz"):

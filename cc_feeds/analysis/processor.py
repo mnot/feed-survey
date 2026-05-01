@@ -1,12 +1,8 @@
-import hashlib
 import logging
-import math
-import pickle
 import re
-import sys
 import traceback
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Set, cast
+from typing import Any, Dict, Optional, Set
 from urllib.parse import urljoin
 
 import dateutil.parser
@@ -14,184 +10,12 @@ import lxml.html
 from fastwarc.warc import WarcRecordType
 from lxml import etree
 
-sys.stderr.write("DEBUG: processor.py module loading...\n")
-sys.stderr.flush()
-
-try:
-    from .fast_parser import FastFeedParser
-    from .utils import get_domain, get_tranco_list, normalize_url
-except (ImportError, ValueError):
-    try:
-        from fast_parser import FastFeedParser  # type: ignore
-        from utils import get_domain, get_tranco_list, normalize_url  # type: ignore
-    except ImportError:
-        from cc_feeds.fast_parser import FastFeedParser
-        from cc_feeds.utils import (
-            get_domain,
-            get_tranco_list,
-            normalize_url,
-        )
-
-sys.stderr.write("DEBUG: processor.py dependencies loaded\n")
-sys.stderr.flush()
+from cc_feeds.analysis.fast_parser import FastFeedParser
+from cc_feeds.analysis.stats import Stats
+from cc_feeds.tranco import get_tranco_list
+from cc_feeds.url import get_domain, normalize_url
 
 logger = logging.getLogger(__name__)
-
-
-class Stats:
-    def __init__(self) -> None:
-        self.pages_seen: int = 0
-        self.sites_seen: Set[str] = set()
-        self.sites_seen_count: int = 0
-        self.autodiscovery_links: Dict[str, List[str]] = {}
-        self.feed_results: Dict[str, Dict[str, Any]] = {}
-        self.content_type_counts: Dict[str, int] = {}
-        self.error_types: Dict[str, int] = {}
-        self.top_n: Optional[int] = None
-        self.max_crawl_time_str: Optional[str] = None
-        self.feeds_sniffed: int = 0
-        self.pages_processed: int = 0
-        self.total_entries: int = 0
-        self.content_length_counts: Dict[int, int] = {}  # Binned content lengths
-        self.discovery_domain_counts: Dict[str, int] = (
-            {}
-        )  # feed_url -> total domains found on
-
-        # Discovery relation tracking
-        self.discovery_rel_alternate: int = 0
-        self.discovery_rel_feed: int = 0
-        self.discovery_rel_both_page: int = 0
-        self.discovery_multi_rel_url: int = 0
-        self.discovery_pages_count: int = 0
-        self.multi_feed_pages: Dict[str, List[str]] = {}  # page_url -> [feed_urls]
-
-        # HyperLogLog for unique sites (p=12 gives ~1.6% error with 4KB state)
-        self.hll_p = 12
-        self.hll_m = 1 << self.hll_p
-        self.hll_registers = [0] * self.hll_m
-
-        # Detailed language tracking
-        self.lang_src_http: int = 0
-        self.lang_src_feed: int = 0
-        self.lang_src_entry: int = 0
-        self.lang_mismatches: int = 0
-        self.lang_multiple_in_feed: int = 0
-
-    def merge(self, other: "Stats") -> None:
-        """Merge another Stats object into this one."""
-        if other.max_crawl_time_str:
-            if (
-                not self.max_crawl_time_str
-                or other.max_crawl_time_str > self.max_crawl_time_str
-            ):
-                self.max_crawl_time_str = other.max_crawl_time_str
-        self.pages_seen += other.pages_seen
-        self.feeds_sniffed += other.feeds_sniffed
-        self.pages_processed += other.pages_processed
-        self.total_entries += other.total_entries
-
-        # Merge content length histogram
-        for length, count in getattr(other, "content_length_counts", {}).items():
-            self.content_length_counts[length] = (
-                self.content_length_counts.get(length, 0) + count
-            )
-
-        self.discovery_rel_alternate += other.discovery_rel_alternate
-        self.discovery_rel_feed += other.discovery_rel_feed
-        self.discovery_rel_both_page += other.discovery_rel_both_page
-        self.discovery_multi_rel_url += other.discovery_multi_rel_url
-        self.discovery_pages_count += getattr(other, "discovery_pages_count", 0)
-
-        for page_url, feed_urls in getattr(other, "multi_feed_pages", {}).items():
-            if page_url not in self.multi_feed_pages:
-                self.multi_feed_pages[page_url] = []
-            # Merge feed URL lists for the same page
-            existing = set(self.multi_feed_pages[page_url])
-            for f in feed_urls:
-                if f not in existing:
-                    self.multi_feed_pages[page_url].append(f)
-        self.lang_src_http += other.lang_src_http
-        self.lang_src_feed += other.lang_src_feed
-        self.lang_src_entry += other.lang_src_entry
-        self.lang_mismatches += other.lang_mismatches
-        self.lang_multiple_in_feed += other.lang_multiple_in_feed
-        self.sites_seen.update(other.sites_seen)
-        self.sites_seen_count += getattr(other, "sites_seen_count", 0)
-
-        for feed_url, domains in other.autodiscovery_links.items():
-            if feed_url not in self.autodiscovery_links:
-                self.autodiscovery_links[feed_url] = []
-            # Merge domain lists (as samples)
-            existing = set(self.autodiscovery_links[feed_url])
-            for d in domains:
-                if d not in existing and len(existing) < 100:
-                    self.autodiscovery_links[feed_url].append(d)
-                    existing.add(d)
-
-        # Merge domain counts
-        for feed_url, count in getattr(other, "discovery_domain_counts", {}).items():
-            self.discovery_domain_counts[feed_url] = (
-                self.discovery_domain_counts.get(feed_url, 0) + count
-            )
-
-        for ct, count in other.content_type_counts.items():
-            self.content_type_counts[ct] = self.content_type_counts.get(ct, 0) + count
-
-        self.feed_results.update(other.feed_results)
-
-        for err_type, count in other.error_types.items():
-            self.error_types[err_type] = self.error_types.get(err_type, 0) + count
-
-        # Merge HLL registers
-        other_hll = getattr(other, "hll_registers", None)
-        if other_hll:
-            for i in range(self.hll_m):
-                self.hll_registers[i] = max(self.hll_registers[i], other_hll[i])
-
-        other_top_n = getattr(other, "top_n", None)
-        if other_top_n is not None:
-            if self.top_n is None or other_top_n > self.top_n:
-                self.top_n = other_top_n
-
-    def save(self, path: str) -> None:
-        with open(path, "wb") as f_out:
-            pickle.dump(self, f_out)
-
-    @classmethod
-    def load(cls, path: str) -> "Stats":
-        with open(path, "rb") as f_in:
-            return cast(Stats, pickle.load(f_in))
-
-    def add_site(self, domain: str) -> None:
-        """Add a site to the HLL counter and the set."""
-        if not domain:
-            return
-        self.sites_seen.add(domain)
-
-        # Faster HLL hashing using CRC32 (stable and fast for non-crypto use)
-        import zlib
-
-        h = zlib.crc32(domain.encode("utf-8")) & 0xFFFFFFFF
-
-        idx = h & (self.hll_m - 1)
-        w_bits = 32 - self.hll_p
-        w = h >> self.hll_p
-        rho = (w_bits - w.bit_length() + 1) if w > 0 else (w_bits + 1)
-        self.hll_registers[idx] = max(self.hll_registers[idx], rho)
-
-    def get_unique_sites_estimate(self) -> int:
-        """Return the HLL estimate of unique sites."""
-        # Alpha_m for p=12 is 0.7213 / (1 + 1.079 / m)
-        alpha = 0.7213 / (1 + 1.079 / self.hll_m)
-        Z = sum(2.0**-r for r in self.hll_registers)
-        E = alpha * (self.hll_m**2) / Z
-
-        # Small range correction
-        if E <= 2.5 * self.hll_m:
-            V = self.hll_registers.count(0)
-            if V > 0:
-                E = self.hll_m * math.log(self.hll_m / V)
-        return int(E)
 
 
 class WarcProcessor:
@@ -408,8 +232,8 @@ class WarcProcessor:
                 self.stats.discovery_rel_both_page += 1
 
             if len(page_discoveries) > 1:
-                # Store the full feed URL list for pages with multiple feeds to detect duplicates later
-                # We limit this to a reasonable number of pages to avoid memory bloat in huge runs
+                # Store the full feed URL list for multi-feed duplicate detection.
+                # Limit retained pages to avoid memory bloat in huge runs.
                 if len(self.stats.multi_feed_pages) < 10000:
                     self.stats.multi_feed_pages[url] = list(page_discoveries.keys())
 

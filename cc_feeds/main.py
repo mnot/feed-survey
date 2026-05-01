@@ -10,9 +10,9 @@ from fastwarc.warc import ArchiveIterator  # pylint: disable=no-name-in-module
 from tqdm import tqdm
 
 from . import __version__
-from .processor import Stats, WarcProcessor
+from .analysis import Stats, WarcProcessor
+from .commoncrawl import get_latest_crawl_id, get_warc_paths
 from .report import generate_report
-from .utils import get_latest_crawl_id, get_warc_paths
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("cc-feeds")

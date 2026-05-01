@@ -13,7 +13,7 @@ import zlib
 from datetime import datetime, timedelta, timezone
 from typing import List
 
-from cc_feeds.processor import Stats
+from cc_feeds.analysis import Stats
 from cc_feeds.report import generate_report
 
 CRAWL_ID = "CC-MAIN-2026-12"

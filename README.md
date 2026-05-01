@@ -74,8 +74,11 @@ Control the cluster size and instance types.
 ## Project Structure
 
 - `cc_feeds/emr/`: EMR orchestration, WARC input, and MapReduce wire-format code.
-- `cc_feeds/processor.py`: Core logic for parsing WARC records and extracting feed metadata.
-- `cc_feeds/utils.py`: Utility functions for Tranco list management and S3 streaming.
+- `cc_feeds/analysis/`: Core logic for parsing WARC records and extracting feed metadata.
+- `cc_feeds/commoncrawl.py`: Common Crawl metadata and WARC path discovery.
+- `cc_feeds/tranco.py`: Tranco list loading for top-site scoping.
+- `cc_feeds/url.py`: URL normalization and domain extraction helpers.
+- `cc_feeds/download.py`: Shared download and cache helpers.
 - `mrjob.conf`: EMR orchestration settings (Python 3.12, dependencies, instance fleets).
 - `.mrjobignore`: Prevents local virtual environments and caches from being uploaded to workers.
 

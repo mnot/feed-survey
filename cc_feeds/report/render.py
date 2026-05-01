@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union, cast
 import dateutil.parser
 from jinja2 import Environment, FileSystemLoader
 
-from cc_feeds.processor import Stats
+from cc_feeds.analysis import Stats
 from cc_feeds.report.quality import score_feed
 
 # Known namespace URI → conventional prefix
