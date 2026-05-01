@@ -74,7 +74,8 @@ namespaces = false
 include-package-data = true
 
 [tool.setuptools.package-data]
-cc_feeds = ["py.typed", "report_template.html"]
+"cc_feeds" = ["py.typed"]
+"cc_feeds.report" = ["template.html"]
 
 [tool.mypy]
 strict = true

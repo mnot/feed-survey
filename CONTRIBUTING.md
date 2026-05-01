@@ -14,8 +14,8 @@ This document contains information for developers who want to modify or extend `
 
 - `cc_feeds/main.py`: CLI orchestration and WARC streaming logic.
 - `cc_feeds/processor.py`: Core logic for HTML parsing and feed validation.
-- `cc_feeds/report.py`: Data aggregation and histogram generation.
-- `cc_feeds/report_template.html`: Jinja2 template for the visual report.
+- `cc_feeds/report/`: Report-time aggregation, quality scoring, and rendering.
+- `cc_feeds/report/template.html`: Jinja2 template for the visual report.
 - `cc_feeds/utils.py`: Helpers for Tranco list caching and CC API interaction.
 
 ## Code Standards

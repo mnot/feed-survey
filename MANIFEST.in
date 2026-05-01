@@ -1,5 +1,5 @@
 include cc_feeds/py.typed
-include cc_feeds/report_template.html
+include cc_feeds/report/template.html
 prune build
 prune dist
 prune test

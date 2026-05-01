@@ -7,7 +7,7 @@ import dateutil.parser
 from jinja2 import Environment, FileSystemLoader
 
 from cc_feeds.processor import Stats
-from cc_feeds.quality import score_feed
+from cc_feeds.report.quality import score_feed
 
 # Known namespace URI → conventional prefix
 _NS_PREFIXES: Dict[str, str] = {
@@ -503,7 +503,7 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
 
     env = Environment(loader=FileSystemLoader(os.path.dirname(__file__)))
     env.filters["comma"] = format_number
-    template = env.get_template("report_template.html")
+    template = env.get_template("template.html")
 
     html = template.render(
         stats=report_stats,
