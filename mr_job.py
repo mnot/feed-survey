@@ -114,10 +114,23 @@ class CCFeedsJob(MRJob): # type: ignore[misc]
                     temp_path = tmp.name
                 
                 try:
-                    self.s3.download_file(
-                        bucket, key_path, temp_path,
-                        ExtraArgs={'RequestPayer': 'requester'}
-                    )
+                    import threading
+                    _done = threading.Event()
+                    def _heartbeat():
+                        while not _done.wait(timeout=30):
+                            self.set_status(f"Downloading WARC {self.count}: {raw_path}")
+                            sys.stderr.write(f"INFO: still downloading WARC {self.count}: {raw_path}\n")
+                            sys.stderr.flush()
+                    _hb = threading.Thread(target=_heartbeat, daemon=True)
+                    _hb.start()
+                    try:
+                        self.s3.download_file(
+                            bucket, key_path, temp_path,
+                            ExtraArgs={'RequestPayer': 'requester'}
+                        )
+                    finally:
+                        _done.set()
+                        _hb.join(timeout=1)
 
                     with open(temp_path, "rb") as f:
                         with PythonIOStreamAdapter(f) as stream:
