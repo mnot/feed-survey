@@ -4,7 +4,7 @@ A high-performance, distributed tool to analyze the prevalence and quality of RS
 
 ## Overview
 
-`cc-feeds` leverages MapReduce to process the massive Common Crawl corpus (approx. 90,000 WARC files) in parallel. It extracts autodiscovery links, validates discovered feeds, and generates granular JSON-lines reports.
+`cc-feeds` uses MapReduce to process Common Crawl WARC files in parallel. It measures feed autodiscovery, fetches and parses discovered RSS/Atom feeds, and renders an HTML report from the aggregated results.
 
 ## Key Features
 
@@ -29,20 +29,20 @@ A high-performance, distributed tool to analyze the prevalence and quality of RS
 
 ### 2. Local Setup
 ```bash
-# Clone and setup virtual environment
+# Clone and set up a virtual environment
 git clone https://github.com/mnot/cc-feeds.git
 cd cc-feeds
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -e ".[dev]"
 ```
 
 ### Local Usage
-You can run the analysis on your own machine for debugging. This uses the `local` runner and doesn't require AWS.
+You can run the analysis on your own machine for debugging. This uses the `local` runner and does not require AWS.
 
 ```bash
-# Process a local list of WARC paths
-cc-feeds-job -r local tiny_input.txt --output-dir ./local-results/
+# Process a local list of WARC paths.
+python -m cc_feeds.emr.job -r local test/warc.paths.txt --output-dir ./local-results/
 ```
 
 ### 3. Run a Smoke Test (EMR)
@@ -87,10 +87,12 @@ Control the cluster size and instance types.
 You can run the processing logic locally for debugging without launching a cluster:
 ```bash
 # Process a single WARC file locally
-PYTHONPATH=. .venv/bin/python -m cc_feeds.emr.job local tiny_input.txt --output-dir ./local-results/
+PYTHONPATH=. .venv/bin/python -m cc_feeds.emr.job local test/warc.paths.txt --output-dir ./local-results/
 ```
 
-## Cost Estimation (AWS USD)
-- **100 Nodes (400 mappers)**: ~$150 USD total (~15 hours).
-- **200 Nodes (800 mappers)**: ~$150 USD total (~7.5 hours).
-*Note: Total cost is similar because the total compute work is identical; higher node counts simply finish the work faster.*
+## Cost Notes
+
+Runtime and cost depend on the selected crawl, EMR instance mix, regional pricing,
+spot availability, and whether slow WARC files dominate the tail of the job. Use
+`make test-emr LIMIT=<n>` to check throughput in your account before starting a
+full run, and use the EMR console or Cost Explorer for current pricing.

@@ -186,9 +186,9 @@
                 <div class="card-sub">Distinct sites (HyperLogLog estimate)</div>
             </div>
             <div class="card">
-                <div class="card-title">Feeds Crawled</div>
+                <div class="card-title">Feed URLs Checked</div>
                 <div class="card-value">{{ stats.feed_results_count|comma }}</div>
-                <div class="card-sub">{{ stats.feeds_sniffed|comma }} discovered via content sniffing</div>
+                <div class="card-sub">{{ stats.feeds_sniffed|comma }} discovered by content sniffing</div>
             </div>
         </div>
 
@@ -200,7 +200,7 @@
             {% set html_count = stats.content_types_collapsed.get("HTML", 0) %}
             {% set html_pct = (html_count / total_ct * 100) if total_ct else 0 %}
             {% set non_html_total = total_ct - html_count %}
-            {% set ct_colors = {"HTML": "#94a3b8", "Atom": "#6366f1", "RSS": "#10b981", "JSON Feed": "#f59e0b", "Other XML": "#8b5cf6", "Other": "#e2e8f0"} %}
+            {% set ct_colors = {"HTML": "#94a3b8", "Atom": "#6366f1", "RSS": "#10b981", "Other XML": "#8b5cf6", "Other": "#e2e8f0"} %}
 
             <!-- HTML callout -->
             <div style="display:flex; align-items:center; gap:1.5rem; margin-bottom:1.25rem; padding:0.75rem 1rem; background:#f1f5f9; border-radius:10px;">
@@ -247,13 +247,14 @@
                 </div>
             </div>
             <div class="card">
-                <div class="card-title">Discovery Relation Types</div>
-                <div class="card-value">{{ (stats.discovery_rel_alternate + stats.discovery_rel_feed)|comma }}</div>
+                <div class="card-title">Discovery Rel Usage</div>
+                <div class="card-value">{{ stats.pages_with_autodiscovery|comma }}</div>
                 <div class="card-sub">
                     <div class="row"><span>rel="alternate"</span> <strong>{{ stats.discovery_rel_alternate|comma }}</strong></div>
                     <div class="row"><span>rel="feed"</span> <strong>{{ stats.discovery_rel_feed|comma }}</strong></div>
                     <div class="row divider"><span>Both on same page</span> <strong>{{ stats.discovery_rel_both_page|comma }}</strong></div>
                     <div class="row"><span>Multi-rel URLs</span> <strong>{{ stats.discovery_multi_rel_url|comma }}</strong></div>
+                    <div style="margin-top:0.35rem;color:var(--text-muted);">Page counts; rows can overlap.</div>
                 </div>
             </div>
         </div>
@@ -318,12 +319,11 @@
                 <div class="card-sub">Individual feed entries found</div>
             </div>
             <div class="card">
-                <div class="card-title">Mean Quality Score</div>
+                <div class="card-title">Mean Parsed-Feed Quality</div>
                 <div class="card-value">{{ "%.3f"|format(stats.mean_quality) }}</div>
                 <div class="card-sub">
-                    Weighted composite: recency (35%), content richness (25%),
+                    Successfully parsed feeds only. Weighted composite: recency (35%), content richness (25%),
                     entry count (15%), entry metadata (15%), feed metadata (10%).
-                    Invalid feeds score 0.
                 </div>
             </div>
         </div>
@@ -333,9 +333,9 @@
         <div class="error-strip">
             <div>
                 <div class="err-count">{{ stats.total_errors|comma }}</div>
-                <div class="err-label">parse errors</div>
-                {% if stats.feeds_sniffed %}
-                <div class="err-label" style="margin-top:0.2rem;">{{ "%.1f"|format(stats.total_errors / stats.feeds_sniffed * 100) }}% of {{ stats.feeds_sniffed|comma }} feeds</div>
+                <div class="err-label">feed parse errors</div>
+                {% if stats.feed_results_count %}
+                <div class="err-label" style="margin-top:0.2rem;">{{ "%.1f"|format(stats.total_errors / stats.feed_results_count * 100) }}% of {{ stats.feed_results_count|comma }} feed URL checks</div>
                 {% endif %}
             </div>
             <table>
@@ -355,9 +355,9 @@
             <div class="chart-card">
                 <div class="chart-title">Feed Quality Distribution</div>
                 <div class="chart-sub">
-                    Score 0–1 per feed. Primary driver is entry recency (exponential decay,
-                    half-life 120 days). Invalid / unparseable feeds score 0 and are
-                    not shown here.
+                    Score 0–1 among successfully parsed feeds. Primary driver is entry
+                    or feed recency (exponential decay, half-life 120 days). Invalid
+                    or unparseable feed checks are excluded from this chart.
                 </div>
                 <div class="chart-container">
                     <canvas id="qualityHistogram"></canvas>
@@ -459,7 +459,7 @@
                 <div class="card-sub" style="margin-top: 1.5rem;">
                     <div class="row"><span>HTTP <code>Content-Language</code></span> <strong>{{ stats.lang_src_http|comma }}</strong></div>
                     <div class="row"><span>Feed-level language tag</span> <strong>{{ stats.lang_src_feed|comma }}</strong></div>
-                    <div class="row"><span>Entry-level language tag</span> <strong>{{ stats.lang_src_entry|comma }}</strong></div>
+                    <div class="row"><span>Entry language tags (distinct)</span> <strong>{{ stats.lang_src_entry|comma }}</strong></div>
                     <div class="row divider"><span style="color:var(--danger)">HTTP vs feed mismatch</span> <strong style="color:var(--danger)">{{ stats.lang_mismatches|comma }}</strong></div>
                     <div class="row"><span>Multi-language feeds</span> <strong>{{ stats.lang_multiple_in_feed|comma }}</strong></div>
                 </div>

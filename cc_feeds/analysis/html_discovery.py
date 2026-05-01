@@ -101,6 +101,9 @@ class HtmlDiscovery:
             self.stats.discovery_rel_feed += 1
         if "alternate" in found_rels and "feed" in found_rels:
             self.stats.discovery_rel_both_page += 1
+        self.stats.discovery_multi_rel_url += sum(
+            1 for rel_tokens in page_discoveries.values() if len(rel_tokens) > 1
+        )
 
         if len(page_discoveries) > 1 and len(self.stats.multi_feed_pages) < 10000:
             self.stats.multi_feed_pages[page_url] = list(page_discoveries.keys())
