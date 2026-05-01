@@ -68,7 +68,7 @@ class FastFeedParser:
             return result
 
         try:
-            context = etree.iterparse(
+            context = etree.iterparse(  # pylint: disable=c-extension-no-member
                 io.BytesIO(content),
                 events=("start", "end"),
                 recover=False,
@@ -90,13 +90,13 @@ class FastFeedParser:
                 root_lang = root_elem.get(XML_LANG)
                 if root_lang:
                     result["feed"]["language"] = root_lang.strip().lower()
-                FastFeedParser._parse_atom(context, root_elem, result)
+                FastFeedParser._parse_atom(context, result)
             elif local == "rss":
                 result["version"] = f"rss{root_elem.get('version', '2.0')}"
-                FastFeedParser._parse_rss2(context, root_elem, result)
+                FastFeedParser._parse_rss2(context, result)
             elif local == "RDF":
                 result["version"] = "rss10"
-                FastFeedParser._parse_rss1(context, root_elem, result)
+                FastFeedParser._parse_rss1(context, result)
             else:
                 result["error"] = f"Unknown root tag: {local}"
                 result.pop("_content_types_seen", None)
@@ -109,14 +109,14 @@ class FastFeedParser:
 
         except StopIteration:
             result["error"] = "Empty document"
-        except Exception as exc:
+        except (SyntaxError, TypeError, ValueError) as exc:
             result["error"] = str(exc)
 
         result.pop("_content_types_seen", None)
         return result
 
     @staticmethod
-    def _parse_atom(context: Any, root: Any, result: Dict[str, Any]) -> None:
+    def _parse_atom(context: Any, result: Dict[str, Any]) -> None:
         current_entry: Optional[Dict[str, Any]] = None
 
         for event, elem in context:
@@ -135,57 +135,20 @@ class FastFeedParser:
                 track_extension(elem, result)
 
                 if current_entry is None:
-                    # Feed-level elements
-                    if ns == ATOM_NS:
-                        if local == "title" and not result["feed"]["title"]:
-                            result["feed"]["title"] = (elem.text or "").strip()
-                        elif local == "link" and not result["feed"]["link"]:
-                            result["feed"]["link"] = elem.get("href", "")
-                        elif (
-                            local in ("updated", "published")
-                            and not result["feed"]["updated_parsed"]
-                        ):
-                            result["feed"]["updated_parsed"] = parse_date(elem.text)
-                    elif (
-                        ns == DC_NS
-                        and local == "language"
-                        and not result["feed"]["language"]
-                    ):
-                        result["feed"]["language"] = (elem.text or "").strip().lower()
+                    FastFeedParser._handle_atom_feed_end(ns, local, elem, result)
                 else:
-                    # Entry-level
                     if local == "entry" and ns == ATOM_NS:
                         update_entry_dates(result, current_entry.get("date"))
                         current_entry = None
-                    elif ns == ATOM_NS:
-                        if local in ("updated", "published"):
-                            parsed_date = parse_date(elem.text)
-                            if parsed_date and not current_entry.get("date"):
-                                current_entry["date"] = parsed_date
-                        elif local == "content":
-                            result["has_content"] = True
-                            ctype = atom_content_type(elem.get("type"))
-                            result["_content_types_seen"].add(ctype)
-                            text = elem.text or ""
-                            if text:
-                                result["content_lengths"].append(len(text))
-                        elif local == "summary":
-                            result["has_summary"] = True
-                            text = elem.text or ""
-                            if text:
-                                result["content_lengths"].append(len(text))
+                    else:
+                        FastFeedParser._handle_atom_entry_end(
+                            ns, local, elem, current_entry, result
+                        )
 
-                if local != "feed":
-                    try:
-                        elem.clear()
-                        parent = elem.getparent()
-                        if parent is not None:
-                            parent.remove(elem)
-                    except Exception:
-                        pass
+                FastFeedParser._clear_element(elem, keep_local_names={"feed"})
 
     @staticmethod
-    def _parse_rss2(context: Any, root: Any, result: Dict[str, Any]) -> None:
+    def _parse_rss2(context: Any, result: Dict[str, Any]) -> None:
         current_item: Optional[Dict[str, Any]] = None
 
         for event, elem in context:
@@ -204,66 +167,20 @@ class FastFeedParser:
                 track_extension(elem, result)
 
                 if current_item is None:
-                    # Channel-level
-                    if ns == "":
-                        if local == "title" and not result["feed"]["title"]:
-                            result["feed"]["title"] = (elem.text or "").strip()
-                        elif local == "link" and not result["feed"]["link"]:
-                            result["feed"]["link"] = (elem.text or "").strip()
-                        elif (
-                            local in ("lastBuildDate", "pubDate")
-                            and not result["feed"]["updated_parsed"]
-                        ):
-                            result["feed"]["updated_parsed"] = parse_date(elem.text)
-                        elif local == "language" and not result["feed"]["language"]:
-                            result["feed"]["language"] = (
-                                (elem.text or "").strip().lower()
-                            )
-                    elif ns == DC_NS:
-                        if local == "language" and not result["feed"]["language"]:
-                            result["feed"]["language"] = (
-                                (elem.text or "").strip().lower()
-                            )
+                    FastFeedParser._handle_rss2_channel_end(ns, local, elem, result)
                 else:
                     if local == "item" and ns == "":
                         update_entry_dates(result, current_item.get("date"))
                         current_item = None
-                    elif ns == "":
-                        if local == "pubDate":
-                            parsed_date = parse_date(elem.text)
-                            if parsed_date and not current_item.get("date"):
-                                current_item["date"] = parsed_date
-                        elif local == "description":
-                            # RSS 2.0 <description> is implicitly HTML per the spec
-                            result["has_summary"] = True
-                            result["_content_types_seen"].add("html")
-                            text = elem.text or ""
-                            if text:
-                                result["content_lengths"].append(len(text))
-                    elif ns == DC_NS:
-                        if local == "date":
-                            parsed_date = parse_date(elem.text)
-                            if parsed_date and not current_item.get("date"):
-                                current_item["date"] = parsed_date
-                    elif ns == CONTENT_NS:
-                        if local == "encoded":
-                            result["has_content"] = True
-                            result["_content_types_seen"].add("html")
-                            text = elem.text or ""
-                            if text:
-                                result["content_lengths"].append(len(text))
+                    else:
+                        FastFeedParser._handle_rss2_item_end(
+                            ns, local, elem, current_item, result
+                        )
 
-                if local not in ("rss", "channel"):
-                    try:
-                        elem.clear()
-                        parent = elem.getparent()
-                        if parent is not None:
-                            parent.remove(elem)
-                    except Exception:
-                        pass
+                FastFeedParser._clear_element(elem, keep_local_names={"rss", "channel"})
 
     @staticmethod
-    def _parse_rss1(context: Any, root: Any, result: Dict[str, Any]) -> None:
+    def _parse_rss1(context: Any, result: Dict[str, Any]) -> None:
         current_item: Optional[Dict[str, Any]] = None
 
         for event, elem in context:
@@ -282,44 +199,148 @@ class FastFeedParser:
                 track_extension(elem, result)
 
                 if current_item is None:
-                    # Channel-level
-                    if local == "title" and not result["feed"]["title"]:
-                        result["feed"]["title"] = (elem.text or "").strip()
-                    elif local == "link" and not result["feed"]["link"]:
-                        result["feed"]["link"] = (elem.text or "").strip()
-                    elif ns == DC_NS:
-                        if local == "date" and not result["feed"]["updated_parsed"]:
-                            result["feed"]["updated_parsed"] = parse_date(elem.text)
-                        elif local == "language" and not result["feed"]["language"]:
-                            result["feed"]["language"] = (
-                                (elem.text or "").strip().lower()
-                            )
+                    FastFeedParser._handle_rss1_channel_end(ns, local, elem, result)
                 else:
                     if local == "item":
                         update_entry_dates(result, current_item.get("date"))
                         current_item = None
-                    elif ns == DC_NS and local == "date":
-                        parsed_date = parse_date(elem.text)
-                        if parsed_date and not current_item.get("date"):
-                            current_item["date"] = parsed_date
-                    elif local == "description":
-                        result["has_summary"] = True
-                        result["_content_types_seen"].add("html")
-                        text = elem.text or ""
-                        if text:
-                            result["content_lengths"].append(len(text))
-                    elif ns == CONTENT_NS and local == "encoded":
-                        result["has_content"] = True
-                        result["_content_types_seen"].add("html")
-                        text = elem.text or ""
-                        if text:
-                            result["content_lengths"].append(len(text))
+                    else:
+                        FastFeedParser._handle_rss1_item_end(
+                            ns, local, elem, current_item, result
+                        )
 
-                if local != "RDF":
-                    try:
-                        elem.clear()
-                        parent = elem.getparent()
-                        if parent is not None:
-                            parent.remove(elem)
-                    except Exception:
-                        pass
+                FastFeedParser._clear_element(elem, keep_local_names={"RDF"})
+
+    @staticmethod
+    def _handle_atom_feed_end(
+        ns: str, local: str, elem: Any, result: Dict[str, Any]
+    ) -> None:
+        if ns == ATOM_NS:
+            if local == "title" and not result["feed"]["title"]:
+                result["feed"]["title"] = (elem.text or "").strip()
+            elif local == "link" and not result["feed"]["link"]:
+                result["feed"]["link"] = elem.get("href", "")
+            elif (
+                local in ("updated", "published")
+                and not result["feed"]["updated_parsed"]
+            ):
+                result["feed"]["updated_parsed"] = parse_date(elem.text)
+        elif ns == DC_NS and local == "language" and not result["feed"]["language"]:
+            result["feed"]["language"] = (elem.text or "").strip().lower()
+
+    @staticmethod
+    def _handle_atom_entry_end(
+        ns: str,
+        local: str,
+        elem: Any,
+        current_entry: Dict[str, Any],
+        result: Dict[str, Any],
+    ) -> None:
+        if ns != ATOM_NS:
+            return
+        if local in ("updated", "published"):
+            FastFeedParser._set_entry_date(current_entry, elem.text)
+        elif local == "content":
+            result["has_content"] = True
+            result["_content_types_seen"].add(atom_content_type(elem.get("type")))
+            FastFeedParser._remember_text_length(elem, result)
+        elif local == "summary":
+            result["has_summary"] = True
+            FastFeedParser._remember_text_length(elem, result)
+
+    @staticmethod
+    def _handle_rss2_channel_end(
+        ns: str, local: str, elem: Any, result: Dict[str, Any]
+    ) -> None:
+        if ns == "":
+            if local == "title" and not result["feed"]["title"]:
+                result["feed"]["title"] = (elem.text or "").strip()
+            elif local == "link" and not result["feed"]["link"]:
+                result["feed"]["link"] = (elem.text or "").strip()
+            elif (
+                local in ("lastBuildDate", "pubDate")
+                and not result["feed"]["updated_parsed"]
+            ):
+                result["feed"]["updated_parsed"] = parse_date(elem.text)
+            elif local == "language" and not result["feed"]["language"]:
+                result["feed"]["language"] = (elem.text or "").strip().lower()
+        elif ns == DC_NS and local == "language" and not result["feed"]["language"]:
+            result["feed"]["language"] = (elem.text or "").strip().lower()
+
+    @staticmethod
+    def _handle_rss2_item_end(
+        ns: str,
+        local: str,
+        elem: Any,
+        current_item: Dict[str, Any],
+        result: Dict[str, Any],
+    ) -> None:
+        if ns == "" and local == "pubDate":
+            FastFeedParser._set_entry_date(current_item, elem.text)
+        elif ns == "" and local == "description":
+            result["has_summary"] = True
+            result["_content_types_seen"].add("html")
+            FastFeedParser._remember_text_length(elem, result)
+        elif ns == DC_NS and local == "date":
+            FastFeedParser._set_entry_date(current_item, elem.text)
+        elif ns == CONTENT_NS and local == "encoded":
+            result["has_content"] = True
+            result["_content_types_seen"].add("html")
+            FastFeedParser._remember_text_length(elem, result)
+
+    @staticmethod
+    def _handle_rss1_channel_end(
+        ns: str, local: str, elem: Any, result: Dict[str, Any]
+    ) -> None:
+        if local == "title" and not result["feed"]["title"]:
+            result["feed"]["title"] = (elem.text or "").strip()
+        elif local == "link" and not result["feed"]["link"]:
+            result["feed"]["link"] = (elem.text or "").strip()
+        elif ns == DC_NS and local == "date" and not result["feed"]["updated_parsed"]:
+            result["feed"]["updated_parsed"] = parse_date(elem.text)
+        elif ns == DC_NS and local == "language" and not result["feed"]["language"]:
+            result["feed"]["language"] = (elem.text or "").strip().lower()
+
+    @staticmethod
+    def _handle_rss1_item_end(
+        ns: str,
+        local: str,
+        elem: Any,
+        current_item: Dict[str, Any],
+        result: Dict[str, Any],
+    ) -> None:
+        if ns == DC_NS and local == "date":
+            FastFeedParser._set_entry_date(current_item, elem.text)
+        elif local == "description":
+            result["has_summary"] = True
+            result["_content_types_seen"].add("html")
+            FastFeedParser._remember_text_length(elem, result)
+        elif ns == CONTENT_NS and local == "encoded":
+            result["has_content"] = True
+            result["_content_types_seen"].add("html")
+            FastFeedParser._remember_text_length(elem, result)
+
+    @staticmethod
+    def _set_entry_date(entry: Dict[str, Any], text: Optional[str]) -> None:
+        parsed_date = parse_date(text)
+        if parsed_date and not entry.get("date"):
+            entry["date"] = parsed_date
+
+    @staticmethod
+    def _remember_text_length(elem: Any, result: Dict[str, Any]) -> None:
+        text = elem.text or ""
+        if text:
+            result["content_lengths"].append(len(text))
+
+    @staticmethod
+    def _clear_element(elem: Any, keep_local_names: set[str]) -> None:
+        _ns, local = split_tag(elem.tag)
+        if local in keep_local_names:
+            return
+        try:
+            elem.clear()
+            parent = elem.getparent()
+            if parent is not None:
+                parent.remove(elem)
+        except (AttributeError, TypeError):
+            pass
