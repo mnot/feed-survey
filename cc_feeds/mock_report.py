@@ -23,7 +23,17 @@ SEED = 42
 
 
 def _date_list(dt: datetime) -> List[int]:
-    return [dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, dt.weekday(), 0, 0]
+    return [
+        dt.year,
+        dt.month,
+        dt.day,
+        dt.hour,
+        dt.minute,
+        dt.second,
+        dt.weekday(),
+        0,
+        0,
+    ]
 
 
 def _random_date(rng: random.Random, min_days_ago: int, max_days_ago: int) -> List[int]:
@@ -94,9 +104,18 @@ def build_mock_stats() -> Stats:
 
     # ── Content length histogram ───────────────────────────────────────────────
     for length_bin, count in [
-        (0, 800), (100, 22_000), (200, 48_000), (500, 95_000),
-        (1000, 140_000), (2000, 180_000), (5000, 120_000), (10000, 60_000),
-        (20000, 25_000), (50000, 8_000), (100000, 1_500), (500000, 200),
+        (0, 800),
+        (100, 22_000),
+        (200, 48_000),
+        (500, 95_000),
+        (1000, 140_000),
+        (2000, 180_000),
+        (5000, 120_000),
+        (10000, 60_000),
+        (20000, 25_000),
+        (50000, 8_000),
+        (100000, 1_500),
+        (500000, 200),
     ]:
         stats.content_length_counts[length_bin] = count
 
@@ -127,8 +146,28 @@ def build_mock_stats() -> Stats:
         ("http://webfeeds.org/rss/1.0", "accentColor"),
     ]
     charsets = ["utf-8", "iso-8859-1", "windows-1252", "utf-16", None]
-    languages = ["en", "de", "fr", "es", "ja", "zh", "pt", "ru", "it", "nl",
-                 "sv", "pl", "ar", "ko", "tr", "fi", "da", "nb", "cs", "hu"]
+    languages = [
+        "en",
+        "de",
+        "fr",
+        "es",
+        "ja",
+        "zh",
+        "pt",
+        "ru",
+        "it",
+        "nl",
+        "sv",
+        "pl",
+        "ar",
+        "ko",
+        "tr",
+        "fi",
+        "da",
+        "nb",
+        "cs",
+        "hu",
+    ]
 
     tlds_feed = ["com", "net", "org", "io", "co.uk", "de", "fr", "jp"]
     n_feeds = 50_000
@@ -154,19 +193,28 @@ def build_mock_stats() -> Stats:
         updated = _random_date(rng, 0, 60) if rng.random() < 0.7 else None
         recently = (
             updated is not None
-            and (CRAWL_DATE - datetime(
-                updated[0], updated[1], updated[2],
-                updated[3], updated[4], updated[5],
-                tzinfo=timezone.utc,
-            )).days < 7
+            and (
+                CRAWL_DATE
+                - datetime(
+                    updated[0],
+                    updated[1],
+                    updated[2],
+                    updated[3],
+                    updated[4],
+                    updated[5],
+                    tzinfo=timezone.utc,
+                )
+            ).days
+            < 7
         )
 
         # Language
         lang_feed = rng.choice(languages) if rng.random() < 0.85 else None
         lang_http = (
-            lang_feed if rng.random() < 0.9
-            else rng.choice(languages)
-        ) if lang_feed and rng.random() < 0.4 else None
+            (lang_feed if rng.random() < 0.9 else rng.choice(languages))
+            if lang_feed and rng.random() < 0.4
+            else None
+        )
         all_langs = set()
         if lang_feed:
             all_langs.add(lang_feed)
@@ -184,7 +232,9 @@ def build_mock_stats() -> Stats:
         feed_info = {
             "url": feed_url,
             "status": 200,
-            "content_type": "application/atom+xml" if "atom" in fmt else "application/rss+xml",
+            "content_type": (
+                "application/atom+xml" if "atom" in fmt else "application/rss+xml"
+            ),
             "charset": rng.choice(charsets),
             "valid": True,
             "format": fmt,
@@ -225,23 +275,41 @@ def build_mock_stats() -> Stats:
     # ── Multi-feed pages ───────────────────────────────────────────────────────
     for i in range(5000):
         page = f"https://example{i}.com/"
-        feed_list = [f"https://example{i}.com/feed{j}.xml" for j in range(rng.randint(2, 4))]
+        feed_list = [
+            f"https://example{i}.com/feed{j}.xml" for j in range(rng.randint(2, 4))
+        ]
         stats.multi_feed_pages[page] = feed_list
         for fu in feed_list:
             if fu not in stats.feed_results:
                 stats.feed_results[fu] = {
-                    "url": fu, "status": 200, "valid": True, "format": "atom10",
-                    "entries_count": 5, "lang_http": None, "lang_feed": "en",
-                    "lang_entries": set(), "languages": {"en"}, "has_summary": True,
-                    "has_content": False, "content_type_profile": "html",
-                    "all_languages": {"en"}, "extensions": set(),
-                    "request_time": CRAWL_DATE, "updated_recently": False,
-                    "updated_date": None, "newest_entry_date": _random_date(rng, 0, 30),
+                    "url": fu,
+                    "status": 200,
+                    "valid": True,
+                    "format": "atom10",
+                    "entries_count": 5,
+                    "lang_http": None,
+                    "lang_feed": "en",
+                    "lang_entries": set(),
+                    "languages": {"en"},
+                    "has_summary": True,
+                    "has_content": False,
+                    "content_type_profile": "html",
+                    "all_languages": {"en"},
+                    "extensions": set(),
+                    "request_time": CRAWL_DATE,
+                    "updated_recently": False,
+                    "updated_date": None,
+                    "newest_entry_date": _random_date(rng, 0, 30),
                     "oldest_entry_date": _random_date(rng, 60, 365),
-                    "title": f"Feed {i}", "link": page, "error": None,
-                    "charset": "utf-8", "content_type": "application/atom+xml",
+                    "title": f"Feed {i}",
+                    "link": page,
+                    "error": None,
+                    "charset": "utf-8",
+                    "content_type": "application/atom+xml",
                 }
-            stats.feed_results[fu]["quality"] = score_feed(stats.feed_results[fu], CRAWL_DATE)
+            stats.feed_results[fu]["quality"] = score_feed(
+                stats.feed_results[fu], CRAWL_DATE
+            )
             if fu not in stats.autodiscovery_links:
                 stats.autodiscovery_links[fu] = [f"example{i}.com"]
                 stats.discovery_domain_counts[fu] = 1

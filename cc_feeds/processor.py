@@ -493,8 +493,12 @@ class WarcProcessor:
 
             if not parsed_data.get("valid"):
                 err = parsed_data.get("error", "parse failed")
-                err_type = type(err).__name__ if not isinstance(err, str) else "ParseError"
-                self.stats.error_types[err_type] = self.stats.error_types.get(err_type, 0) + 1
+                err_type = (
+                    type(err).__name__ if not isinstance(err, str) else "ParseError"
+                )
+                self.stats.error_types[err_type] = (
+                    self.stats.error_types.get(err_type, 0) + 1
+                )
                 return
 
             # Track language from HTTP headers
@@ -571,7 +575,9 @@ class WarcProcessor:
         feed_info["extensions"] = parsed_data.get("extensions", set())
         feed_info["has_content"] = parsed_data.get("has_content", False)
         feed_info["has_summary"] = parsed_data.get("has_summary", False)
-        feed_info["content_type_profile"] = parsed_data.get("content_type_profile", "unknown")
+        feed_info["content_type_profile"] = parsed_data.get(
+            "content_type_profile", "unknown"
+        )
         feed_info["all_languages"] = parsed_data.get("all_languages", set())
 
         feed_info["entries_count"] = entries_count
@@ -607,8 +613,12 @@ class WarcProcessor:
         if updated_parsed:
             try:
                 updated_dt = datetime(
-                    updated_parsed[0], updated_parsed[1], updated_parsed[2],
-                    updated_parsed[3], updated_parsed[4], updated_parsed[5],
+                    updated_parsed[0],
+                    updated_parsed[1],
+                    updated_parsed[2],
+                    updated_parsed[3],
+                    updated_parsed[4],
+                    updated_parsed[5],
                     tzinfo=timezone.utc,
                 )
                 if timedelta(0) <= request_time - updated_dt < timedelta(days=7):
@@ -650,8 +660,12 @@ class WarcProcessor:
         if newest_date:
             try:
                 entry_dt = datetime(
-                    newest_date[0], newest_date[1], newest_date[2],
-                    newest_date[3], newest_date[4], newest_date[5],
+                    newest_date[0],
+                    newest_date[1],
+                    newest_date[2],
+                    newest_date[3],
+                    newest_date[4],
+                    newest_date[5],
                     tzinfo=timezone.utc,
                 )
                 delta = request_time - entry_dt
@@ -669,4 +683,3 @@ class WarcProcessor:
             self.stats.content_length_counts[binned] = (
                 self.stats.content_length_counts.get(binned, 0) + 1
             )
-

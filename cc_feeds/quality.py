@@ -30,17 +30,22 @@ import math
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-__all__ = ["score_feed", "WEIGHTS", "RECENCY_HALF_LIFE_DAYS", "ENTRY_RECENCY_CUTOFF_DAYS"]
+__all__ = [
+    "score_feed",
+    "WEIGHTS",
+    "RECENCY_HALF_LIFE_DAYS",
+    "ENTRY_RECENCY_CUTOFF_DAYS",
+]
 
 RECENCY_HALF_LIFE_DAYS: float = 120.0
-ENTRY_RECENCY_CUTOFF_DAYS: float = 365.0   # no entry in this window → score 0
+ENTRY_RECENCY_CUTOFF_DAYS: float = 365.0  # no entry in this window → score 0
 
 WEIGHTS: Dict[str, float] = {
-    "recency":          0.35,
+    "recency": 0.35,
     "content_richness": 0.25,
-    "entry_count":      0.15,
-    "entry_metadata":   0.15,
-    "feed_metadata":    0.10,
+    "entry_count": 0.15,
+    "entry_metadata": 0.15,
+    "feed_metadata": 0.10,
 }
 
 assert abs(sum(WEIGHTS.values()) - 1.0) < 1e-9, "Weights must sum to 1"
@@ -74,11 +79,11 @@ def score_feed(
     f = _feed_metadata_score(feed_info)
 
     raw = (
-        WEIGHTS["recency"]          * r
+        WEIGHTS["recency"] * r
         + WEIGHTS["content_richness"] * c
-        + WEIGHTS["entry_count"]      * n
-        + WEIGHTS["entry_metadata"]   * m
-        + WEIGHTS["feed_metadata"]    * f
+        + WEIGHTS["entry_count"] * n
+        + WEIGHTS["entry_metadata"] * m
+        + WEIGHTS["feed_metadata"] * f
     )
     return round(min(max(raw, 0.0), 1.0), 4)
 
@@ -101,15 +106,16 @@ def score_components(
         return {k: 0.0 for k in WEIGHTS}
 
     return {
-        "recency":          _recency_score(feed_info, now),
+        "recency": _recency_score(feed_info, now),
         "content_richness": _content_richness_score(feed_info),
-        "entry_count":      _entry_count_score(feed_info),
-        "entry_metadata":   _entry_metadata_score(feed_info),
-        "feed_metadata":    _feed_metadata_score(feed_info),
+        "entry_count": _entry_count_score(feed_info),
+        "entry_metadata": _entry_metadata_score(feed_info),
+        "feed_metadata": _feed_metadata_score(feed_info),
     }
 
 
 # ── Sub-scorers ────────────────────────────────────────────────────────────────
+
 
 def _date_to_age_days(date_list: Optional[List[int]], now: datetime) -> Optional[float]:
     """Convert a [y,m,d,H,M,S,...] date list to age in days. Returns None on failure."""
@@ -117,8 +123,12 @@ def _date_to_age_days(date_list: Optional[List[int]], now: datetime) -> Optional
         return None
     try:
         dt = datetime(
-            date_list[0], date_list[1], date_list[2],
-            date_list[3], date_list[4], date_list[5],
+            date_list[0],
+            date_list[1],
+            date_list[2],
+            date_list[3],
+            date_list[4],
+            date_list[5],
             tzinfo=timezone.utc,
         )
         return max(0.0, (now - dt).total_seconds() / 86400.0)
@@ -149,7 +159,7 @@ def _content_richness_score(feed_info: Dict[str, Any]) -> float:
     """
     has_content = bool(feed_info.get("has_content"))
     has_summary = bool(feed_info.get("has_summary"))
-    profile     = (feed_info.get("content_type_profile") or "unknown").lower()
+    profile = (feed_info.get("content_type_profile") or "unknown").lower()
     lengths: List[int] = feed_info.get("content_lengths") or []
 
     presence = 1.0 if has_content else (0.5 if has_summary else 0.0)
@@ -207,9 +217,11 @@ def _feed_metadata_score(feed_info: Dict[str, Any]) -> float:
         score += 0.30
     if feed_info.get("link"):
         score += 0.30
-    if (feed_info.get("lang_feed")
-            or feed_info.get("lang_http")
-            or feed_info.get("all_languages")):
+    if (
+        feed_info.get("lang_feed")
+        or feed_info.get("lang_http")
+        or feed_info.get("all_languages")
+    ):
         score += 0.20
     if feed_info.get("updated_date"):
         score += 0.20

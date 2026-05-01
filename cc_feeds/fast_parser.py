@@ -50,13 +50,13 @@ class FastFeedParser:
             "entries_count": 0,
             "newest_entry_date": None,
             "oldest_entry_date": None,
-            "extensions": set(),          # set of (namespace_uri, localname) tuples
+            "extensions": set(),  # set of (namespace_uri, localname) tuples
             "has_content": False,
             "has_summary": False,
             "content_type_profile": "unknown",  # plain / html / xhtml / mixed / unknown
             "content_lengths": [],
-            "all_languages": set(),        # every xml:lang value seen anywhere in the doc
-            "entry_languages": set(),      # xml:lang values seen inside entries/items
+            "all_languages": set(),  # every xml:lang value seen anywhere in the doc
+            "entry_languages": set(),  # xml:lang values seen inside entries/items
             "error": None,
             # Internal accumulator – removed before returning
             "_content_types_seen": set(),
@@ -78,8 +78,8 @@ class FastFeedParser:
                 events=("start", "end"),
                 recover=False,
                 resolve_entities=False,
-                no_network=True,       # never fetch external DTDs or entities
-                load_dtd=False,        # don't load DTDs at all
+                no_network=True,  # never fetch external DTDs or entities
+                load_dtd=False,  # don't load DTDs at all
                 dtd_validation=False,  # don't validate against DTD
             )
 
@@ -203,9 +203,15 @@ class FastFeedParser:
             if dt.tzinfo is None:
                 dt = dt.replace(tzinfo=timezone.utc)
             return [
-                dt.year, dt.month, dt.day,
-                dt.hour, dt.minute, dt.second,
-                dt.weekday(), 0, 0,
+                dt.year,
+                dt.month,
+                dt.day,
+                dt.hour,
+                dt.minute,
+                dt.second,
+                dt.weekday(),
+                0,
+                0,
             ]
         except Exception:
             return None
@@ -240,14 +246,25 @@ class FastFeedParser:
                             result["feed"]["title"] = (elem.text or "").strip()
                         elif local == "link" and not result["feed"]["link"]:
                             result["feed"]["link"] = elem.get("href", "")
-                        elif local in ("updated", "published") and not result["feed"]["updated_parsed"]:
-                            result["feed"]["updated_parsed"] = FastFeedParser._parse_date(elem.text)
-                    elif ns == DC_NS and local == "language" and not result["feed"]["language"]:
+                        elif (
+                            local in ("updated", "published")
+                            and not result["feed"]["updated_parsed"]
+                        ):
+                            result["feed"]["updated_parsed"] = (
+                                FastFeedParser._parse_date(elem.text)
+                            )
+                    elif (
+                        ns == DC_NS
+                        and local == "language"
+                        and not result["feed"]["language"]
+                    ):
                         result["feed"]["language"] = (elem.text or "").strip().lower()
                 else:
                     # Entry-level
                     if local == "entry" and ns == ATOM_NS:
-                        FastFeedParser._update_entry_dates(result, current_entry.get("date"))
+                        FastFeedParser._update_entry_dates(
+                            result, current_entry.get("date")
+                        )
                         current_entry = None
                     elif ns == ATOM_NS:
                         if local in ("updated", "published"):
@@ -302,16 +319,27 @@ class FastFeedParser:
                             result["feed"]["title"] = (elem.text or "").strip()
                         elif local == "link" and not result["feed"]["link"]:
                             result["feed"]["link"] = (elem.text or "").strip()
-                        elif local in ("lastBuildDate", "pubDate") and not result["feed"]["updated_parsed"]:
-                            result["feed"]["updated_parsed"] = FastFeedParser._parse_date(elem.text)
+                        elif (
+                            local in ("lastBuildDate", "pubDate")
+                            and not result["feed"]["updated_parsed"]
+                        ):
+                            result["feed"]["updated_parsed"] = (
+                                FastFeedParser._parse_date(elem.text)
+                            )
                         elif local == "language" and not result["feed"]["language"]:
-                            result["feed"]["language"] = (elem.text or "").strip().lower()
+                            result["feed"]["language"] = (
+                                (elem.text or "").strip().lower()
+                            )
                     elif ns == DC_NS:
                         if local == "language" and not result["feed"]["language"]:
-                            result["feed"]["language"] = (elem.text or "").strip().lower()
+                            result["feed"]["language"] = (
+                                (elem.text or "").strip().lower()
+                            )
                 else:
                     if local == "item" and ns == "":
-                        FastFeedParser._update_entry_dates(result, current_item.get("date"))
+                        FastFeedParser._update_entry_dates(
+                            result, current_item.get("date")
+                        )
                         current_item = None
                     elif ns == "":
                         if local == "pubDate":
@@ -374,12 +402,18 @@ class FastFeedParser:
                         result["feed"]["link"] = (elem.text or "").strip()
                     elif ns == DC_NS:
                         if local == "date" and not result["feed"]["updated_parsed"]:
-                            result["feed"]["updated_parsed"] = FastFeedParser._parse_date(elem.text)
+                            result["feed"]["updated_parsed"] = (
+                                FastFeedParser._parse_date(elem.text)
+                            )
                         elif local == "language" and not result["feed"]["language"]:
-                            result["feed"]["language"] = (elem.text or "").strip().lower()
+                            result["feed"]["language"] = (
+                                (elem.text or "").strip().lower()
+                            )
                 else:
                     if local == "item":
-                        FastFeedParser._update_entry_dates(result, current_item.get("date"))
+                        FastFeedParser._update_entry_dates(
+                            result, current_item.get("date")
+                        )
                         current_item = None
                     elif ns == DC_NS and local == "date":
                         d = FastFeedParser._parse_date(elem.text)

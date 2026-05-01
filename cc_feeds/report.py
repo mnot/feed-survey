@@ -6,20 +6,8 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union, cast
 import dateutil.parser
 from jinja2 import Environment, FileSystemLoader
 
-try:
-    from .processor import Stats
-    from .quality import score_feed
-    from .utils import get_domain
-except (ImportError, ValueError):
-    try:
-        from processor import Stats  # type: ignore[no-redef]
-        from quality import score_feed  # type: ignore[no-redef]
-        from utils import get_domain  # type: ignore[no-redef]
-    except ImportError:
-        from cc_feeds.processor import Stats
-        from cc_feeds.quality import score_feed
-        from cc_feeds.utils import get_domain
-
+from cc_feeds.processor import Stats
+from cc_feeds.quality import score_feed
 
 # Known namespace URI → conventional prefix
 _NS_PREFIXES: Dict[str, str] = {
@@ -41,17 +29,17 @@ _NS_PREFIXES: Dict[str, str] = {
 # (max_age_days, label) pairs for recency CDFs – ordered oldest→newest so the
 # CDF reads left-to-right as "older threshold → higher coverage"
 _CDF_BREAKPOINTS: List[Tuple[int, str]] = [
-    (0,    "Today"),
-    (1,    "1 day"),
-    (3,    "3 days"),
-    (7,    "1 week"),
-    (14,   "2 weeks"),
-    (30,   "1 month"),
-    (90,   "3 months"),
-    (180,  "6 months"),
-    (365,  "1 year"),
-    (730,  "2 years"),
-    (10000, "All"),   # sentinel — catches everything, always 100 %
+    (0, "Today"),
+    (1, "1 day"),
+    (3, "3 days"),
+    (7, "1 week"),
+    (14, "2 weeks"),
+    (30, "1 month"),
+    (90, "3 months"),
+    (180, "6 months"),
+    (365, "1 year"),
+    (730, "2 years"),
+    (10000, "All"),  # sentinel — catches everything, always 100 %
 ]
 
 
@@ -296,7 +284,12 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
 
     # --- Content-type distribution (collapsed) ---
     content_types_collapsed: Dict[str, int] = {
-        "HTML": 0, "Atom": 0, "RSS": 0, "JSON Feed": 0, "Other XML": 0, "Other": 0
+        "HTML": 0,
+        "Atom": 0,
+        "RSS": 0,
+        "JSON Feed": 0,
+        "Other XML": 0,
+        "Other": 0,
     }
     for ct, count in stats.content_type_counts.items():
         ct_l = ct.lower()
@@ -315,7 +308,11 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
 
     # --- Content profile distribution ---
     content_profile_dist: Dict[str, int] = {
-        "html": 0, "plain": 0, "xhtml": 0, "mixed": 0, "unknown": 0
+        "html": 0,
+        "plain": 0,
+        "xhtml": 0,
+        "mixed": 0,
+        "unknown": 0,
     }
     for res in all_valid_results.values():
         profile = res.get("content_type_profile", "unknown") or "unknown"
@@ -358,7 +355,8 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
     multi_feed_pages_total = len(stats.multi_feed_pages)
     duplicate_prevalence_pct = (
         round(pages_with_duplicates / multi_feed_pages_total * 100, 1)
-        if multi_feed_pages_total else 0.0
+        if multi_feed_pages_total
+        else 0.0
     )
 
     # Stacked discovery data
@@ -397,9 +395,9 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
     }
     n_zero_entry = len(all_valid_results) - len(feeds_with_entries)
 
-    feed_recency_cdf  = _build_recency_cdf(all_valid_results, "updated_date", now)
+    feed_recency_cdf = _build_recency_cdf(all_valid_results, "updated_date", now)
     entry_recency_cdf = _build_recency_cdf(feeds_with_entries, "newest_entry_date", now)
-    oldest_entry_cdf  = _build_recency_cdf(feeds_with_entries, "oldest_entry_date", now)
+    oldest_entry_cdf = _build_recency_cdf(feeds_with_entries, "oldest_entry_date", now)
 
     # --- Quality distribution (recomputed at report time so algo changes are free) ---
     quality_hist: Dict[str, int] = {f"{i/10:.1f}–{(i+1)/10:.1f}": 0 for i in range(10)}
@@ -419,14 +417,16 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
     for fmt, scores in fmt_quality.items():
         n = len(scores)
         mean_q: float = sum(scores) / n
-        format_quality_rows.append({
-            "fmt":      fmt,
-            "count":    n,
-            "mean":     round(mean_q, 3),
-            "high_pct": round(sum(1 for s in scores if s >= 0.7) / n * 100, 1),
-            "mid_pct":  round(sum(1 for s in scores if 0.4 <= s < 0.7) / n * 100, 1),
-            "low_pct":  round(sum(1 for s in scores if s < 0.4) / n * 100, 1),
-        })
+        format_quality_rows.append(
+            {
+                "fmt": fmt,
+                "count": n,
+                "mean": round(mean_q, 3),
+                "high_pct": round(sum(1 for s in scores if s >= 0.7) / n * 100, 1),
+                "mid_pct": round(sum(1 for s in scores if 0.4 <= s < 0.7) / n * 100, 1),
+                "low_pct": round(sum(1 for s in scores if s < 0.4) / n * 100, 1),
+            }
+        )
     # Order by mean quality descending for the chart
     format_quality_rows.sort(key=lambda r: cast(float, r["mean"]), reverse=True)
 
@@ -446,13 +446,13 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
     no_autodiscovery_results = {
         url: res for url, res in all_valid_results.items() if url not in discovered_urls
     }
-    autodiscovery_quality  = _quality_dist(discovered_results)
+    autodiscovery_quality = _quality_dist(discovered_results)
     no_autodiscovery_quality = _quality_dist(no_autodiscovery_results)
 
     # --- Sort & format ---
-    formats   = sorted(agg["formats"].items(),   key=lambda x: x[1], reverse=True)
+    formats = sorted(agg["formats"].items(), key=lambda x: x[1], reverse=True)
     languages = sorted(agg["languages"].items(), key=lambda x: x[1], reverse=True)
-    errors    = sorted(stats.error_types.items(), key=lambda x: x[1], reverse=True)
+    errors = sorted(stats.error_types.items(), key=lambda x: x[1], reverse=True)
     total_errors = sum(c for _, c in errors)
 
     # Extensions: format as prefix:local, deduplicate, top 15
@@ -798,8 +798,8 @@ def _build_recency_cdf(
             pass
 
     ages.sort()
-    n = len(ages)              # feeds that have a date — the CDF denominator
-    no_date = total - n        # feeds excluded (no date available)
+    n = len(ages)  # feeds that have a date — the CDF denominator
+    no_date = total - n  # feeds excluded (no date available)
     labels: List[str] = []
     data: List[float] = []
     for days, label in _CDF_BREAKPOINTS:

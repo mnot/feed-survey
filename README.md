@@ -73,7 +73,7 @@ Control the cluster size and instance types.
 
 ## Project Structure
 
-- `cc_feeds/mr_job.py`: The MapReduce entry point and orchestration logic.
+- `cc_feeds/emr/`: EMR orchestration, WARC input, and MapReduce wire-format code.
 - `cc_feeds/processor.py`: Core logic for parsing WARC records and extracting feed metadata.
 - `cc_feeds/utils.py`: Utility functions for Tranco list management and S3 streaming.
 - `mrjob.conf`: EMR orchestration settings (Python 3.12, dependencies, instance fleets).
@@ -84,7 +84,7 @@ Control the cluster size and instance types.
 You can run the processing logic locally for debugging without launching a cluster:
 ```bash
 # Process a single WARC file locally
-PYTHONPATH=. .venv/bin/python -m cc_feeds.mr_job local tiny_input.txt --output-dir ./local-results/
+PYTHONPATH=. .venv/bin/python -m cc_feeds.emr.job local tiny_input.txt --output-dir ./local-results/
 ```
 
 ## Cost Estimation (AWS USD)
