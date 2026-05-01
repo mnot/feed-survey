@@ -1,13 +1,11 @@
-import json
-import os
 from datetime import datetime, timezone
 from typing import Any, Dict
 
 import dateutil.parser
-from jinja2 import Environment, FileSystemLoader
 
 from cc_feeds.analysis import Stats
 from cc_feeds.report.aggregate import aggregate_feed_data
+from cc_feeds.report.context import ReportContext, render_report_html
 from cc_feeds.report.discovery import build_discovery_summary
 from cc_feeds.report.distributions import (
     collapse_content_types,
@@ -15,8 +13,7 @@ from cc_feeds.report.distributions import (
     count_language_buckets,
     format_extension_counts,
 )
-from cc_feeds.report.formatting import format_number
-from cc_feeds.report.histograms import build_recency_cdf, make_histogram
+from cc_feeds.report.histograms import build_recency_cdf
 from cc_feeds.report.quality_summary import build_quality_summary
 
 
@@ -42,9 +39,6 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
 
     # --- Aggregate over ALL valid feeds ---
     agg = aggregate_feed_data(all_valid_results)
-
-    feeds_with_autodiscovery = len(discovered_results)
-    feeds_without_autodiscovery = len(all_valid_results) - feeds_with_autodiscovery
 
     content_types_collapsed = collapse_content_types(stats.content_type_counts)
     content_profile_dist = count_content_profiles(all_valid_results)
@@ -88,93 +82,33 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
     formats = sorted(agg["formats"].items(), key=lambda x: x[1], reverse=True)
     languages = sorted(agg["languages"].items(), key=lambda x: x[1], reverse=True)
     errors = sorted(stats.error_types.items(), key=lambda x: x[1], reverse=True)
-    total_errors = sum(c for _, c in errors)
 
     # Extensions: format as prefix:local, deduplicate, top 15
     ext_formatted = format_extension_counts(agg["extensions"])
     extensions = sorted(ext_formatted.items(), key=lambda x: x[1], reverse=True)[:15]
 
-    # --- Template data ---
-    report_stats = {
-        "pages_seen": stats.pages_seen,
-        "max_crawl_time": max_crawl_time,
-        "sites_seen": discovery.total_sites,
-        "feed_results_count": len(stats.feed_results),
-        "feeds_with_autodiscovery": feeds_with_autodiscovery,
-        "feeds_without_autodiscovery": feeds_without_autodiscovery,
-        "formats": formats,
-        "languages": languages,
-        "extensions": extensions,
-        "error_types": errors,
-        "total_errors": total_errors,
-        "feeds_with_content": agg["feeds_with_content"],
-        "feeds_with_summary": agg["feeds_with_summary"],
-        "feeds_with_neither": agg["feeds_with_neither"],
-        "pages_with_autodiscovery": getattr(
-            stats, "discovery_pages_count", len(discovery.page_to_feeds)
-        ),
-        "sites_with_autodiscovery": len(discovery.site_to_feeds),
-        "top_n": stats.top_n,
-        "feeds_sniffed": stats.feeds_sniffed,
-        "total_entries": agg["total_entries"],
-        "lang_src_http": agg["lang_src_http"],
-        "lang_src_feed": agg["lang_src_feed"],
-        "lang_src_entry": agg["lang_src_entry"],
-        "lang_mismatches": agg["lang_mismatches"],
-        "lang_multiple_in_feed": agg["lang_multiple_in_feed"],
-        "discovery_rel_alternate": stats.discovery_rel_alternate,
-        "discovery_rel_feed": stats.discovery_rel_feed,
-        "discovery_rel_both_page": stats.discovery_rel_both_page,
-        "discovery_multi_rel_url": stats.discovery_multi_rel_url,
-        "content_types_collapsed": content_types_collapsed,
-        "content_profile_dist": content_profile_dist,
-        "lang_count_hist": lang_count_hist,
-        "quality_hist": quality["hist"],
-        "mean_quality": round(quality["mean"], 3),
-    }
-
-    env = Environment(loader=FileSystemLoader(os.path.dirname(__file__)))
-    env.filters["comma"] = format_number
-    template = env.get_template("template.html")
-
-    html = template.render(
-        stats=report_stats,
-        crawl_id=crawl_id,
-        formats=formats,
-        languages=languages,
-        extensions=extensions,
-        errors=errors,
-        discovery_per_page_hist=discovery.per_page_hist,
-        discovery_per_site_hist=discovery.per_site_hist,
-        stacked_page_json=json.dumps(discovery.stacked_page),
-        stacked_site_json=json.dumps(discovery.stacked_site),
-        charsets_per_format=agg["charsets_per_format"],
-        content_length_hist=make_histogram(stats.content_length_counts, bins="natural"),
-        entry_counts_hist=make_histogram(agg["entry_counts"], bins="entries"),
-        feed_recency_cdf=json.dumps(feed_recency_cdf),
-        entry_recency_cdf=json.dumps(entry_recency_cdf),
-        oldest_entry_cdf=json.dumps(oldest_entry_cdf),
-        n_zero_entry=n_zero_entry,
-        quality_hist=json.dumps(quality["hist"]),
-        format_quality_json=json.dumps(quality["format_rows"]),
-        format_quality_rows=quality["format_rows"],
-        autodiscovery_quality=quality["autodiscovery"],
-        no_autodiscovery_quality=quality["no_autodiscovery"],
-        autodiscovery_quality_json=json.dumps(quality["autodiscovery"]),
-        no_autodiscovery_quality_json=json.dumps(quality["no_autodiscovery"]),
-        total_pages_f=format_number(stats.pages_seen),
-        pages_with_auto_f=format_number(
-            stats.discovery_pages_count
-            if stats.discovery_pages_count > 0
-            else len(stats.autodiscovery_links)
-        ),
-        zero_pages_f=format_number(discovery.zero_pages),
-        total_sites_f=format_number(discovery.total_sites),
-        sites_with_auto_f=format_number(len(discovery.site_to_feeds)),
-        zero_sites_f=format_number(discovery.zero_sites),
-        pages_with_duplicates=discovery.pages_with_duplicates,
-        duplicate_prevalence_pct=discovery.duplicate_prevalence_pct,
-        multi_feed_pages_total=discovery.multi_feed_pages_total,
+    html = render_report_html(
+        ReportContext(
+            stats=stats,
+            crawl_id=crawl_id,
+            aggregate=agg,
+            discovery=discovery,
+            quality=quality,
+            content_types_collapsed=content_types_collapsed,
+            content_profile_dist=content_profile_dist,
+            lang_count_hist=lang_count_hist,
+            feed_recency_cdf=feed_recency_cdf,
+            entry_recency_cdf=entry_recency_cdf,
+            oldest_entry_cdf=oldest_entry_cdf,
+            n_zero_entry=n_zero_entry,
+            max_crawl_time=max_crawl_time,
+            all_valid_count=len(all_valid_results),
+            discovered_count=len(discovered_results),
+            formats=formats,
+            languages=languages,
+            extensions=extensions,
+            errors=errors,
+        )
     )
 
     with open(output_path, "w", encoding="utf-8") as f_out:
