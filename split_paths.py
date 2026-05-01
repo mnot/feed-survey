@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Split a WARC paths file into N chunks and upload to an S3 prefix.
 
-Usage: split_paths.py <input> <s3-output-prefix> <n-tasks>
+Usage: split_paths.py <input> <s3-output-prefix> <n-tasks> [max-paths]
   input: local .txt/.gz file or s3:// path (requester-pays handled automatically)
+  max-paths: optional global cap on the number of paths to upload
 """
 
 import gzip
@@ -36,16 +37,20 @@ def read_paths(source: str) -> List[str]:
 
 
 def main() -> None:
-    if len(sys.argv) != 4:
-        print(f"Usage: {sys.argv[0]} <input> <s3-output-prefix> <n-tasks>")
+    if len(sys.argv) not in (4, 5):
+        print(f"Usage: {sys.argv[0]} <input> <s3-output-prefix> <n-tasks> [max-paths]")
         sys.exit(1)
 
     source = sys.argv[1]
     dest = sys.argv[2].rstrip("/") + "/"
     n_tasks = int(sys.argv[3])
+    max_paths = int(sys.argv[4]) if len(sys.argv) == 5 else 0
 
     print(f"Reading paths from {source}...")
     lines = read_paths(source)
+    if max_paths > 0:
+        lines = lines[:max_paths]
+        print(f"Limited to first {len(lines)} paths.")
     chunk_size = math.ceil(len(lines) / n_tasks)
     print(f"Splitting {len(lines)} paths into {n_tasks} chunks of ~{chunk_size}...")
 

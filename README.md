@@ -50,6 +50,7 @@ The `test-emr` target runs a single WARC file through a small EMR cluster to ver
 ```bash
 make test-emr
 ```
+To run a larger sample, set `LIMIT`, e.g. `make test-emr LIMIT=50`.
 *Results will be automatically downloaded to `results/test-XXXXXXXX/`.*
 
 ### 4. Run the Full Crawl

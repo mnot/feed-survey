@@ -26,6 +26,7 @@ RUN_ID := $(shell date +%Y%m%d-%H%M%S)
 
 MAP_TASKS ?= 400
 TEST_MAP_TASKS ?= 20
+TEST_REDUCES ?= 1
 
 .PHONY: emr
 emr: venv
@@ -62,7 +63,7 @@ mock_report: venv
 upload-wheels: wheels
 	aws s3 sync wheels/ $(WHEEL_S3_PATH)
 
-LIMIT ?= 50
+LIMIT ?= 1
 
 TEST_CLUSTER_FILE = TEST_CLUSTER
 
@@ -71,10 +72,11 @@ test-emr: venv
 	$(VENV)/python split_paths.py \
 		test/warc.paths.txt \
 		$(PATHS_PREFIX)test-$(RUN_ID)/ \
-		$(TEST_MAP_TASKS)
+		$(TEST_MAP_TASKS) \
+		$(LIMIT)
 	$(VENV)/python mr_job.py -r emr -c mrjob-test.conf \
 		--no-read-logs --no-cat-output \
-		--jobconf mapreduce.job.reduces=20 \
+		--jobconf mapreduce.job.reduces=$(TEST_REDUCES) \
 		--output-dir $(OUTPUT_DIR)test-$(RUN_ID)/ \
 		--limit $(LIMIT) \
 		--topn 500000 \
