@@ -45,44 +45,7 @@ def render_report_html(context: ReportContext) -> str:
     env.filters["comma"] = format_number
     template = env.get_template("template.html")
 
-    feeds_without_autodiscovery = context.all_valid_count - context.discovered_count
-    report_stats = {
-        "pages_seen": stats.pages_seen,
-        "max_crawl_time": context.max_crawl_time,
-        "sites_seen": discovery.total_sites,
-        "feed_results_count": len(stats.feed_results),
-        "feeds_with_autodiscovery": context.discovered_count,
-        "feeds_without_autodiscovery": feeds_without_autodiscovery,
-        "formats": context.formats,
-        "languages": context.languages,
-        "extensions": context.extensions,
-        "error_types": context.errors,
-        "total_errors": sum(count for _, count in context.errors),
-        "feeds_with_content": aggregate["feeds_with_content"],
-        "feeds_with_summary": aggregate["feeds_with_summary"],
-        "feeds_with_neither": aggregate["feeds_with_neither"],
-        "pages_with_autodiscovery": getattr(
-            stats, "discovery_pages_count", len(discovery.page_to_feeds)
-        ),
-        "sites_with_autodiscovery": len(discovery.site_to_feeds),
-        "top_n": stats.top_n,
-        "feeds_sniffed": stats.feeds_sniffed,
-        "total_entries": aggregate["total_entries"],
-        "lang_src_http": aggregate["lang_src_http"],
-        "lang_src_feed": aggregate["lang_src_feed"],
-        "lang_src_entry": aggregate["lang_src_entry"],
-        "lang_mismatches": aggregate["lang_mismatches"],
-        "lang_multiple_in_feed": aggregate["lang_multiple_in_feed"],
-        "discovery_rel_alternate": stats.discovery_rel_alternate,
-        "discovery_rel_feed": stats.discovery_rel_feed,
-        "discovery_rel_both_page": stats.discovery_rel_both_page,
-        "discovery_multi_rel_url": stats.discovery_multi_rel_url,
-        "content_types_collapsed": context.content_types_collapsed,
-        "content_profile_dist": context.content_profile_dist,
-        "lang_count_hist": context.lang_count_hist,
-        "quality_hist": quality["hist"],
-        "mean_quality": round(quality["mean"], 3),
-    }
+    report_stats = build_report_stats(context)
 
     return template.render(
         stats=report_stats,
@@ -123,3 +86,48 @@ def render_report_html(context: ReportContext) -> str:
         duplicate_prevalence_pct=discovery.duplicate_prevalence_pct,
         multi_feed_pages_total=discovery.multi_feed_pages_total,
     )
+
+
+def build_report_stats(context: ReportContext) -> Dict[str, Any]:
+    stats = context.stats
+    aggregate = context.aggregate
+    discovery = context.discovery
+    quality = context.quality
+    feeds_without_autodiscovery = context.all_valid_count - context.discovered_count
+    return {
+        "pages_seen": stats.pages_seen,
+        "max_crawl_time": context.max_crawl_time,
+        "sites_seen": discovery.total_sites,
+        "feed_results_count": len(stats.feed_results),
+        "feeds_with_autodiscovery": context.discovered_count,
+        "feeds_without_autodiscovery": feeds_without_autodiscovery,
+        "formats": context.formats,
+        "languages": context.languages,
+        "extensions": context.extensions,
+        "error_types": context.errors,
+        "total_errors": sum(count for _, count in context.errors),
+        "feeds_with_content": aggregate["feeds_with_content"],
+        "feeds_with_summary": aggregate["feeds_with_summary"],
+        "feeds_with_neither": aggregate["feeds_with_neither"],
+        "pages_with_autodiscovery": getattr(
+            stats, "discovery_pages_count", len(discovery.page_to_feeds)
+        ),
+        "sites_with_autodiscovery": len(discovery.site_to_feeds),
+        "top_n": stats.top_n,
+        "feeds_sniffed": stats.feeds_sniffed,
+        "total_entries": aggregate["total_entries"],
+        "lang_src_http": stats.lang_src_http,
+        "lang_src_feed": stats.lang_src_feed,
+        "lang_src_entry": stats.lang_src_entry,
+        "lang_mismatches": stats.lang_mismatches,
+        "lang_multiple_in_feed": stats.lang_multiple_in_feed,
+        "discovery_rel_alternate": stats.discovery_rel_alternate,
+        "discovery_rel_feed": stats.discovery_rel_feed,
+        "discovery_rel_both_page": stats.discovery_rel_both_page,
+        "discovery_multi_rel_url": stats.discovery_multi_rel_url,
+        "content_types_collapsed": context.content_types_collapsed,
+        "content_profile_dist": context.content_profile_dist,
+        "lang_count_hist": context.lang_count_hist,
+        "quality_hist": quality["hist"],
+        "mean_quality": round(quality["mean"], 3),
+    }

@@ -1,0 +1,74 @@
+from datetime import datetime, timezone
+from typing import Any
+
+from cc_feeds.analysis.feed_analysis import FeedAnalyzer
+from cc_feeds.analysis.stats import Stats
+
+
+class _Reader:
+    def __init__(self, content: bytes) -> None:
+        self.content = content
+
+    def read(self, _size: int) -> bytes:
+        return self.content
+
+
+class _Headers(dict[str, str]):
+    status_code = 200
+
+
+class _Record:
+    def __init__(self, content: bytes, content_type: str) -> None:
+        self.headers = {"WARC-Date": "2026-05-01T12:00:00Z"}
+        self.http_headers = _Headers({"Content-Type": content_type})
+        self.reader = _Reader(content)
+
+    def parse_http(self) -> None:
+        return
+
+
+def test_feed_analyzer_parse_error() -> None:
+    stats = Stats()
+    analyzer = FeedAnalyzer(stats)
+
+    analyzer.process(
+        _Record(b"not xml", "application/rss+xml"),
+        "https://example.com/feed.xml",
+        200,
+    )
+
+    result = stats.feed_results["https://example.com/feed.xml"]
+    assert result["valid"] is False
+    assert result["error"] == "Not XML"
+    assert stats.error_types == {"ParseError": 1}
+
+
+def test_feed_analyzer_valid_feed() -> None:
+    stats = Stats()
+    analyzer = FeedAnalyzer(stats)
+    content = b"""<?xml version="1.0"?>
+    <rss version="2.0"><channel>
+      <title>Example</title>
+      <link>https://example.com/</link>
+      <lastBuildDate>Fri, 01 May 2026 11:00:00 GMT</lastBuildDate>
+      <item>
+        <title>Entry</title>
+        <pubDate>Fri, 01 May 2026 11:30:00 GMT</pubDate>
+        <description>Hello</description>
+      </item>
+    </channel></rss>"""
+
+    analyzer.process(
+        _Record(content, "application/rss+xml"), "https://EXAMPLE.com/feed", 200
+    )
+
+    result: dict[str, Any] = stats.feed_results["https://example.com/feed"]
+    request_time = result["request_time"]
+    assert isinstance(request_time, datetime)
+    assert request_time.tzinfo == timezone.utc
+    assert result["valid"] is True
+    assert result["format"] == "rss2.0"
+    assert result["entries_count"] == 1
+    assert result["updated_recently"] is True
+    assert result["entry_recently"] is True
+    assert stats.total_entries == 1

@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
 
 from cc_feeds.analysis.stats import Stats
-from cc_feeds.report.discovery import build_discovery_summary
+from cc_feeds.report.context import ReportContext, build_report_stats
+from cc_feeds.report.discovery import DiscoverySummary, build_discovery_summary
+from cc_feeds.report.distributions import collapse_content_types
 from cc_feeds.report.quality_summary import build_quality_summary
 
 
@@ -113,3 +115,82 @@ def test_discovery_summary_counts() -> None:
     assert summary.pages_with_duplicates == 1
     assert summary.duplicate_prevalence_pct == 100.0
     assert "0" not in summary.stacked_page["labels"]
+
+
+def test_content_types_exclude_json() -> None:
+    collapsed = collapse_content_types(
+        {
+            "application/feed+json": 3,
+            "application/json": 2,
+            "application/rss+xml": 1,
+        }
+    )
+
+    assert "JSON Feed" not in collapsed
+    assert collapsed["RSS"] == 1
+    assert collapsed["Other"] == 5
+
+
+def test_report_runtime_lang_counts() -> None:
+    stats = Stats()
+    stats.lang_src_http = 7
+    stats.lang_src_feed = 8
+    stats.lang_src_entry = 9
+    stats.lang_mismatches = 10
+    stats.lang_multiple_in_feed = 11
+    aggregate = {
+        "feeds_with_content": 0,
+        "feeds_with_summary": 0,
+        "feeds_with_neither": 0,
+        "total_entries": 0,
+        "lang_src_http": 1,
+        "lang_src_feed": 1,
+        "lang_src_entry": 1,
+        "lang_mismatches": 1,
+        "lang_multiple_in_feed": 1,
+    }
+    discovery = DiscoverySummary(
+        page_to_feeds={},
+        site_to_feeds={},
+        per_page_hist={},
+        per_site_hist={},
+        total_sites=0,
+        zero_pages=0,
+        zero_sites=0,
+        stacked_page={},
+        stacked_site={},
+        pages_with_duplicates=0,
+        duplicate_prevalence_pct=0.0,
+        multi_feed_pages_total=0,
+    )
+    quality = {"hist": {}, "mean": 0.0}
+
+    report_stats = build_report_stats(
+        ReportContext(
+            stats=stats,
+            crawl_id="CC-MAIN-2026-12",
+            aggregate=aggregate,
+            discovery=discovery,
+            quality=quality,
+            content_types_collapsed={},
+            content_profile_dist={},
+            lang_count_hist={},
+            feed_recency_cdf={},
+            entry_recency_cdf={},
+            oldest_entry_cdf={},
+            n_zero_entry=0,
+            max_crawl_time=None,
+            all_valid_count=0,
+            discovered_count=0,
+            formats=[],
+            languages=[],
+            extensions=[],
+            errors=[],
+        )
+    )
+
+    assert report_stats["lang_src_http"] == 7
+    assert report_stats["lang_src_feed"] == 8
+    assert report_stats["lang_src_entry"] == 9
+    assert report_stats["lang_mismatches"] == 10
+    assert report_stats["lang_multiple_in_feed"] == 11

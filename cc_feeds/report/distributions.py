@@ -8,7 +8,6 @@ def collapse_content_types(content_type_counts: Dict[str, int]) -> Dict[str, int
         "HTML": 0,
         "Atom": 0,
         "RSS": 0,
-        "JSON Feed": 0,
         "Other XML": 0,
         "Other": 0,
     }
@@ -23,10 +22,6 @@ def collapse_content_types(content_type_counts: Dict[str, int]) -> Dict[str, int
             content_types["Atom"] += count
         elif "rss" in content_type_lower:
             content_types["RSS"] += count
-        elif "feed+json" in content_type_lower or (
-            "json" in content_type_lower and "html" not in content_type_lower
-        ):
-            content_types["JSON Feed"] += count
         elif "xml" in content_type_lower:
             content_types["Other XML"] += count
         else:

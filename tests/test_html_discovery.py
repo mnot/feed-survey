@@ -27,8 +27,33 @@ def test_discovers_feed_links() -> None:
             "https://feeds.example.com/a",
         ]
     }
-    assert stats.autodiscovery_links["https://example.com/feed.xml"] == ["Example.COM"]
+    assert stats.autodiscovery_links["https://example.com/feed.xml"] == ["example.com"]
     assert stats.discovery_domain_counts["https://example.com/feed.xml"] == 1
+
+
+def test_discovers_rel_tokens() -> None:
+    stats = Stats()
+    discovery = HtmlDiscovery(stats)
+
+    discovery.process(
+        "https://example.com/",
+        b"""
+        <html><head>
+          <link rel="alternate feed" type="application/rss+xml; charset=utf-8"
+                href="/rss.xml">
+          <link rel="feed" type="application/rdf+xml" href="/rss1.rdf">
+        </head></html>
+        """,
+    )
+
+    assert stats.discovery_pages_count == 1
+    assert stats.discovery_rel_alternate == 1
+    assert stats.discovery_rel_feed == 1
+    assert stats.discovery_rel_both_page == 1
+    assert set(stats.autodiscovery_links) == {
+        "https://example.com/rss.xml",
+        "https://example.com/rss1.rdf",
+    }
 
 
 def test_ignores_pages_no_feeds() -> None:
@@ -38,6 +63,23 @@ def test_ignores_pages_no_feeds() -> None:
     discovery.process(
         "https://example.com/",
         b'<html><head><link rel="stylesheet" href="/style.css"></head></html>',
+    )
+
+    assert stats.discovery_pages_count == 0
+    assert stats.autodiscovery_links == {}
+
+
+def test_ignores_json_feed_links() -> None:
+    stats = Stats()
+    discovery = HtmlDiscovery(stats)
+
+    discovery.process(
+        "https://example.com/",
+        b"""
+        <html><head>
+          <link rel="alternate" type="application/feed+json" href="/feed.json">
+        </head></html>
+        """,
     )
 
     assert stats.discovery_pages_count == 0

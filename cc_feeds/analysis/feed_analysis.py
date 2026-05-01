@@ -47,6 +47,8 @@ class FeedAnalyzer:
             parsed_data = FastFeedParser.parse(content)
             if not parsed_data.get("valid"):
                 self._record_parse_error(parsed_data)
+                feed_info["error"] = parsed_data.get("error", "parse failed")
+                self.stats.feed_results[url] = feed_info
                 return
 
             self._record_http_language(record, feed_info)

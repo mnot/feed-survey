@@ -8,10 +8,12 @@ from cc_feeds.analysis.stats import Stats
 from cc_feeds.url import get_domain, normalize_url
 
 _LINK_RE = re.compile(
-    b"<link\\s+[^>]*rel=[\"'](?:alternate|feed)[\"'][^>]*>", re.IGNORECASE
+    b"<link\\s+[^>]*rel=[\"'][^\"']*(?:alternate|feed)[^\"']*[\"'][^>]*>",
+    re.IGNORECASE,
 )
 _FEED_TYPE_RE = re.compile(
-    b"type=[\"']application/(?:rss\\+xml|atom\\+xml|feed\\+json)[\"']",
+    b"type=[\"']application/(?:rss\\+xml|atom\\+xml|rdf\\+xml)"
+    b"(?:\\s*;[^\"']*)?[\"']",
     re.IGNORECASE,
 )
 
@@ -30,7 +32,7 @@ class HtmlDiscovery:
                 return
 
             doc = lxml.html.fromstring(content, parser=self.html_parser)
-            links = doc.xpath('//link[@rel="alternate" or @rel="feed"]')
+            links = doc.xpath("//link[@rel]")
             if not isinstance(links, list):
                 return
 
@@ -56,8 +58,13 @@ class HtmlDiscovery:
         if (
             "rss+xml" not in link_type
             and "atom+xml" not in link_type
-            and "feed+json" not in link_type
+            and "rdf+xml" not in link_type
         ):
+            return
+
+        rel_tokens = set(rel.split())
+        feed_rel_tokens = rel_tokens & {"alternate", "feed"}
+        if not feed_rel_tokens:
             return
 
         href = link.get("href")
@@ -65,10 +72,10 @@ class HtmlDiscovery:
             return
 
         feed_url = normalize_url(urljoin(page_url, str(href)))
-        found_rels.add(rel)
-        page_discoveries.setdefault(feed_url, set()).add(rel)
+        found_rels.update(feed_rel_tokens)
+        page_discoveries.setdefault(feed_url, set()).update(feed_rel_tokens)
 
-        domain = get_domain(page_url)
+        domain = get_domain(page_url).lower()
         if feed_url not in self.stats.autodiscovery_links:
             self.stats.autodiscovery_links[feed_url] = []
             self.stats.discovery_domain_counts[feed_url] = 0
