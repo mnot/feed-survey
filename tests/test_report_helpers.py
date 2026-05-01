@@ -130,6 +130,33 @@ def test_discovery_summary_counts() -> None:
     assert "0" not in summary.stacked_page["labels"]
 
 
+def test_duplicate_no_query() -> None:
+    stats = Stats()
+    stats.pages_seen = 1
+    stats.multi_feed_pages = {
+        "https://example.com/": [
+            "https://example.com/feed.xml",
+            "https://example.com/feed.xml?format=atom",
+        ]
+    }
+    stats.feed_results = {
+        "https://example.com/feed.xml": {
+            "valid": True,
+            "link": "https://example.com/?utm=rss",
+            "title": "Example",
+        },
+        "https://example.com/feed.xml?format=atom": {
+            "valid": True,
+            "link": "https://example.com/",
+            "title": "Example",
+        },
+    }
+
+    summary = build_discovery_summary(stats)
+
+    assert summary.pages_with_duplicates == 1
+
+
 def test_content_types_exclude_json() -> None:
     collapsed = collapse_content_types(
         {
