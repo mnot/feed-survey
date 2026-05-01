@@ -47,7 +47,11 @@ homepage = "https://github.com/mnot/cc-feeds"
 
 [project.scripts]
 cc-feeds = "cc_feeds.main:main"
-cc-feeds-job = "mr_job:main"
+cc-feeds-job = "cc_feeds.mr_job:main"
+cc-feeds-finalize = "cc_feeds.finalize:main"
+cc-feeds-mock-report = "cc_feeds.mock_report:main"
+cc-feeds-mrjob-wrapper = "cc_feeds.mrjob_wrapper:main"
+cc-feeds-split-paths = "cc_feeds.split_paths:main"
 
 
 [build-system]
@@ -70,7 +74,7 @@ namespaces = false
 include-package-data = true
 
 [tool.setuptools.package-data]
-cc_feeds = ["py.typed"]
+cc_feeds = ["py.typed", "report_template.html"]
 
 [tool.mypy]
 strict = true

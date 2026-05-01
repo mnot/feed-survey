@@ -36,4 +36,4 @@ cc-feeds --limit 1 --limit-records 1000 --output test_report.html
 
 For large-scale analysis across the entire Common Crawl corpus:
 - The tool is designed to be compatible with `mrjob`.
-- See `cc_feeds/mr_job.py` (Work in progress) for the MapReduce wrapper.
+- See `cc_feeds/mr_job.py` for the MapReduce wrapper.

@@ -149,12 +149,16 @@ def finalize_mr_results(results_dir: str, crawl_id: str, output_path: str) -> No
     generate_report(overall_stats, crawl_id, output_path)
     print(f"Official report generated: {output_path}")
 
-if __name__ == "__main__":
+def main() -> None:
     if len(sys.argv) < 3:
-        print("Usage: python finalize.py <results_dir> <crawl_id> [output_file]")
+        print("Usage: python -m cc_feeds.finalize <results_dir> <crawl_id> [output_file]")
         sys.exit(1)
     
     dir_path = sys.argv[1]
     cid = sys.argv[2]
     out = sys.argv[3] if len(sys.argv) > 3 else "cc_feeds_report.html"
     finalize_mr_results(dir_path, cid, out)
+
+
+if __name__ == "__main__":
+    main()

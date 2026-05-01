@@ -2,7 +2,7 @@
 Generate a mock HTML report with realistic dummy data.
 
 Usage:
-    python mock_report.py [output_path]
+    python -m cc_feeds.mock_report [output_path]
 
 Default output_path: mock_report.html
 """

@@ -364,5 +364,9 @@ class CCFeedsJob(MRJob): # type: ignore[misc]
             sys.stderr.flush()
             raise
 
-if __name__ == "__main__":
+def main() -> None:
     CCFeedsJob.run()
+
+
+if __name__ == "__main__":
+    main()

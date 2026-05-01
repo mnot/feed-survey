@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Split a WARC paths file into N chunks and upload to an S3 prefix.
 
-Usage: split_paths.py <input> <s3-output-prefix> <n-tasks> [max-paths]
+Usage: python -m cc_feeds.split_paths <input> <s3-output-prefix> <n-tasks> [max-paths]
   input: local .txt/.gz file or s3:// path (requester-pays handled automatically)
   max-paths: optional global cap on the number of paths to upload
 """
@@ -38,7 +38,9 @@ def read_paths(source: str) -> List[str]:
 
 def main() -> None:
     if len(sys.argv) not in (4, 5):
-        print(f"Usage: {sys.argv[0]} <input> <s3-output-prefix> <n-tasks> [max-paths]")
+        print(
+            f"Usage: {sys.argv[0]} <input> <s3-output-prefix> <n-tasks> [max-paths]"
+        )
         sys.exit(1)
 
     source = sys.argv[1]

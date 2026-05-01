@@ -9,9 +9,9 @@ if "pipes" not in sys.modules:
     setattr(_pipes, "quote", shlex.quote)
     sys.modules["pipes"] = _pipes
 
-if __name__ == "__main__":
+def main() -> None:
     if len(sys.argv) < 2:
-        print("Usage: python mrjob_wrapper.py <module_name> [args...]")
+        print("Usage: python -m cc_feeds.mrjob_wrapper <module_name> [args...]")
         sys.exit(1)
     
     module_name = sys.argv[1]
@@ -29,3 +29,7 @@ if __name__ == "__main__":
     except ImportError as e:
         print(f"Error importing {module_name}: {e}")
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
