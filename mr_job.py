@@ -47,6 +47,10 @@ class CCFeedsJob(MRJob): # type: ignore[misc]
             self.processor = WarcProcessor(top_n=self.options.topn)
             self.count = 0
             self.processed_records = 0
+            # Stagger initial S3 downloads to avoid thundering herd when all
+            # mappers start simultaneously and hit the same S3 partition.
+            import random
+            self._s3_jitter = random.uniform(0, 30)
 
             from botocore.config import Config
             self.s3 = boto3.client(
@@ -79,6 +83,11 @@ class CCFeedsJob(MRJob): # type: ignore[misc]
         try:
             sys.stderr.write(f"INFO: starting WARC {self.count}: {raw_path}\n")
             sys.stderr.flush()
+            if self.count == 1 and self._s3_jitter > 0:
+                import time
+                sys.stderr.write(f"INFO: jitter sleep {self._s3_jitter:.1f}s\n")
+                sys.stderr.flush()
+                time.sleep(self._s3_jitter)
             self.set_status(f"Downloading WARC {self.count}: {raw_path}")
             if os.path.exists(raw_path):
                 # Process local file with optimized stream
