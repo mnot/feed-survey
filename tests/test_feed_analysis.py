@@ -43,6 +43,22 @@ def test_feed_analyzer_parse_error() -> None:
     assert stats.error_types == {"ParseError": 1}
 
 
+def test_feed_analyzer_empty_response_is_counted() -> None:
+    stats = Stats()
+    analyzer = FeedAnalyzer(stats)
+
+    analyzer.process(
+        _Record(b"", "application/rss+xml"),
+        "https://example.com/feed.xml",
+        200,
+    )
+
+    result = stats.feed_results["https://example.com/feed.xml"]
+    assert result["valid"] is False
+    assert result["error"] == "Empty response"
+    assert stats.error_types == {"ParseError": 1}
+
+
 def test_feed_analyzer_valid_feed() -> None:
     stats = Stats()
     analyzer = FeedAnalyzer(stats)
@@ -72,3 +88,30 @@ def test_feed_analyzer_valid_feed() -> None:
     assert result["updated_recently"] is True
     assert result["entry_recently"] is True
     assert stats.total_entries == 1
+
+
+def test_entry_language_does_not_become_feed_language() -> None:
+    stats = Stats()
+    analyzer = FeedAnalyzer(stats)
+    content = b"""<?xml version="1.0"?>
+    <feed xmlns="http://www.w3.org/2005/Atom">
+      <title>Example</title>
+      <updated>2026-05-01T11:00:00Z</updated>
+      <entry xml:lang="fr">
+        <title>Entry</title>
+        <updated>2026-05-01T11:30:00Z</updated>
+        <summary>Hello</summary>
+      </entry>
+    </feed>"""
+
+    analyzer.process(
+        _Record(content, "application/atom+xml"), "https://example.com/feed", 200
+    )
+
+    result: dict[str, Any] = stats.feed_results["https://example.com/feed"]
+    assert result["valid"] is True
+    assert result["lang_feed"] is None
+    assert result["lang_entries"] == {"fr"}
+    assert result["languages"] == {"fr"}
+    assert stats.lang_src_feed == 0
+    assert stats.lang_src_entry == 1

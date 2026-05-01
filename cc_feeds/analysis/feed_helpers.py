@@ -80,6 +80,13 @@ def atom_content_type(type_attr: Optional[str]) -> str:
     return "plain"
 
 
+def text_content_type(text: Optional[str]) -> str:
+    content = (text or "").strip()
+    if "<" in content and ">" in content:
+        return "html"
+    return "plain"
+
+
 def parse_date(date_str: Optional[str]) -> Optional[List[int]]:
     if not date_str:
         return None

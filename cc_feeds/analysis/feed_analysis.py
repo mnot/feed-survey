@@ -42,6 +42,9 @@ class FeedAnalyzer:
         try:
             content = record.reader.read(10 * 1024 * 1024)
             if not content:
+                feed_info["error"] = "Empty response"
+                self._record_parse_error(feed_info)
+                self.stats.feed_results[url] = feed_info
                 return
 
             parsed_data = FastFeedParser.parse(content)
@@ -118,10 +121,6 @@ class FeedAnalyzer:
         self, feed_info: Dict[str, Any], feed_data: Dict[str, Any]
     ) -> None:
         feed_lang = feed_data.get("language")
-        if not feed_lang:
-            all_langs = feed_info.get("all_languages", set())
-            if all_langs:
-                feed_lang = next(iter(all_langs))
         if feed_lang:
             feed_lang = feed_lang.lower()
             feed_info["lang_feed"] = feed_lang

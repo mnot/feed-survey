@@ -122,8 +122,26 @@ def test_parse_rss2() -> None:
     assert result["feed"]["language"] == "en"
     assert result["entries_count"] == 1
     assert result["has_summary"] is True
-    assert result["content_type_profile"] == "html"
+    assert result["content_type_profile"] == "plain"
     assert _date_prefix(result["newest_entry_date"]) == [2026, 1, 3]
+
+
+def test_rss_description_with_markup_counts_as_html() -> None:
+    result = FastFeedParser.parse(b"""<?xml version="1.0"?>
+        <rss version="2.0">
+          <channel>
+            <title>Example RSS</title>
+            <link>https://example.com/</link>
+            <item>
+              <title>Entry</title>
+              <description>&lt;p&gt;hello&lt;/p&gt;</description>
+            </item>
+          </channel>
+        </rss>""")
+
+    assert result["valid"] is True
+    assert result["has_summary"] is True
+    assert result["content_type_profile"] == "html"
 
 
 def test_rss_channel_last_build_date_preferred_over_pub_date() -> None:

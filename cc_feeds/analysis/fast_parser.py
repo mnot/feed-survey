@@ -13,6 +13,7 @@ from cc_feeds.analysis.feed_helpers import (
     classify_content,
     parse_date,
     split_tag,
+    text_content_type,
     track_extension,
     track_lang,
     update_entry_dates,
@@ -303,7 +304,7 @@ class FastFeedParser:
             FastFeedParser._set_entry_date(current_item, elem.text)
         elif ns == "" and local == "description":
             result["has_summary"] = True
-            result["_content_types_seen"].add("html")
+            result["_content_types_seen"].add(text_content_type(elem.text))
             FastFeedParser._remember_text_length(elem, result)
         elif ns == DC_NS and local == "date":
             FastFeedParser._set_entry_date(current_item, elem.text)
@@ -337,7 +338,7 @@ class FastFeedParser:
             FastFeedParser._set_entry_date(current_item, elem.text)
         elif local == "description":
             result["has_summary"] = True
-            result["_content_types_seen"].add("html")
+            result["_content_types_seen"].add(text_content_type(elem.text))
             FastFeedParser._remember_text_length(elem, result)
         elif ns == CONTENT_NS and local == "encoded":
             result["has_content"] = True
