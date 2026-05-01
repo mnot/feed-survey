@@ -41,7 +41,13 @@ class FastFeedParser:
         result: Dict[str, Any] = {
             "valid": False,
             "version": "",
-            "feed": {"title": "", "link": "", "updated_parsed": None, "language": None},
+            "feed": {
+                "title": "",
+                "link": "",
+                "link_fallback": "",
+                "updated_parsed": None,
+                "language": None,
+            },
             "entries_count": 0,
             "newest_entry_date": None,
             "oldest_entry_date": None,
@@ -105,6 +111,10 @@ class FastFeedParser:
             result["content_type_profile"] = classify_content(
                 result["_content_types_seen"]
             )
+            feed = result["feed"]
+            if not feed["link"] and feed["link_fallback"]:
+                feed["link"] = feed["link_fallback"]
+            feed.pop("link_fallback", None)
             result["valid"] = True
 
         except StopIteration:
@@ -112,6 +122,7 @@ class FastFeedParser:
         except (SyntaxError, TypeError, ValueError) as exc:
             result["error"] = str(exc)
 
+        result["feed"].pop("link_fallback", None)
         result.pop("_content_types_seen", None)
         return result
 
@@ -218,8 +229,8 @@ class FastFeedParser:
         if ns == ATOM_NS:
             if local == "title" and not result["feed"]["title"]:
                 result["feed"]["title"] = (elem.text or "").strip()
-            elif local == "link" and not result["feed"]["link"]:
-                result["feed"]["link"] = elem.get("href", "")
+            elif local == "link":
+                FastFeedParser._record_atom_feed_link(elem, result)
             elif (
                 local in ("updated", "published")
                 and not result["feed"]["updated_parsed"]
@@ -328,9 +339,23 @@ class FastFeedParser:
 
     @staticmethod
     def _remember_text_length(elem: Any, result: Dict[str, Any]) -> None:
-        text = elem.text or ""
+        text = (
+            "".join(elem.itertext()) if hasattr(elem, "itertext") else elem.text or ""
+        )
         if text:
             result["content_lengths"].append(len(text))
+
+    @staticmethod
+    def _record_atom_feed_link(elem: Any, result: Dict[str, Any]) -> None:
+        href = elem.get("href", "")
+        if not href:
+            return
+
+        rel = (elem.get("rel") or "alternate").strip().lower()
+        if rel in ("", "alternate") and not result["feed"]["link"]:
+            result["feed"]["link"] = href
+        elif not result["feed"]["link_fallback"] and rel != "self":
+            result["feed"]["link_fallback"] = href
 
     @staticmethod
     def _clear_element(elem: Any, keep_local_names: set[str]) -> None:

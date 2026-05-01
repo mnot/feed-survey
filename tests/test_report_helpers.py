@@ -75,6 +75,8 @@ def test_discovery_summary_counts() -> None:
     stats = Stats()
     stats.pages_seen = 4
     stats.sites_seen_count = 3
+    stats.discovery_pages_count = 3
+    stats.discovery_links_per_page_counts = {1: 2, 2: 1}
     stats.autodiscovery_links = {
         "https://example.com/a.xml": ["example.com"],
         "https://example.com/b.xml": ["example.com"],
@@ -108,10 +110,11 @@ def test_discovery_summary_counts() -> None:
 
     summary = build_discovery_summary(stats)
 
-    assert summary.zero_pages == 2
+    assert summary.zero_pages == 1
     assert summary.zero_sites == 1
-    assert summary.per_page_hist["1"] == 1
+    assert summary.per_page_hist["1"] == 2
     assert summary.per_page_hist["2"] == 1
+    assert summary.stacked_page == {"labels": ["1", "2"], "counts": [2, 1]}
     assert summary.pages_with_duplicates == 1
     assert summary.duplicate_prevalence_pct == 100.0
     assert "0" not in summary.stacked_page["labels"]

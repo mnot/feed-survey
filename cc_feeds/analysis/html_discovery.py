@@ -104,6 +104,11 @@ class HtmlDiscovery:
         self.stats.discovery_multi_rel_url += sum(
             1 for rel_tokens in page_discoveries.values() if len(rel_tokens) > 1
         )
+        feed_count = len(page_discoveries)
+        if feed_count:
+            self.stats.discovery_links_per_page_counts[feed_count] = (
+                self.stats.discovery_links_per_page_counts.get(feed_count, 0) + 1
+            )
 
         if len(page_discoveries) > 1 and len(self.stats.multi_feed_pages) < 10000:
             self.stats.multi_feed_pages[page_url] = list(page_discoveries.keys())

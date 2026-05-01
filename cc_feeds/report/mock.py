@@ -174,6 +174,18 @@ def _populate_crawl_totals(stats: Stats) -> None:
     stats.discovery_rel_feed = 90_000
     stats.discovery_rel_both_page = 35_000
     stats.discovery_multi_rel_url = 8_500
+    stats.discovery_links_per_page_counts = {
+        1: 1_130_000,
+        2: 82_000,
+        3: 18_000,
+        4: 6_500,
+        5: 2_000,
+        6: 1_000,
+        8: 350,
+        12: 100,
+        20: 40,
+        60: 10,
+    }
     stats.lang_src_http = 420_000
     stats.lang_src_feed = 980_000
     stats.lang_src_entry = 65_000

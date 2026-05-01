@@ -32,6 +32,39 @@ def test_parse_atom_feed() -> None:
     assert result["error"] is None
 
 
+def test_atom_feed_link_prefers_alternate_over_self() -> None:
+    result = FastFeedParser.parse(b"""<?xml version="1.0"?>
+        <feed xmlns="http://www.w3.org/2005/Atom">
+          <title>Example Atom</title>
+          <link rel="self" href="https://example.com/feed.xml"/>
+          <link rel="alternate" href="https://example.com/"/>
+          <updated>2026-01-02T03:04:05Z</updated>
+        </feed>""")
+
+    assert result["valid"] is True
+    assert result["feed"]["link"] == "https://example.com/"
+
+
+def test_atom_xhtml_content_counts_descendant_text() -> None:
+    result = FastFeedParser.parse(b"""<?xml version="1.0"?>
+        <feed xmlns="http://www.w3.org/2005/Atom">
+          <title>Example Atom</title>
+          <updated>2026-01-02T03:04:05Z</updated>
+          <entry>
+            <title>Entry</title>
+            <updated>2026-01-03T00:00:00Z</updated>
+            <content type="xhtml">
+              <div xmlns="http://www.w3.org/1999/xhtml">hello <b>world</b></div>
+            </content>
+          </entry>
+        </feed>""")
+
+    assert result["valid"] is True
+    assert result["content_type_profile"] == "xhtml"
+    assert result["content_lengths"]
+    assert result["content_lengths"][0] >= len("hello world")
+
+
 def test_parse_rss2() -> None:
     result = FastFeedParser.parse(b"""<?xml version="1.0"?>
         <rss version="2.0">

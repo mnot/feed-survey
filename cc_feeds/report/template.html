@@ -262,7 +262,7 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Autodiscovery Links per Page</div>
-                <p class="chart-sub">Unique feed URLs per page (pages with zero links omitted: {{ zero_pages_f }}).</p>
+                <p class="chart-sub">Unique feed URLs per discovered page (pages with zero feed links omitted: {{ zero_pages_f }}).</p>
                 <canvas id="feedsPerPageHistogram"></canvas>
             </div>
             <div class="chart-card">
@@ -300,6 +300,7 @@
                 <div class="card-value">{{ (stats.feeds_with_content + stats.feeds_with_summary + stats.feeds_with_neither)|comma }}</div>
                 <div class="card-sub">
                     {% set total_parsed = stats.feeds_with_content + stats.feeds_with_summary + stats.feeds_with_neither %}
+                    <div class="row"><span>Parse success rate</span> <strong>{{ "%.1f"|format(total_parsed / stats.feed_results_count * 100 if stats.feed_results_count else 0) }}%</strong></div>
                     <div class="row"><span>With autodiscovery link</span> <strong>{{ stats.feeds_with_autodiscovery|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.feeds_with_autodiscovery / total_parsed * 100 if total_parsed else 0) }}%)</span></strong></div>
                     <div class="row"><span>Without autodiscovery link</span> <strong>{{ stats.feeds_without_autodiscovery|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.feeds_without_autodiscovery / total_parsed * 100 if total_parsed else 0) }}%)</span></strong></div>
                 </div>
@@ -308,6 +309,7 @@
                 <div class="card-title">Content Coverage</div>
                 <div class="card-value">{{ (stats.feeds_with_content + stats.feeds_with_summary)|comma }}</div>
                 <div class="card-sub">
+                    <div class="row"><span>Any entry content</span> <strong>{{ "%.1f"|format((stats.feeds_with_content + stats.feeds_with_summary) / total_parsed * 100 if total_parsed else 0) }}%</strong></div>
                     <div class="row"><span>Full content</span> <strong>{{ stats.feeds_with_content|comma }}</strong></div>
                     <div class="row"><span>Summary only</span> <strong>{{ stats.feeds_with_summary|comma }}</strong></div>
                     <div class="row"><span>Neither</span> <strong>{{ stats.feeds_with_neither|comma }}</strong></div>
@@ -316,7 +318,7 @@
             <div class="card">
                 <div class="card-title">Total Entries</div>
                 <div class="card-value">{{ stats.total_entries|comma }}</div>
-                <div class="card-sub">Individual feed entries found</div>
+                <div class="card-sub">Individual feed entries found; {{ "%.1f"|format(stats.total_entries / total_parsed if total_parsed else 0) }} per parsed feed on average</div>
             </div>
             <div class="card">
                 <div class="card-title">Mean Parsed-Feed Quality</div>
@@ -592,13 +594,10 @@
         data: {
             labels: stackedPageData.labels,
             datasets: [
-                { label: 'Has Entries',   data: stackedPageData.has_entries,  backgroundColor: '#10b981' },
-                { label: 'Valid Only',    data: stackedPageData.valid_only,   backgroundColor: '#3b82f6' },
-                { label: 'Success Only',  data: stackedPageData.success_only, backgroundColor: '#6366f1' },
-                { label: 'Other / Failed',data: stackedPageData.other,        backgroundColor: '#e2e8f0' }
+                { label: 'Pages', data: stackedPageData.counts, backgroundColor: 'rgba(99,102,241,0.55)', borderColor: '#6366f1', borderWidth: 1 }
             ]
         },
-        options: stackedOpts
+        options: baseOpts
     });
 
     const stackedSiteData = {{ stacked_site_json|safe }};

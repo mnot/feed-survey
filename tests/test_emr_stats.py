@@ -14,6 +14,7 @@ def test_summary_record_counts() -> None:
     stats.lang_src_entry = 8
     stats.lang_mismatches = 9
     stats.lang_multiple_in_feed = 10
+    stats.discovery_links_per_page_counts = {1: 12, 2: 3}
     stats.top_n = 500000
 
     record = summary_record(stats)
@@ -27,6 +28,7 @@ def test_summary_record_counts() -> None:
     assert record["lang_src_entry"] == 8
     assert record["lang_mismatches"] == 9
     assert record["lang_multiple_in_feed"] == 10
+    assert record["discovery_links_per_page_counts"] == {1: 12, 2: 3}
     assert record["top_n"] == 500000
 
 
@@ -45,6 +47,7 @@ def test_merge_summary_counts_once() -> None:
             "lang_src_entry": 8,
             "lang_mismatches": 9,
             "lang_multiple_in_feed": 10,
+            "discovery_links_per_page_counts": {"1": 12, "2": 3},
             "top_n": 500000,
         },
     )
@@ -58,4 +61,5 @@ def test_merge_summary_counts_once() -> None:
     assert stats.lang_src_entry == 8
     assert stats.lang_mismatches == 9
     assert stats.lang_multiple_in_feed == 10
+    assert stats.discovery_links_per_page_counts == {1: 12, 2: 3}
     assert stats.top_n == 500000

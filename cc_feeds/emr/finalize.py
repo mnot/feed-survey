@@ -42,6 +42,12 @@ def _merge_content_lengths(stats: Stats, counts: Dict[str, int]) -> None:
         )
 
 
+def _merge_int_counts(target: Dict[int, int], source: Dict[str, int]) -> None:
+    for key, count in source.items():
+        key_int = int(key)
+        target[key_int] = target.get(key_int, 0) + count
+
+
 def _merge_multi_feed_pages(stats: Stats, pages: Dict[str, Any]) -> None:
     for url, feeds in pages.items():
         if url not in stats.multi_feed_pages:
@@ -87,6 +93,10 @@ def _merge_summary(stats: Stats, data: Dict[str, Any]) -> None:
     stats.discovery_rel_both_page += data.get("discovery_rel_both_page", 0)
     stats.discovery_multi_rel_url += data.get("discovery_multi_rel_url", 0)
     stats.discovery_pages_count += data.get("discovery_pages_count", 0)
+    _merge_int_counts(
+        stats.discovery_links_per_page_counts,
+        data.get("discovery_links_per_page_counts", {}),
+    )
 
     _merge_multi_feed_pages(stats, data.get("multi_feed_pages", {}))
     _merge_counts(

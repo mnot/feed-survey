@@ -22,6 +22,7 @@ def test_discovers_feed_links() -> None:
     assert stats.discovery_rel_feed == 1
     assert stats.discovery_rel_both_page == 1
     assert stats.discovery_multi_rel_url == 0
+    assert stats.discovery_links_per_page_counts == {2: 1}
     assert stats.multi_feed_pages == {
         "https://Example.COM/articles/": [
             "https://example.com/feed.xml",
@@ -52,6 +53,7 @@ def test_discovers_rel_tokens() -> None:
     assert stats.discovery_rel_feed == 1
     assert stats.discovery_rel_both_page == 1
     assert stats.discovery_multi_rel_url == 1
+    assert stats.discovery_links_per_page_counts == {2: 1}
     assert set(stats.autodiscovery_links) == {
         "https://example.com/rss.xml",
         "https://example.com/rss1.rdf",

@@ -75,7 +75,7 @@ def atom_content_type(type_attr: Optional[str]) -> str:
         return "plain"
     if type_name in ("html", "text/html"):
         return "html"
-    if type_name == "xhtml":
+    if type_name in ("xhtml", "application/xhtml+xml"):
         return "xhtml"
     return "plain"
 

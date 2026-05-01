@@ -150,10 +150,10 @@ def _discovery_histogram(counts: Dict[Any, int]) -> Dict[str, int]:
         ["0"]
         + [str(i) for i in range(1, 11)]
         + [
-            "-15",
-            "-20",
-            "-50",
-            "-100",
+            "11-15",
+            "16-20",
+            "21-50",
+            "51-100",
             "100+",
         ]
     )
@@ -164,13 +164,13 @@ def _discovery_histogram(counts: Dict[Any, int]) -> Dict[str, int]:
         elif val <= 10:
             hist[str(val)] += count
         elif val <= 15:
-            hist["-15"] += count
+            hist["11-15"] += count
         elif val <= 20:
-            hist["-20"] += count
+            hist["16-20"] += count
         elif val <= 50:
-            hist["-50"] += count
+            hist["21-50"] += count
         elif val <= 100:
-            hist["-100"] += count
+            hist["51-100"] += count
         else:
             hist["100+"] += count
     return hist

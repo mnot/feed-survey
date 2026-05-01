@@ -41,6 +41,7 @@ def serialize_stats(stats: Stats) -> Dict[str, Any]:
                 "discovery_rel_both_page": stats.discovery_rel_both_page,
                 "discovery_multi_rel_url": stats.discovery_multi_rel_url,
                 "discovery_pages_count": stats.discovery_pages_count,
+                "discovery_links_per_page_counts": stats.discovery_links_per_page_counts,
                 "multi_feed_pages": stats.multi_feed_pages,
                 "content_length_counts": stats.content_length_counts,
                 "discovery_domain_counts": stats.discovery_domain_counts,
@@ -90,6 +91,15 @@ def merge_serialized_stats(merged: Dict[str, Any], incoming: Dict[str, Any]) -> 
             merged["discovery_domain_counts"].get(url, 0) + count
         )
 
+    if "discovery_links_per_page_counts" not in merged:
+        merged["discovery_links_per_page_counts"] = {}
+    for link_count, page_count in incoming.get(
+        "discovery_links_per_page_counts", {}
+    ).items():
+        merged["discovery_links_per_page_counts"][link_count] = (
+            merged["discovery_links_per_page_counts"].get(link_count, 0) + page_count
+        )
+
 
 def merge_stats_values(values: Generator[Any, None, None]) -> Dict[str, Any]:
     merged = None
@@ -128,6 +138,14 @@ def reduce_stats(values: Generator[Any, None, None]) -> Stats:
         final_stats.discovery_rel_both_page += value.get("discovery_rel_both_page", 0)
         final_stats.discovery_multi_rel_url += value.get("discovery_multi_rel_url", 0)
         final_stats.discovery_pages_count += value.get("discovery_pages_count", 0)
+        for link_count, page_count in value.get(
+            "discovery_links_per_page_counts", {}
+        ).items():
+            link_count_int = int(link_count)
+            final_stats.discovery_links_per_page_counts[link_count_int] = (
+                final_stats.discovery_links_per_page_counts.get(link_count_int, 0)
+                + page_count
+            )
 
         other_time = value.get("max_crawl_time_str")
         if other_time:
@@ -189,6 +207,7 @@ def summary_record(stats: Stats) -> Dict[str, Any]:
         "discovery_rel_feed": stats.discovery_rel_feed,
         "discovery_rel_both_page": stats.discovery_rel_both_page,
         "discovery_multi_rel_url": stats.discovery_multi_rel_url,
+        "discovery_links_per_page_counts": stats.discovery_links_per_page_counts,
         "multi_feed_pages": stats.multi_feed_pages,
         "top_n": stats.top_n,
     }

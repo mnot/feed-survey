@@ -33,6 +33,7 @@ class Stats:
         self.discovery_rel_both_page: int = 0
         self.discovery_multi_rel_url: int = 0
         self.discovery_pages_count: int = 0
+        self.discovery_links_per_page_counts: Dict[int, int] = {}
         self.multi_feed_pages: Dict[str, List[str]] = {}
 
         self.hll_p = 12
@@ -68,6 +69,12 @@ class Stats:
         self.discovery_rel_both_page += other.discovery_rel_both_page
         self.discovery_multi_rel_url += other.discovery_multi_rel_url
         self.discovery_pages_count += getattr(other, "discovery_pages_count", 0)
+        for count, pages in getattr(
+            other, "discovery_links_per_page_counts", {}
+        ).items():
+            self.discovery_links_per_page_counts[count] = (
+                self.discovery_links_per_page_counts.get(count, 0) + pages
+            )
 
         for page_url, feed_urls in getattr(other, "multi_feed_pages", {}).items():
             if page_url not in self.multi_feed_pages:

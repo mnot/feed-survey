@@ -26,9 +26,16 @@ def build_discovery_summary(stats: Stats) -> DiscoverySummary:
     site_to_feeds = build_site_map(stats)
 
     total_pages = stats.pages_seen
-    zero_pages = max(0, total_pages - len(page_to_feeds))
-    discovery_page_counts = [len(feeds) for feeds in page_to_feeds.values()]
-    per_page_hist = make_histogram(discovery_page_counts, bins="discovery")
+    pages_with_discovery = getattr(stats, "discovery_pages_count", 0) or len(
+        page_to_feeds
+    )
+    zero_pages = max(0, total_pages - pages_with_discovery)
+    page_count_hist = getattr(stats, "discovery_links_per_page_counts", {})
+    if page_count_hist:
+        per_page_hist = make_histogram(page_count_hist, bins="discovery")
+    else:
+        discovery_page_counts = [len(feeds) for feeds in page_to_feeds.values()]
+        per_page_hist = make_histogram(discovery_page_counts, bins="discovery")
     per_page_hist.pop("0", None)
 
     total_sites = getattr(stats, "sites_seen_count", len(stats.sites_seen))
@@ -46,9 +53,8 @@ def build_discovery_summary(stats: Stats) -> DiscoverySummary:
         else 0.0
     )
 
-    stacked_page = build_stacked_data(stats, page_to_feeds, zero_pages)
+    stacked_page = build_page_chart_data(per_page_hist)
     stacked_site = build_stacked_data(stats, site_to_feeds, zero_sites)
-    _remove_zero_bucket(stacked_page)
     _remove_zero_bucket(stacked_site)
 
     return DiscoverySummary(
@@ -75,6 +81,14 @@ def build_page_map(stats: Stats) -> Dict[str, Set[str]]:
                 page_to_feeds[domain_or_url] = set()
             page_to_feeds[domain_or_url].add(feed_url)
     return page_to_feeds
+
+
+def build_page_chart_data(per_page_hist: Dict[str, int]) -> Dict[str, Any]:
+    non_empty = {label: count for label, count in per_page_hist.items() if count}
+    return {
+        "labels": list(non_empty.keys()),
+        "counts": list(non_empty.values()),
+    }
 
 
 def build_site_map(stats: Stats) -> Dict[str, Set[str]]:
