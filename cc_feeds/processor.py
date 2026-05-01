@@ -3,7 +3,6 @@ import logging
 import math
 import pickle
 import re
-import signal
 import sys
 import traceback
 from datetime import datetime, timedelta, timezone
@@ -14,17 +13,6 @@ import dateutil.parser
 import lxml.html
 from fastwarc.warc import WarcRecordType
 from lxml import etree
-
-FEED_TIMEOUT_SECS = 30  # kill any feed that takes longer than this to parse
-
-
-class _FeedTimeout(Exception):
-    pass
-
-
-def _alarm_handler(signum: int, frame: Any) -> None:
-    raise _FeedTimeout("feed processing timed out")
-
 
 sys.stderr.write("DEBUG: processor.py module loading...\n")
 sys.stderr.flush()
@@ -325,16 +313,7 @@ class WarcProcessor:
         status_code: int = h.status_code
         if status_code == 200:
             normalized_url = normalize_url(url)
-            old_handler = signal.signal(signal.SIGALRM, _alarm_handler)
-            signal.alarm(FEED_TIMEOUT_SECS)
-            try:
-                self._process_feed(record, normalized_url, status_code, request_time_str)
-            except _FeedTimeout:
-                sys.stderr.write(f"WARNING: feed timed out after {FEED_TIMEOUT_SECS}s: {url}\n")
-                sys.stderr.flush()
-            finally:
-                signal.alarm(0)
-                signal.signal(signal.SIGALRM, old_handler)
+            self._process_feed(record, normalized_url, status_code, request_time_str)
         elif "text/plain" in content_type or "application/octet-stream" in content_type:
             # Sniff the first few bytes for feed signatures (only if reader supports peek)
             try:
