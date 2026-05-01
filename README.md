@@ -63,11 +63,12 @@ make emr
 
 ### `mrjob.conf`
 Control the cluster size and instance types.
-- **`TargetSpotCapacity`**: Set to `100` for a ~15 hour run, or `200` for ~7.5 hours.
-- **`instance_fleets`**: Defines the mix of Spot instances (m5, r5, c5) to ensure high availability.
+- **`TargetOnDemandCapacity`**: The default full run uses 30 core xlarge instances plus one master, leaving a little headroom below a 128 vCPU on-demand quota.
+- **`instance_fleets`**: Defines the mix of m5, r5, and c5 instances EMR can choose from.
 
 ### `Makefile`
 - **`CRAWL_ID`**: The Common Crawl index to process (e.g., `CC-MAIN-2026-12`).
+- **`MAP_TASKS`**: Number of WARC path chunks for a full run. The default is higher than the worker count so slow WARC files have less impact on overall progress.
 - **`OUTPUT_DIR`**: The S3 bucket where results and logs will be stored.
 
 ## Project Structure

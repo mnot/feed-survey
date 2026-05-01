@@ -24,7 +24,7 @@ PATHS_PREFIX = s3://mnot-cc-feeds/paths/
 # Use := to ensure RUN_ID is fixed for the entire make execution
 RUN_ID := $(shell date +%Y%m%d-%H%M%S)
 
-MAP_TASKS ?= 400
+MAP_TASKS ?= 800
 TEST_MAP_TASKS ?= 20
 TEST_REDUCES ?= 1
 
