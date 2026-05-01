@@ -99,9 +99,6 @@ def _merge_summary(stats: Stats, data: Dict[str, Any]) -> None:
 
     _merge_counts(stats.content_type_counts, data.get("content_types", {}))
 
-    # Preserve the existing summary accumulation behavior while making it explicit.
-    stats.feeds_sniffed += data.get("feeds_sniffed", 0)
-    stats.total_entries += data.get("total_entries", 0)
     stats.pages_processed += data.get("pages_processed", 0)
 
 

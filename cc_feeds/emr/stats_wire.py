@@ -181,12 +181,16 @@ def summary_record(stats: Stats) -> Dict[str, Any]:
         "total_entries": stats.total_entries,
         "lang_src_http": stats.lang_src_http,
         "lang_src_feed": stats.lang_src_feed,
+        "lang_src_entry": stats.lang_src_entry,
+        "lang_mismatches": stats.lang_mismatches,
+        "lang_multiple_in_feed": stats.lang_multiple_in_feed,
         "discovery_pages_count": stats.discovery_pages_count,
         "discovery_rel_alternate": stats.discovery_rel_alternate,
         "discovery_rel_feed": stats.discovery_rel_feed,
         "discovery_rel_both_page": stats.discovery_rel_both_page,
         "discovery_multi_rel_url": stats.discovery_multi_rel_url,
         "multi_feed_pages": stats.multi_feed_pages,
+        "top_n": stats.top_n,
     }
 
 
