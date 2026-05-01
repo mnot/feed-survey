@@ -51,7 +51,7 @@ class FeedAnalyzer:
 
             self._record_http_language(record, feed_info)
             self._analyze_parsed_feed(feed_info, parsed_data, content, request_time)
-        except Exception as exc:  # pylint: disable=broad-except
+        except (OSError, RuntimeError, SyntaxError, TypeError, ValueError) as exc:
             self._handle_process_error(feed_info, url, exc)
 
         self.stats.feed_results[url] = feed_info
@@ -188,7 +188,7 @@ class FeedAnalyzer:
                 delta = request_time - entry_dt
                 if timedelta(0) <= delta < timedelta(days=7):
                     feed_info["entry_recently"] = True
-            except Exception:
+            except (ValueError, TypeError, IndexError):
                 pass
 
         feed_info["newest_entry_date"] = newest_date

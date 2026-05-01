@@ -3,7 +3,6 @@ from typing import Any, Dict, Set
 from urllib.parse import urljoin
 
 import lxml.html
-from lxml import etree
 
 from cc_feeds.analysis.stats import Stats
 from cc_feeds.url import get_domain, normalize_url
@@ -38,11 +37,11 @@ class HtmlDiscovery:
             found_rels: Set[str] = set()
             page_discoveries: Dict[str, Set[str]] = {}
             for link in links:
-                if isinstance(link, etree._Element):
+                if hasattr(link, "get"):
                     self._record_link(page_url, link, found_rels, page_discoveries)
 
             self._record_page_stats(page_url, found_rels, page_discoveries)
-        except Exception:
+        except (LookupError, RuntimeError, SyntaxError, TypeError, ValueError):
             pass
 
     def _record_link(

@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from fastwarc.warc import WarcRecordType
+from fastwarc.warc import WarcRecordType  # pylint: disable=no-name-in-module
 
 from cc_feeds.analysis.feed_analysis import FeedAnalyzer
 from cc_feeds.analysis.formats import guess_feed_format
@@ -22,104 +22,85 @@ class WarcProcessor:
         return self.scope.includes(domain)
 
     def process_record(self, record: Any) -> None:
-        # 1. Immediate exit for non-responses (very fast)
         if record.record_type != WarcRecordType.response:
             return
-
-        # 2. FAST METADATA FILTER (WARC-level)
-        # Common Crawl provides the identified payload type in WARC headers.
-        # This allows us to skip HTTP parsing for 80% of records.
-        warc_ct = record.headers.get("WARC-Identified-Payload-Type", "")
-        if warc_ct and not (
-            "text/html" in warc_ct
-            or "xml" in warc_ct
-            or "rss" in warc_ct
-            or "json" in warc_ct
-        ):
+        if not _interesting_warc_content_type(record):
             return
 
-        # 3. Target URI and Scope (Check before expensive HTTP parsing)
-        # Fetch URI once to avoid multiple decodes in fastwarc
         url = record.headers.get("WARC-Target-URI")
-        if not url:
+        domain = get_domain(url or "")
+        if not url or not self.is_in_scope(domain):
             return
 
-        domain = get_domain(url)
-        if not self.is_in_scope(domain):
-            return
-
-        # 4. Lazy parse HTTP headers ONLY for potentially interesting records
         record.parse_http()
         http_headers = record.http_headers
         if not http_headers:
             return
 
-        # 5. CONTENT-TYPE RE-VERIFICATION (HTTP-level)
         ct_header = http_headers.get("Content-Type", "")
-
-        # Fast path: check for interesting types in the raw string
-        if not (
-            "text/html" in ct_header
-            or "xml" in ct_header
-            or "rss" in ct_header
-            or "json" in ct_header
-        ):
+        if not _interesting_http_content_type(ct_header):
             return
 
-        # Normalize content type for stats
-        ct_lower = ct_header.lower()
-        content_type = ct_lower.split(";")[0].strip()
-        if content_type:
-            self.stats.content_type_counts[content_type] = (
-                self.stats.content_type_counts.get(content_type, 0) + 1
-            )
-
-        # 6. General stats and date (only for in-scope interesting records)
-        self.stats.pages_seen += 1
-
-        # Capture request time once from WARC headers to avoid redundant decodes
+        content_type = _normalized_content_type(ct_header)
         request_time_str = record.headers.get("WARC-Date")
-        self.stats.pages_processed += 1
-        if domain:
-            self.stats.add_site(domain)
+        self._record_page_metadata(domain, content_type, request_time_str)
 
-        if request_time_str:
-            if (
-                not self.stats.max_crawl_time_str
-                or request_time_str > self.stats.max_crawl_time_str
-            ):
-                self.stats.max_crawl_time_str = request_time_str
-
-        # 7. Process based on type
         if "text/html" in content_type:
-            # ONLY read a small snippet to find feed links
-            # NEVER use record.body as it triggers a full download of the entire record
-            try:
-                content = record.reader.read(12288)
-                self._process_html(url, content)
-            except Exception:
-                pass
+            self._process_html_snippet(record, url)
             return
 
-        # 8. Feed processing
         status_code: int = http_headers.status_code
         if status_code == 200:
             normalized_url = normalize_url(url)
             self._process_feed(record, normalized_url, status_code, request_time_str)
         elif "text/plain" in content_type or "application/octet-stream" in content_type:
-            # Sniff the first few bytes for feed signatures (only if reader supports peek)
-            try:
-                if (
-                    hasattr(record.reader, "peek")
-                    and guess_feed_format(record.reader.peek(1024)) != "unknown"
-                ):
-                    self.stats.feeds_sniffed += 1
-                    self._process_feed(record, url, status_code, request_time_str)
-            except (AttributeError, Exception):
-                pass
+            self._process_sniffed_feed(record, url, status_code, request_time_str)
 
     def _process_html(self, url: str, content: bytes) -> None:
         self.html_discovery.process(url, content)
+
+    def _process_html_snippet(self, record: Any, url: str) -> None:
+        try:
+            content = record.reader.read(12288)
+            self._process_html(url, content)
+        except (OSError, RuntimeError, TypeError, ValueError):
+            pass
+
+    def _process_sniffed_feed(
+        self,
+        record: Any,
+        url: str,
+        status_code: int,
+        request_time_str: Optional[str],
+    ) -> None:
+        try:
+            if (
+                hasattr(record.reader, "peek")
+                and guess_feed_format(record.reader.peek(1024)) != "unknown"
+            ):
+                self.stats.feeds_sniffed += 1
+                self._process_feed(record, url, status_code, request_time_str)
+        except (AttributeError, OSError, RuntimeError, TypeError, ValueError):
+            pass
+
+    def _record_page_metadata(
+        self, domain: str, content_type: str, request_time_str: Optional[str]
+    ) -> None:
+        if content_type:
+            self.stats.content_type_counts[content_type] = (
+                self.stats.content_type_counts.get(content_type, 0) + 1
+            )
+
+        self.stats.pages_seen += 1
+        self.stats.pages_processed += 1
+        if domain:
+            self.stats.add_site(domain)
+
+        if request_time_str and (
+            not self.stats.max_crawl_time_str
+            or request_time_str > self.stats.max_crawl_time_str
+        ):
+            self.stats.max_crawl_time_str = request_time_str
 
     def _guess_format(self, content: bytes) -> str:
         return guess_feed_format(content)
@@ -132,3 +113,26 @@ class WarcProcessor:
         request_time_str: Optional[str] = None,
     ) -> None:
         self.feed_analyzer.process(record, url, status_code, request_time_str)
+
+
+def _interesting_warc_content_type(record: Any) -> bool:
+    warc_ct = record.headers.get("WARC-Identified-Payload-Type", "")
+    return not warc_ct or _interesting_content_type(warc_ct)
+
+
+def _interesting_http_content_type(content_type_header: str) -> bool:
+    return _interesting_content_type(content_type_header)
+
+
+def _interesting_content_type(content_type_header: str) -> bool:
+    content_type = content_type_header.lower()
+    return (
+        "text/html" in content_type
+        or "xml" in content_type
+        or "rss" in content_type
+        or "json" in content_type
+    )
+
+
+def _normalized_content_type(content_type_header: str) -> str:
+    return content_type_header.lower().split(";")[0].strip()
