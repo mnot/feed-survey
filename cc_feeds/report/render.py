@@ -8,13 +8,14 @@ from jinja2 import Environment, FileSystemLoader
 
 from cc_feeds.analysis import Stats
 from cc_feeds.report.aggregate import aggregate_feed_data
-from cc_feeds.report.discovery import (
-    build_page_map,
-    build_site_map,
-    build_stacked_data,
-    detect_duplicates,
+from cc_feeds.report.discovery import build_discovery_summary
+from cc_feeds.report.distributions import (
+    collapse_content_types,
+    count_content_profiles,
+    count_language_buckets,
+    format_extension_counts,
 )
-from cc_feeds.report.formatting import format_extension, format_number
+from cc_feeds.report.formatting import format_number
 from cc_feeds.report.histograms import build_recency_cdf, make_histogram
 from cc_feeds.report.quality_summary import build_quality_summary
 
@@ -45,94 +46,11 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
     feeds_with_autodiscovery = len(discovered_results)
     feeds_without_autodiscovery = len(all_valid_results) - feeds_with_autodiscovery
 
-    # --- Content-type distribution (collapsed) ---
-    content_types_collapsed: Dict[str, int] = {
-        "HTML": 0,
-        "Atom": 0,
-        "RSS": 0,
-        "JSON Feed": 0,
-        "Other XML": 0,
-        "Other": 0,
-    }
-    for ct, count in stats.content_type_counts.items():
-        ct_l = ct.lower()
-        if "text/html" in ct_l or "application/xhtml" in ct_l:
-            content_types_collapsed["HTML"] += count
-        elif "atom" in ct_l:
-            content_types_collapsed["Atom"] += count
-        elif "rss" in ct_l:
-            content_types_collapsed["RSS"] += count
-        elif "feed+json" in ct_l or ("json" in ct_l and "html" not in ct_l):
-            content_types_collapsed["JSON Feed"] += count
-        elif "xml" in ct_l:
-            content_types_collapsed["Other XML"] += count
-        else:
-            content_types_collapsed["Other"] += count
+    content_types_collapsed = collapse_content_types(stats.content_type_counts)
+    content_profile_dist = count_content_profiles(all_valid_results)
+    lang_count_hist = count_language_buckets(all_valid_results)
 
-    # --- Content profile distribution ---
-    content_profile_dist: Dict[str, int] = {
-        "html": 0,
-        "plain": 0,
-        "xhtml": 0,
-        "mixed": 0,
-        "unknown": 0,
-    }
-    for res in all_valid_results.values():
-        profile = res.get("content_type_profile", "unknown") or "unknown"
-        content_profile_dist[profile] = content_profile_dist.get(profile, 0) + 1
-
-    # --- Language count per feed histogram ---
-    lang_count_hist: Dict[str, int] = {"0": 0, "1": 0, "2": 0, "3+": 0}
-    for res in all_valid_results.values():
-        language_count = len(res.get("all_languages") or [])
-        if language_count == 0:
-            lang_count_hist["0"] += 1
-        elif language_count == 1:
-            lang_count_hist["1"] += 1
-        elif language_count == 2:
-            lang_count_hist["2"] += 1
-        else:
-            lang_count_hist["3+"] += 1
-
-    # --- Discovery Mapping ---
-    page_to_feeds = build_page_map(stats)
-    site_to_feeds = build_site_map(stats)
-
-    discovery_page_counts = [len(f) for f in page_to_feeds.values()]
-    total_pages = stats.pages_seen
-    zero_pages = max(0, total_pages - len(page_to_feeds))
-
-    discovery_per_page_hist = make_histogram(discovery_page_counts, bins="discovery")
-    discovery_per_page_hist.pop("0", None)
-
-    discovery_site_counts = [len(f) for f in site_to_feeds.values()]
-    total_sites = getattr(stats, "sites_seen_count", len(stats.sites_seen))
-    zero_sites = max(0, total_sites - len(site_to_feeds))
-
-    discovery_per_site_hist = make_histogram(discovery_site_counts, bins="discovery")
-    discovery_per_site_hist.pop("0", None)
-
-    # Duplicate detection
-    duplicate_counts = detect_duplicates(stats.multi_feed_pages, stats.feed_results)
-    pages_with_duplicates = len(duplicate_counts)
-    multi_feed_pages_total = len(stats.multi_feed_pages)
-    duplicate_prevalence_pct = (
-        round(pages_with_duplicates / multi_feed_pages_total * 100, 1)
-        if multi_feed_pages_total
-        else 0.0
-    )
-
-    # Stacked discovery data
-    stacked_page = build_stacked_data(stats, page_to_feeds, zero_pages)
-    stacked_site = build_stacked_data(stats, site_to_feeds, zero_sites)
-    for stacked in [stacked_page, stacked_site]:
-        if "0" in stacked["labels"]:
-            idx = stacked["labels"].index("0")
-            stacked["labels"].pop(idx)
-            stacked["has_entries"].pop(idx)
-            stacked["valid_only"].pop(idx)
-            stacked["success_only"].pop(idx)
-            stacked["other"].pop(idx)
+    discovery = build_discovery_summary(stats)
 
     # --- Crawl time reference ---
     max_crawl_time = None
@@ -173,17 +91,14 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
     total_errors = sum(c for _, c in errors)
 
     # Extensions: format as prefix:local, deduplicate, top 15
-    ext_formatted: Dict[str, int] = {}
-    for ext, count in agg["extensions"].items():
-        label = format_extension(ext)
-        ext_formatted[label] = ext_formatted.get(label, 0) + count
+    ext_formatted = format_extension_counts(agg["extensions"])
     extensions = sorted(ext_formatted.items(), key=lambda x: x[1], reverse=True)[:15]
 
     # --- Template data ---
     report_stats = {
         "pages_seen": stats.pages_seen,
         "max_crawl_time": max_crawl_time,
-        "sites_seen": total_sites,
+        "sites_seen": discovery.total_sites,
         "feed_results_count": len(stats.feed_results),
         "feeds_with_autodiscovery": feeds_with_autodiscovery,
         "feeds_without_autodiscovery": feeds_without_autodiscovery,
@@ -196,9 +111,9 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
         "feeds_with_summary": agg["feeds_with_summary"],
         "feeds_with_neither": agg["feeds_with_neither"],
         "pages_with_autodiscovery": getattr(
-            stats, "discovery_pages_count", len(page_to_feeds)
+            stats, "discovery_pages_count", len(discovery.page_to_feeds)
         ),
-        "sites_with_autodiscovery": len(site_to_feeds),
+        "sites_with_autodiscovery": len(discovery.site_to_feeds),
         "top_n": stats.top_n,
         "feeds_sniffed": stats.feeds_sniffed,
         "total_entries": agg["total_entries"],
@@ -229,10 +144,10 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
         languages=languages,
         extensions=extensions,
         errors=errors,
-        discovery_per_page_hist=discovery_per_page_hist,
-        discovery_per_site_hist=discovery_per_site_hist,
-        stacked_page_json=json.dumps(stacked_page),
-        stacked_site_json=json.dumps(stacked_site),
+        discovery_per_page_hist=discovery.per_page_hist,
+        discovery_per_site_hist=discovery.per_site_hist,
+        stacked_page_json=json.dumps(discovery.stacked_page),
+        stacked_site_json=json.dumps(discovery.stacked_site),
         charsets_per_format=agg["charsets_per_format"],
         content_length_hist=make_histogram(stats.content_length_counts, bins="natural"),
         entry_counts_hist=make_histogram(agg["entry_counts"], bins="entries"),
@@ -253,13 +168,13 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
             if stats.discovery_pages_count > 0
             else len(stats.autodiscovery_links)
         ),
-        zero_pages_f=format_number(zero_pages),
-        total_sites_f=format_number(total_sites),
-        sites_with_auto_f=format_number(len(site_to_feeds)),
-        zero_sites_f=format_number(zero_sites),
-        pages_with_duplicates=pages_with_duplicates,
-        duplicate_prevalence_pct=duplicate_prevalence_pct,
-        multi_feed_pages_total=multi_feed_pages_total,
+        zero_pages_f=format_number(discovery.zero_pages),
+        total_sites_f=format_number(discovery.total_sites),
+        sites_with_auto_f=format_number(len(discovery.site_to_feeds)),
+        zero_sites_f=format_number(discovery.zero_sites),
+        pages_with_duplicates=discovery.pages_with_duplicates,
+        duplicate_prevalence_pct=discovery.duplicate_prevalence_pct,
+        multi_feed_pages_total=discovery.multi_feed_pages_total,
     )
 
     with open(output_path, "w", encoding="utf-8") as f_out:

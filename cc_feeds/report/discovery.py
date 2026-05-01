@@ -1,6 +1,70 @@
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from cc_feeds.analysis import Stats
+from cc_feeds.report.histograms import make_histogram
+
+
+@dataclass(frozen=True)
+class DiscoverySummary:
+    page_to_feeds: Dict[str, Set[str]]
+    site_to_feeds: Dict[str, Set[str]]
+    per_page_hist: Dict[str, int]
+    per_site_hist: Dict[str, int]
+    total_sites: int
+    zero_pages: int
+    zero_sites: int
+    stacked_page: Dict[str, Any]
+    stacked_site: Dict[str, Any]
+    pages_with_duplicates: int
+    duplicate_prevalence_pct: float
+    multi_feed_pages_total: int
+
+
+def build_discovery_summary(stats: Stats) -> DiscoverySummary:
+    page_to_feeds = build_page_map(stats)
+    site_to_feeds = build_site_map(stats)
+
+    total_pages = stats.pages_seen
+    zero_pages = max(0, total_pages - len(page_to_feeds))
+    discovery_page_counts = [len(feeds) for feeds in page_to_feeds.values()]
+    per_page_hist = make_histogram(discovery_page_counts, bins="discovery")
+    per_page_hist.pop("0", None)
+
+    total_sites = getattr(stats, "sites_seen_count", len(stats.sites_seen))
+    zero_sites = max(0, total_sites - len(site_to_feeds))
+    discovery_site_counts = [len(feeds) for feeds in site_to_feeds.values()]
+    per_site_hist = make_histogram(discovery_site_counts, bins="discovery")
+    per_site_hist.pop("0", None)
+
+    duplicate_counts = detect_duplicates(stats.multi_feed_pages, stats.feed_results)
+    pages_with_duplicates = len(duplicate_counts)
+    multi_feed_pages_total = len(stats.multi_feed_pages)
+    duplicate_prevalence_pct = (
+        round(pages_with_duplicates / multi_feed_pages_total * 100, 1)
+        if multi_feed_pages_total
+        else 0.0
+    )
+
+    stacked_page = build_stacked_data(stats, page_to_feeds, zero_pages)
+    stacked_site = build_stacked_data(stats, site_to_feeds, zero_sites)
+    _remove_zero_bucket(stacked_page)
+    _remove_zero_bucket(stacked_site)
+
+    return DiscoverySummary(
+        page_to_feeds=page_to_feeds,
+        site_to_feeds=site_to_feeds,
+        per_page_hist=per_page_hist,
+        per_site_hist=per_site_hist,
+        total_sites=total_sites,
+        zero_pages=zero_pages,
+        zero_sites=zero_sites,
+        stacked_page=stacked_page,
+        stacked_site=stacked_site,
+        pages_with_duplicates=pages_with_duplicates,
+        duplicate_prevalence_pct=duplicate_prevalence_pct,
+        multi_feed_pages_total=multi_feed_pages_total,
+    )
 
 
 def build_page_map(stats: Stats) -> Dict[str, Set[str]]:
@@ -112,3 +176,14 @@ def build_stacked_data(
         else:
             stacked["other"][bin_idx] += 1
     return stacked
+
+
+def _remove_zero_bucket(stacked: Dict[str, Any]) -> None:
+    if "0" not in stacked["labels"]:
+        return
+    idx = stacked["labels"].index("0")
+    stacked["labels"].pop(idx)
+    stacked["has_entries"].pop(idx)
+    stacked["valid_only"].pop(idx)
+    stacked["success_only"].pop(idx)
+    stacked["other"].pop(idx)
