@@ -72,19 +72,7 @@ test-emr: venv
 		test/warc.paths.txt \
 		$(PATHS_PREFIX)test-$(RUN_ID)/ \
 		$(TEST_MAP_TASKS)
-	@if [ ! -s $(TEST_CLUSTER_FILE) ]; then \
-		echo "Starting new persistent cluster..."; \
-		$(VENV)/python mrjob_wrapper.py mrjob.tools.emr.create_cluster -c mrjob-test.conf 2>&1 | tee cluster_start.log; \
-		grep -o "j-[A-Z0-9]*" cluster_start.log | head -n 1 > $(TEST_CLUSTER_FILE); \
-		rm cluster_start.log; \
-	fi; \
-	CLUSTER_ID=$$(cat $(TEST_CLUSTER_FILE)); \
-	if [ -z "$$CLUSTER_ID" ]; then \
-		echo "ERROR: Failed to start cluster or find cluster ID in cluster_start.log"; \
-		exit 1; \
-	fi; \
-	echo "Using cluster $$CLUSTER_ID"; \
-	$(VENV)/python mr_job.py -r emr --cluster-id $$CLUSTER_ID -c mrjob-test.conf \
+	$(VENV)/python mr_job.py -r emr -c mrjob-test.conf \
 		--no-read-logs --no-cat-output \
 		--jobconf mapreduce.job.reduces=20 \
 		--output-dir $(OUTPUT_DIR)test-$(RUN_ID)/ \
@@ -95,10 +83,6 @@ test-emr: venv
 	aws s3 sync $(OUTPUT_DIR)test-$(RUN_ID)/ results/test-$(RUN_ID)/
 	$(VENV)/python finalize.py results/test-$(RUN_ID)/ $(CRAWL_ID) results/test-$(RUN_ID)/report.html
 	@echo "Report generated at results/test-$(RUN_ID)/report.html"
-	@echo ""
-	@echo "**************************************************"
-	@echo "* CLUSTER STILL RUNNING - make test-clean IF DONE *"
-	@echo "**************************************************"
 
 .PHONY: test-clean
 test-clean:
