@@ -64,8 +64,6 @@ upload-wheels: wheels
 
 LIMIT ?= 1
 
-TEST_CLUSTER_FILE = TEST_CLUSTER
-
 .PHONY: test-emr
 test-emr: venv
 	$(VENV)/python -m cc_feeds.emr.split_paths \
@@ -84,18 +82,6 @@ test-emr: venv
 	aws s3 sync $(OUTPUT_DIR)test-$(RUN_ID)/ results/test-$(RUN_ID)/
 	$(VENV)/python -m cc_feeds.emr.finalize results/test-$(RUN_ID)/ $(CRAWL_ID) results/test-$(RUN_ID)/report.html
 	@echo "Report generated at results/test-$(RUN_ID)/report.html"
-
-.PHONY: test-clean
-test-clean:
-	@if [ -f $(TEST_CLUSTER_FILE) ]; then \
-		CLUSTER_ID=$$(cat $(TEST_CLUSTER_FILE)); \
-		echo "Terminating cluster $$CLUSTER_ID..."; \
-		$(VENV)/python -m cc_feeds.emr.mrjob_wrapper mrjob.tools.emr.terminate_cluster $$CLUSTER_ID || true; \
-		rm $(TEST_CLUSTER_FILE); \
-		echo "Cleaned up."; \
-	else \
-		echo "No persistent cluster found."; \
-	fi
 
 # Update a specific report: make results/test-xxx/report.html
 .PHONY: results/%/report.html
