@@ -170,6 +170,7 @@ class CCFeedsJob(MRJob): # type: ignore[misc]
             "multi_feed_pages": stats.multi_feed_pages,
             "content_length_counts": stats.content_length_counts,
             "discovery_domain_counts": stats.discovery_domain_counts,
+            "top_n": stats.top_n,
         }))
 
     def mapper_final(self) -> Generator[Tuple[str, Any], None, None]:

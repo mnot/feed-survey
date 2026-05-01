@@ -31,6 +31,8 @@ def finalize_mr_results(results_dir: str, crawl_id: str, output_path: str) -> No
                     data = json.loads(data_str)
                     
                     if label == 'summary' or label == 'pages_processed':
+                        if data.get("top_n"):
+                            overall_stats.top_n = data["top_n"]
                         overall_stats.pages_seen += data.get("pages_seen", 0)
                         other_max_crawl = data.get("max_crawl_time_str")
                         if other_max_crawl:
