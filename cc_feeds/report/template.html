@@ -321,11 +321,12 @@
                 <div class="card-sub">Individual feed entries found; {{ "%.1f"|format(stats.total_entries / total_parsed if total_parsed else 0) }} per parsed feed on average</div>
             </div>
             <div class="card">
-                <div class="card-title">Mean Parsed-Feed Quality</div>
+                <div class="card-title">Mean Feed Quality</div>
                 <div class="card-value">{{ "%.3f"|format(stats.mean_quality) }}</div>
                 <div class="card-sub">
-                    Successfully parsed feeds only. Weighted composite: recency (35%), content richness (25%),
-                    entry count (15%), entry metadata (15%), feed metadata (10%).
+                    <div class="row"><span>All parsed feeds</span> <strong>{{ "%.3f"|format(stats.mean_quality) }}</strong></div>
+                    <div class="row"><span>Active/datable feeds</span> <strong>{{ "%.3f"|format(stats.active_quality.mean) }}</strong></div>
+                    <div class="row"><span>Active/datable share</span> <strong>{{ stats.active_quality.n|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.active_quality.pct) }}%)</span></strong></div>
                 </div>
             </div>
         </div>
@@ -357,18 +358,29 @@
             <div class="chart-card">
                 <div class="chart-title">Feed Quality Distribution</div>
                 <div class="chart-sub">
-                    Score 0–1 among successfully parsed feeds. Primary driver is entry
-                    or feed recency (exponential decay, half-life 120 days). Invalid
-                    or unparseable feed checks are excluded from this chart.
+                    Score 0–1 among successfully parsed feeds. Abandoned, undated,
+                    or stale feeds score 0 here; the card above also shows the
+                    mean after counting those feeds out. Invalid or unparseable
+                    feed checks are excluded.
                 </div>
                 <div class="chart-container">
                     <canvas id="qualityHistogram"></canvas>
                 </div>
             </div>
             <div class="chart-card">
+                <div class="chart-title">Quality Score Components</div>
+                <div class="chart-sub">
+                    Mean component scores across successfully parsed feeds. Bar
+                    labels show each component's weight in the composite score.
+                </div>
+                <div class="chart-container">
+                    <canvas id="qualityComponents"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
                 <div class="chart-title">Quality by Format</div>
                 <div class="chart-sub">
-                    % of feeds in each quality tier per format, ordered by mean quality (↓).
+                    % of feeds in each quality tier per format, ordered by mean score (↓).
                     Dot = mean score. Normalised for population size so rare formats
                     compare fairly against common ones.
                 </div>
@@ -778,6 +790,30 @@
             }]
         },
         options: baseOpts
+    });
+
+    const qualityComponents = {{ quality_components_json|safe }};
+    new Chart(document.getElementById('qualityComponents'), {
+        type: 'bar',
+        data: {
+            labels: qualityComponents.map(row => `${row.label} (${Math.round(row.weight * 100)}%)`),
+            datasets: [{
+                data: qualityComponents.map(row => row.mean),
+                backgroundColor: ['#6366f1', '#10b981', '#8b5cf6', '#f59e0b', '#94a3b8'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            ...cloneOpts(baseOpts),
+            scales: {
+                x: { ...cloneOpts(baseOpts).scales.x, ticks: { maxRotation: 35, minRotation: 35, font: { size: 11 } } },
+                y: { ...cloneOpts(baseOpts).scales.y, min: 0, max: 1 }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: ctx => ` Mean: ${ctx.parsed.y.toFixed(3)}` } }
+            }
+        }
     });
 
     // ── Content length ────────────────────────────────────────────────────────

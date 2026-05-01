@@ -66,6 +66,8 @@ def render_report_html(context: ReportContext) -> str:
         oldest_entry_cdf=json.dumps(context.oldest_entry_cdf),
         n_zero_entry=context.n_zero_entry,
         quality_hist=json.dumps(quality["hist"]),
+        quality_components_json=json.dumps(quality["components"]),
+        quality_components=quality["components"],
         format_quality_json=json.dumps(quality["format_rows"]),
         format_quality_rows=quality["format_rows"],
         autodiscovery_quality=quality["autodiscovery"],
@@ -130,4 +132,5 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         "lang_count_hist": context.lang_count_hist,
         "quality_hist": quality["hist"],
         "mean_quality": round(quality["mean"], 3),
+        "active_quality": quality["active"],
     }

@@ -66,6 +66,16 @@ def test_quality_summary_sets() -> None:
     )
 
     assert sum(summary["hist"].values()) == 2
+    assert summary["active"]["n"] == 2
+    assert summary["active"]["mean"] > 0
+    assert [row["key"] for row in summary["components"]] == [
+        "recency",
+        "content_richness",
+        "entry_count",
+        "entry_metadata",
+        "feed_metadata",
+    ]
+    assert all(0.0 <= row["mean"] <= 1.0 for row in summary["components"])
     assert summary["autodiscovery"]["n"] == 1
     assert summary["no_autodiscovery"]["n"] == 1
     assert [row["fmt"] for row in summary["format_rows"]] == ["rss20", "atom10"]
@@ -166,7 +176,12 @@ def test_report_runtime_lang_counts() -> None:
         duplicate_prevalence_pct=0.0,
         multi_feed_pages_total=0,
     )
-    quality = {"hist": {}, "mean": 0.0}
+    quality = {
+        "hist": {},
+        "mean": 0.0,
+        "active": {"mean": 0.0, "n": 0, "pct": 0.0},
+        "components": [],
+    }
 
     report_stats = build_report_stats(
         ReportContext(
@@ -197,3 +212,4 @@ def test_report_runtime_lang_counts() -> None:
     assert report_stats["lang_src_entry"] == 9
     assert report_stats["lang_mismatches"] == 10
     assert report_stats["lang_multiple_in_feed"] == 11
+    assert report_stats["active_quality"]["n"] == 0

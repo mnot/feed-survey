@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from cc_feeds.report.quality import score_components, score_feed
+from cc_feeds.report.quality import is_active_feed, score_components, score_feed
 
 NOW = datetime(2026, 5, 1, tzinfo=timezone.utc)
 
@@ -31,6 +31,7 @@ def test_quality_uses_feed_updated() -> None:
 
     assert score_feed(feed, NOW) > 0.0
     assert score_components(feed, NOW)["recency"] > 0.0
+    assert is_active_feed(feed, NOW) is True
 
 
 def test_quality_rejects_stale_feed() -> None:
@@ -45,6 +46,7 @@ def test_quality_rejects_stale_feed() -> None:
         "entry_metadata": 0.0,
         "feed_metadata": 0.0,
     }
+    assert is_active_feed(feed, NOW) is False
 
 
 def test_quality_stale_entry_wins() -> None:

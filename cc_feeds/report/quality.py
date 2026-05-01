@@ -1,5 +1,10 @@
 """
-Feed quality scoring: 0.0 (invalid / dead) to 1.0 (ideal active feed).
+Feed quality scoring: 0.0 (invalid / inactive) to 1.0 (ideal active feed).
+
+This is an operational quality score, not an editorial judgment. It is
+intentionally freshness-weighted, so abandoned feeds remain visible in the
+"all parsed feeds" view while active-only summaries can show the quality of
+feeds that still appear maintained.
 
 Overall score is a weighted sum of five sub-scores, each in [0, 1]:
 
@@ -23,7 +28,7 @@ Overall score is a weighted sum of five sub-scores, each in [0, 1]:
   feed_metadata    0.10  Is the feed itself well-described?
                          Weighted flags: title, link, language, updated date.
 
-Invalid or errored feeds always score 0.0.
+Invalid, errored, undated, or stale feeds always score 0.0.
 """
 
 import math
@@ -35,6 +40,7 @@ __all__ = [
     "WEIGHTS",
     "RECENCY_HALF_LIFE_DAYS",
     "ENTRY_RECENCY_CUTOFF_DAYS",
+    "is_active_feed",
 ]
 
 RECENCY_HALF_LIFE_DAYS: float = 120.0
@@ -114,6 +120,17 @@ def score_components(
         "entry_metadata": _entry_metadata_score(feed_info),
         "feed_metadata": _feed_metadata_score(feed_info),
     }
+
+
+def is_active_feed(
+    feed_info: Dict[str, Any],
+    crawl_time: Optional[datetime] = None,
+) -> bool:
+    if not feed_info.get("valid") or feed_info.get("error"):
+        return False
+    now = crawl_time or datetime.now(timezone.utc)
+    recency_age = _recency_age_days(feed_info, now)
+    return recency_age is not None and recency_age <= ENTRY_RECENCY_CUTOFF_DAYS
 
 
 # ── Sub-scorers ────────────────────────────────────────────────────────────────

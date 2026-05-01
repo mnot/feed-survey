@@ -1,7 +1,12 @@
 from datetime import datetime
 from typing import Any, Dict, List, cast
 
-from cc_feeds.report.quality import score_feed
+from cc_feeds.report.quality import (
+    WEIGHTS,
+    is_active_feed,
+    score_components,
+    score_feed,
+)
 
 
 def build_quality_summary(
@@ -14,11 +19,18 @@ def build_quality_summary(
         f"{idx/10:.1f}–{(idx+1)/10:.1f}": 0 for idx in range(10)
     }
     quality_scores: List[float] = []
+    active_scores: List[float] = []
     format_scores: Dict[str, List[float]] = {}
+    component_scores: Dict[str, List[float]] = {key: [] for key in WEIGHTS}
 
     for result in all_valid_results.values():
         score = score_feed(result, now)
         quality_scores.append(score)
+        if is_active_feed(result, now):
+            active_scores.append(score)
+        components = score_components(result, now)
+        for key, component_score in components.items():
+            component_scores[key].append(component_score)
         bin_idx = min(int(score * 10), 9)
         label = f"{bin_idx/10:.1f}–{(bin_idx+1)/10:.1f}"
         quality_hist[label] += 1
@@ -35,10 +47,39 @@ def build_quality_summary(
     return {
         "hist": quality_hist,
         "mean": _mean(quality_scores),
+        "active": {
+            "mean": round(_mean(active_scores), 3),
+            "n": len(active_scores),
+            "pct": (
+                round(len(active_scores) / len(quality_scores) * 100, 1)
+                if quality_scores
+                else 0.0
+            ),
+        },
+        "components": _component_rows(component_scores),
         "format_rows": _format_quality_rows(format_scores),
         "autodiscovery": _quality_dist(discovered_results, now),
         "no_autodiscovery": _quality_dist(no_autodiscovery_results, now),
     }
+
+
+def _component_rows(component_scores: Dict[str, List[float]]) -> List[Dict[str, Any]]:
+    labels = {
+        "recency": "Recency",
+        "content_richness": "Content",
+        "entry_count": "Entry count",
+        "entry_metadata": "Entry metadata",
+        "feed_metadata": "Feed metadata",
+    }
+    return [
+        {
+            "key": key,
+            "label": labels[key],
+            "weight": WEIGHTS[key],
+            "mean": round(_mean(scores), 3),
+        }
+        for key, scores in component_scores.items()
+    ]
 
 
 def _format_quality_rows(format_scores: Dict[str, List[float]]) -> List[Dict[str, Any]]:
