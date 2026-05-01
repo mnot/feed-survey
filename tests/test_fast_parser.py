@@ -65,6 +65,41 @@ def test_atom_xhtml_content_counts_descendant_text() -> None:
     assert result["content_lengths"][0] >= len("hello world")
 
 
+def test_atom_summary_type_contributes_to_content_profile() -> None:
+    result = FastFeedParser.parse(b"""<?xml version="1.0"?>
+        <feed xmlns="http://www.w3.org/2005/Atom">
+          <title>Example Atom</title>
+          <updated>2026-01-02T03:04:05Z</updated>
+          <entry>
+            <title>Entry</title>
+            <updated>2026-01-03T00:00:00Z</updated>
+            <summary type="html">&lt;p&gt;hello&lt;/p&gt;</summary>
+          </entry>
+        </feed>""")
+
+    assert result["valid"] is True
+    assert result["has_summary"] is True
+    assert result["content_type_profile"] == "html"
+
+
+def test_atom_updated_date_preferred_over_published() -> None:
+    result = FastFeedParser.parse(b"""<?xml version="1.0"?>
+        <feed xmlns="http://www.w3.org/2005/Atom">
+          <title>Example Atom</title>
+          <published>2025-01-02T00:00:00Z</published>
+          <updated>2026-01-02T00:00:00Z</updated>
+          <entry>
+            <title>Entry</title>
+            <published>2025-01-03T00:00:00Z</published>
+            <updated>2026-01-03T00:00:00Z</updated>
+          </entry>
+        </feed>""")
+
+    assert result["valid"] is True
+    assert _date_prefix(result["feed"]["updated_parsed"]) == [2026, 1, 2]
+    assert _date_prefix(result["newest_entry_date"]) == [2026, 1, 3]
+
+
 def test_parse_rss2() -> None:
     result = FastFeedParser.parse(b"""<?xml version="1.0"?>
         <rss version="2.0">
@@ -89,6 +124,35 @@ def test_parse_rss2() -> None:
     assert result["has_summary"] is True
     assert result["content_type_profile"] == "html"
     assert _date_prefix(result["newest_entry_date"]) == [2026, 1, 3]
+
+
+def test_rss_channel_last_build_date_preferred_over_pub_date() -> None:
+    result = FastFeedParser.parse(b"""<?xml version="1.0"?>
+        <rss version="2.0">
+          <channel>
+            <title>Example RSS</title>
+            <link>https://example.com/</link>
+            <pubDate>Fri, 02 Jan 2026 00:00:00 GMT</pubDate>
+            <lastBuildDate>Sat, 03 Jan 2026 00:00:00 GMT</lastBuildDate>
+          </channel>
+        </rss>""")
+
+    assert result["valid"] is True
+    assert _date_prefix(result["feed"]["updated_parsed"]) == [2026, 1, 3]
+
+
+def test_rss_channel_dc_date_sets_feed_updated_date() -> None:
+    result = FastFeedParser.parse(b"""<?xml version="1.0"?>
+        <rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
+          <channel>
+            <title>Example RSS</title>
+            <link>https://example.com/</link>
+            <dc:date>2026-01-04T00:00:00Z</dc:date>
+          </channel>
+        </rss>""")
+
+    assert result["valid"] is True
+    assert _date_prefix(result["feed"]["updated_parsed"]) == [2026, 1, 4]
 
 
 def test_parse_rss1() -> None:

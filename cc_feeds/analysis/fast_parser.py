@@ -115,6 +115,7 @@ class FastFeedParser:
             if not feed["link"] and feed["link_fallback"]:
                 feed["link"] = feed["link_fallback"]
             feed.pop("link_fallback", None)
+            feed.pop("date_source", None)
             result["valid"] = True
 
         except StopIteration:
@@ -123,6 +124,7 @@ class FastFeedParser:
             result["error"] = str(exc)
 
         result["feed"].pop("link_fallback", None)
+        result["feed"].pop("date_source", None)
         result.pop("_content_types_seen", None)
         return result
 
@@ -231,11 +233,10 @@ class FastFeedParser:
                 result["feed"]["title"] = (elem.text or "").strip()
             elif local == "link":
                 FastFeedParser._record_atom_feed_link(elem, result)
-            elif (
-                local in ("updated", "published")
-                and not result["feed"]["updated_parsed"]
-            ):
-                result["feed"]["updated_parsed"] = parse_date(elem.text)
+            elif local in ("updated", "published"):
+                FastFeedParser._set_preferred_date(
+                    result["feed"], "updated_parsed", local, elem.text
+                )
         elif ns == DC_NS and local == "language" and not result["feed"]["language"]:
             result["feed"]["language"] = (elem.text or "").strip().lower()
 
@@ -250,13 +251,14 @@ class FastFeedParser:
         if ns != ATOM_NS:
             return
         if local in ("updated", "published"):
-            FastFeedParser._set_entry_date(current_entry, elem.text)
+            FastFeedParser._set_preferred_date(current_entry, "date", local, elem.text)
         elif local == "content":
             result["has_content"] = True
             result["_content_types_seen"].add(atom_content_type(elem.get("type")))
             FastFeedParser._remember_text_length(elem, result)
         elif local == "summary":
             result["has_summary"] = True
+            result["_content_types_seen"].add(atom_content_type(elem.get("type")))
             FastFeedParser._remember_text_length(elem, result)
 
     @staticmethod
@@ -268,15 +270,26 @@ class FastFeedParser:
                 result["feed"]["title"] = (elem.text or "").strip()
             elif local == "link" and not result["feed"]["link"]:
                 result["feed"]["link"] = (elem.text or "").strip()
-            elif (
-                local in ("lastBuildDate", "pubDate")
-                and not result["feed"]["updated_parsed"]
-            ):
-                result["feed"]["updated_parsed"] = parse_date(elem.text)
+            elif local in ("lastBuildDate", "pubDate"):
+                FastFeedParser._set_preferred_date(
+                    result["feed"],
+                    "updated_parsed",
+                    local,
+                    elem.text,
+                    preferred_source="lastBuildDate",
+                )
             elif local == "language" and not result["feed"]["language"]:
                 result["feed"]["language"] = (elem.text or "").strip().lower()
         elif ns == DC_NS and local == "language" and not result["feed"]["language"]:
             result["feed"]["language"] = (elem.text or "").strip().lower()
+        elif ns == DC_NS and local == "date":
+            FastFeedParser._set_preferred_date(
+                result["feed"],
+                "updated_parsed",
+                "dc:date",
+                elem.text,
+                preferred_source="lastBuildDate",
+            )
 
     @staticmethod
     def _handle_rss2_item_end(
@@ -336,6 +349,26 @@ class FastFeedParser:
         parsed_date = parse_date(text)
         if parsed_date and not entry.get("date"):
             entry["date"] = parsed_date
+
+    @staticmethod
+    def _set_preferred_date(
+        target: Dict[str, Any],
+        date_key: str,
+        source: str,
+        text: Optional[str],
+        preferred_source: str = "updated",
+    ) -> None:
+        parsed_date = parse_date(text)
+        if not parsed_date:
+            return
+        current_source = target.get("date_source")
+        if (
+            source == preferred_source
+            or not target.get(date_key)
+            or current_source != preferred_source
+        ):
+            target[date_key] = parsed_date
+            target["date_source"] = source
 
     @staticmethod
     def _remember_text_length(elem: Any, result: Dict[str, Any]) -> None:
