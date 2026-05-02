@@ -28,18 +28,5 @@ def _normalize_url(url: str, keep_query: bool) -> str:
 def get_domain(url: str) -> str:
     """High-performance extraction of domain from URL."""
     if url.lower().startswith("http"):
-        start = url.find("//") + 2
-        end = url.find("/", start)
-        if end == -1:
-            end = url.find("?", start)
-        if end == -1:
-            end = url.find("#", start)
-        if end == -1:
-            end = len(url)
-
-        netloc = url[start:end]
-        port_idx = netloc.find(":")
-        if port_idx != -1:
-            return netloc[:port_idx].lower()
-        return netloc.lower()
+        return (urlparse(url).hostname or "").lower()
     return url.split("/", 1)[0].lower()

@@ -24,3 +24,11 @@ def test_grouping_url_strips_query() -> None:
 
 def test_get_domain_lowercases_host() -> None:
     assert get_domain("HTTPS://Example.COM:443/path") == "example.com"
+
+
+def test_get_domain_userinfo() -> None:
+    assert get_domain("http://user:pass@Example.COM/feed") == "example.com"
+
+
+def test_get_domain_handles_ipv6() -> None:
+    assert get_domain("http://[2001:db8::1]:8080/feed") == "2001:db8::1"
