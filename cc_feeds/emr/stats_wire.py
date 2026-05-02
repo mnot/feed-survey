@@ -56,6 +56,22 @@ def merge_serialized_stats(merged: Dict[str, Any], incoming: Dict[str, Any]) -> 
     merged["pages_processed"] += incoming.get("pages_processed", 0)
     merged["feeds_sniffed"] += incoming.get("feeds_sniffed", 0)
     merged["total_entries"] += incoming.get("total_entries", 0)
+    merged["lang_src_http"] += incoming.get("lang_src_http", 0)
+    merged["lang_src_feed"] += incoming.get("lang_src_feed", 0)
+    merged["lang_src_entry"] += incoming.get("lang_src_entry", 0)
+    merged["lang_mismatches"] += incoming.get("lang_mismatches", 0)
+    merged["lang_multiple_in_feed"] += incoming.get("lang_multiple_in_feed", 0)
+    merged["discovery_rel_alternate"] += incoming.get("discovery_rel_alternate", 0)
+    merged["discovery_rel_feed"] += incoming.get("discovery_rel_feed", 0)
+    merged["discovery_rel_both_page"] += incoming.get("discovery_rel_both_page", 0)
+    merged["discovery_multi_rel_url"] += incoming.get("discovery_multi_rel_url", 0)
+    merged["discovery_pages_count"] += incoming.get("discovery_pages_count", 0)
+
+    incoming_top_n = incoming.get("top_n")
+    if incoming_top_n is not None:
+        current_top_n = merged.get("top_n")
+        if current_top_n is None or incoming_top_n > current_top_n:
+            merged["top_n"] = incoming_top_n
 
     incoming_hll = incoming.get("hll_registers")
     if incoming_hll:
@@ -99,6 +115,13 @@ def merge_serialized_stats(merged: Dict[str, Any], incoming: Dict[str, Any]) -> 
         merged["discovery_links_per_page_counts"][link_count] = (
             merged["discovery_links_per_page_counts"].get(link_count, 0) + page_count
         )
+
+    if "multi_feed_pages" not in merged:
+        merged["multi_feed_pages"] = {}
+    if len(merged["multi_feed_pages"]) < 10000:
+        for page_url, feed_urls in incoming.get("multi_feed_pages", {}).items():
+            if page_url not in merged["multi_feed_pages"]:
+                merged["multi_feed_pages"][page_url] = feed_urls
 
 
 def merge_stats_values(values: Generator[Any, None, None]) -> Dict[str, Any]:
