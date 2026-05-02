@@ -325,8 +325,9 @@
                 <div class="card-value">{{ "%.3f"|format(stats.mean_quality) }}</div>
                 <div class="card-sub">
                     <div class="row"><span>All parsed feeds</span> <strong>{{ "%.3f"|format(stats.mean_quality) }}</strong></div>
-                    <div class="row"><span>Active/datable feeds</span> <strong>{{ "%.3f"|format(stats.active_quality.mean) }}</strong></div>
-                    <div class="row"><span>Active/datable share</span> <strong>{{ stats.active_quality.n|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.active_quality.pct) }}%)</span></strong></div>
+                    <div class="row"><span>Recent/datable feeds</span> <strong>{{ "%.3f"|format(stats.active_quality.mean) }}</strong></div>
+                    <div class="row"><span>Recent/datable share</span> <strong>{{ stats.active_quality.n|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.active_quality.pct) }}%)</span></strong></div>
+                    <div class="row"><span>Undated or stale</span> <strong>{{ stats.inactive_quality.n|comma }}</strong></div>
                 </div>
             </div>
         </div>
@@ -358,10 +359,12 @@
             <div class="chart-card">
                 <div class="chart-title">Feed Quality Distribution</div>
                 <div class="chart-sub">
-                    Score 0–1 among successfully parsed feeds. Abandoned, undated,
-                    or stale feeds score 0 here; the card above also shows the
-                    mean after counting those feeds out. Invalid or unparseable
-                    feed checks are excluded.
+                    Score 0–1 among successfully parsed feeds. Feeds with no usable
+                    date, or no freshness signal within {{ stats.inactive_quality.cutoff_days|comma }}
+                    days, score 0 here; the card above also shows the mean after
+                    counting those feeds out. Excluded from the recent/datable mean:
+                    {{ stats.inactive_quality.undated|comma }} undated and
+                    {{ stats.inactive_quality.stale|comma }} stale feeds.
                 </div>
                 <div class="chart-container">
                     <canvas id="qualityHistogram"></canvas>

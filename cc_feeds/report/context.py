@@ -133,4 +133,5 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         "quality_hist": quality["hist"],
         "mean_quality": round(quality["mean"], 3),
         "active_quality": quality["active"],
+        "inactive_quality": quality["inactive"],
     }

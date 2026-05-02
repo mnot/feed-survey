@@ -41,6 +41,7 @@ __all__ = [
     "RECENCY_HALF_LIFE_DAYS",
     "ENTRY_RECENCY_CUTOFF_DAYS",
     "is_active_feed",
+    "recency_age_days",
 ]
 
 RECENCY_HALF_LIFE_DAYS: float = 120.0
@@ -76,7 +77,7 @@ def score_feed(
     # Hard cutoff: no usable recency signal within the last year → dead feed.
     # Prefer entry recency when present; otherwise fall back to feed-level
     # updated date so sparse but active feeds are not forced to zero.
-    recency_age = _recency_age_days(feed_info, now)
+    recency_age = recency_age_days(feed_info, now)
     if recency_age is None or recency_age > ENTRY_RECENCY_CUTOFF_DAYS:
         return 0.0
 
@@ -109,7 +110,7 @@ def score_components(
 
     now = crawl_time or datetime.now(timezone.utc)
 
-    recency_age = _recency_age_days(feed_info, now)
+    recency_age = recency_age_days(feed_info, now)
     if recency_age is None or recency_age > ENTRY_RECENCY_CUTOFF_DAYS:
         return {k: 0.0 for k in WEIGHTS}
 
@@ -129,8 +130,22 @@ def is_active_feed(
     if not feed_info.get("valid") or feed_info.get("error"):
         return False
     now = crawl_time or datetime.now(timezone.utc)
-    recency_age = _recency_age_days(feed_info, now)
+    recency_age = recency_age_days(feed_info, now)
     return recency_age is not None and recency_age <= ENTRY_RECENCY_CUTOFF_DAYS
+
+
+def recency_age_days(
+    feed_info: Dict[str, Any],
+    crawl_time: Optional[datetime] = None,
+) -> Optional[float]:
+    """
+    Return the age in days of the freshness signal used for quality scoring.
+
+    Entry recency is preferred when present; otherwise this falls back to the
+    feed-level updated date.  Returns None when neither date is usable.
+    """
+    now = crawl_time or datetime.now(timezone.utc)
+    return _recency_age_days(feed_info, now)
 
 
 # ── Sub-scorers ────────────────────────────────────────────────────────────────

@@ -2,8 +2,10 @@ from datetime import datetime
 from typing import Any, Dict, List, cast
 
 from cc_feeds.report.quality import (
+    ENTRY_RECENCY_CUTOFF_DAYS,
     WEIGHTS,
     is_active_feed,
+    recency_age_days,
     score_components,
     score_feed,
 )
@@ -20,6 +22,8 @@ def build_quality_summary(
     }
     quality_scores: List[float] = []
     active_scores: List[float] = []
+    undated_count = 0
+    stale_count = 0
     format_scores: Dict[str, List[float]] = {}
     component_scores: Dict[str, List[float]] = {key: [] for key in WEIGHTS}
 
@@ -28,6 +32,12 @@ def build_quality_summary(
         quality_scores.append(score)
         if is_active_feed(result, now):
             active_scores.append(score)
+        else:
+            age = recency_age_days(result, now)
+            if age is None:
+                undated_count += 1
+            elif age > ENTRY_RECENCY_CUTOFF_DAYS:
+                stale_count += 1
         components = score_components(result, now)
         for key, component_score in components.items():
             component_scores[key].append(component_score)
@@ -55,6 +65,12 @@ def build_quality_summary(
                 if quality_scores
                 else 0.0
             ),
+        },
+        "inactive": {
+            "n": undated_count + stale_count,
+            "undated": undated_count,
+            "stale": stale_count,
+            "cutoff_days": int(ENTRY_RECENCY_CUTOFF_DAYS),
         },
         "components": _component_rows(component_scores),
         "format_rows": _format_quality_rows(format_scores),

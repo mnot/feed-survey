@@ -53,6 +53,16 @@ def test_quality_summary_sets() -> None:
         "https://other.example/feed.xml": _feed(
             fmt="atom10", days_old=10, has_content=False
         ),
+        "https://undated.example/feed.xml": {
+            **_feed(fmt="rss20", days_old=0),
+            "newest_entry_date": None,
+            "updated_date": None,
+        },
+        "https://stale.example/feed.xml": {
+            **_feed(fmt="rss20", days_old=0),
+            "newest_entry_date": [2024, 1, 1, 0, 0, 0, 0, 0, 0],
+            "updated_date": None,
+        },
     }
     discovered = {
         "https://example.com/feed.xml": all_valid["https://example.com/feed.xml"]
@@ -65,9 +75,15 @@ def test_quality_summary_sets() -> None:
         now,
     )
 
-    assert sum(summary["hist"].values()) == 2
+    assert sum(summary["hist"].values()) == 4
     assert summary["active"]["n"] == 2
     assert summary["active"]["mean"] > 0
+    assert summary["inactive"] == {
+        "n": 2,
+        "undated": 1,
+        "stale": 1,
+        "cutoff_days": 365,
+    }
     assert [row["key"] for row in summary["components"]] == [
         "recency",
         "content_richness",
@@ -77,8 +93,8 @@ def test_quality_summary_sets() -> None:
     ]
     assert all(0.0 <= row["mean"] <= 1.0 for row in summary["components"])
     assert summary["autodiscovery"]["n"] == 1
-    assert summary["no_autodiscovery"]["n"] == 1
-    assert [row["fmt"] for row in summary["format_rows"]] == ["rss20", "atom10"]
+    assert summary["no_autodiscovery"]["n"] == 3
+    assert [row["fmt"] for row in summary["format_rows"]] == ["atom10", "rss20"]
 
 
 def test_discovery_summary_counts() -> None:
@@ -207,6 +223,7 @@ def test_report_runtime_lang_counts() -> None:
         "hist": {},
         "mean": 0.0,
         "active": {"mean": 0.0, "n": 0, "pct": 0.0},
+        "inactive": {"n": 0, "undated": 0, "stale": 0, "cutoff_days": 365},
         "components": [],
     }
 
@@ -240,3 +257,4 @@ def test_report_runtime_lang_counts() -> None:
     assert report_stats["lang_mismatches"] == 10
     assert report_stats["lang_multiple_in_feed"] == 11
     assert report_stats["active_quality"]["n"] == 0
+    assert report_stats["inactive_quality"]["n"] == 0
