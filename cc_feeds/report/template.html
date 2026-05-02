@@ -482,7 +482,7 @@
                     <div class="row"><span>HTTP <code>Content-Language</code></span> <strong>{{ stats.lang_src_http|comma }}</strong></div>
                     <div class="row"><span>Feed-level language tag</span> <strong>{{ stats.lang_src_feed|comma }}</strong></div>
                     <div class="row"><span>Entry language tags (distinct)</span> <strong>{{ stats.lang_src_entry|comma }}</strong></div>
-                    <div class="row divider"><span style="color:var(--danger)">Language mismatches</span> <strong style="color:var(--danger)">{{ stats.lang_mismatches|comma }}</strong></div>
+                    <div class="row divider"><span style="color:var(--danger)">HTTP/feed mismatches</span> <strong style="color:var(--danger)">{{ stats.lang_mismatches|comma }}</strong></div>
                     <div class="row"><span>Multi-language feeds</span> <strong>{{ stats.lang_multiple_in_feed|comma }}</strong></div>
                 </div>
             </div>
