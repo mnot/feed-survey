@@ -95,12 +95,33 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
     aggregate = context.aggregate
     discovery = context.discovery
     quality = context.quality
+    parsed_feeds = context.all_valid_count
+    feed_results_count = len(stats.feed_results)
     feeds_without_autodiscovery = context.all_valid_count - context.discovered_count
+    rss_count = sum(
+        count
+        for feed_format, count in context.formats
+        if str(feed_format).lower().startswith("rss")
+    )
+    atom_count = sum(
+        count
+        for feed_format, count in context.formats
+        if str(feed_format).lower().startswith("atom")
+    )
     return {
         "pages_seen": stats.pages_seen,
         "max_crawl_time": context.max_crawl_time,
         "sites_seen": discovery.total_sites,
-        "feed_results_count": len(stats.feed_results),
+        "feed_results_count": feed_results_count,
+        "parsed_feeds": parsed_feeds,
+        "unparsed_feeds": max(0, feed_results_count - parsed_feeds),
+        "parse_success_pct": (
+            round(parsed_feeds / feed_results_count * 100, 1)
+            if feed_results_count
+            else 0.0
+        ),
+        "rss_count": rss_count,
+        "atom_count": atom_count,
         "feeds_with_autodiscovery": context.discovered_count,
         "feeds_without_autodiscovery": feeds_without_autodiscovery,
         "formats": context.formats,

@@ -137,6 +137,37 @@
         }
         .ct-bar-fill { height: 100%; border-radius: 9999px; }
         .ct-bar-val { font-size: 0.8rem; color: var(--text-muted); width: 7rem; text-align: right; flex-shrink: 0; }
+        .note-box {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            padding: 1rem 1.25rem;
+        }
+        .funnel {
+            display: grid;
+            gap: 0.75rem;
+        }
+        .funnel-row {
+            align-items: center;
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: minmax(9rem, 1fr) minmax(12rem, 2fr) auto;
+        }
+        .funnel-track {
+            background: var(--border);
+            border-radius: 9999px;
+            height: 12px;
+            overflow: hidden;
+        }
+        .funnel-fill {
+            background: var(--primary);
+            border-radius: 9999px;
+            height: 100%;
+        }
+        .funnel-label { font-size: 0.9rem; font-weight: 700; }
+        .funnel-value { color: var(--text-muted); font-size: 0.85rem; text-align: right; }
     </style>
 </head>
 <body>
@@ -174,6 +205,9 @@
     <!-- ═══════════════════════════════════════════════════════════ 1. THE CRAWL -->
     <section id="crawl-section">
         <h2 class="main-section-title">1. The Crawl</h2>
+        <div class="note-box" style="margin-bottom: 1.5rem;">
+            Percentages describe this Common Crawl result set, not the entire Web. Common Crawl reflects what its crawler fetched, what sites allowed, and the configured domain/sample limits for this run.
+        </div>
         <div class="stats-grid">
             <div class="card">
                 <div class="card-title">Crawl Responses Scanned</div>
@@ -359,6 +393,33 @@
         </div>
         {% endif %}
 
+        <div class="chart-card" style="margin-bottom: 2rem;">
+            <div class="chart-title">Feed Health Funnel</div>
+            <div class="chart-sub">Step-down view from every feed URL check to feeds that appear active. Active means successfully parsed with a usable freshness signal within {{ stats.inactive_quality.cutoff_days|comma }} days.</div>
+            <div class="funnel">
+                <div class="funnel-row">
+                    <div class="funnel-label">Feed URL checks</div>
+                    <div class="funnel-track"><div class="funnel-fill" style="width:100%;"></div></div>
+                    <div class="funnel-value">{{ stats.feed_results_count|comma }}</div>
+                </div>
+                <div class="funnel-row">
+                    <div class="funnel-label">Parsed RSS/Atom</div>
+                    <div class="funnel-track"><div class="funnel-fill" style="width:{{ "%.1f"|format(stats.parsed_feeds / stats.feed_results_count * 100 if stats.feed_results_count else 0) }}%;"></div></div>
+                    <div class="funnel-value">{{ stats.parsed_feeds|comma }}</div>
+                </div>
+                <div class="funnel-row">
+                    <div class="funnel-label">Recent/datable</div>
+                    <div class="funnel-track"><div class="funnel-fill" style="width:{{ "%.1f"|format(stats.active_quality.n / stats.feed_results_count * 100 if stats.feed_results_count else 0) }}%;"></div></div>
+                    <div class="funnel-value">{{ stats.active_quality.n|comma }}</div>
+                </div>
+                <div class="funnel-row">
+                    <div class="funnel-label">Active with entries</div>
+                    <div class="funnel-track"><div class="funnel-fill" style="width:{{ "%.1f"|format(stats.active_quality.with_entries / stats.feed_results_count * 100 if stats.feed_results_count else 0) }}%;"></div></div>
+                    <div class="funnel-value">{{ stats.active_quality.with_entries|comma }}</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Quality distribution + quality by format -->
         <div class="chart-grid" style="margin-bottom: 2rem;">
             <div class="chart-card">
@@ -402,6 +463,7 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Feed Formats</div>
+                <div class="chart-sub">Successfully parsed feeds only. RSS-family feeds: {{ stats.rss_count|comma }}; Atom feeds: {{ stats.atom_count|comma }}.</div>
                 <table class="data-table">
                     <thead><tr><th>Format</th><th>Count</th><th>Mean quality</th></tr></thead>
                     <tbody>

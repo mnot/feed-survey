@@ -22,6 +22,7 @@ def build_quality_summary(
     }
     quality_scores: List[float] = []
     active_scores: List[float] = []
+    active_with_entries_count = 0
     undated_count = 0
     stale_count = 0
     format_scores: Dict[str, List[float]] = {}
@@ -32,6 +33,8 @@ def build_quality_summary(
         quality_scores.append(score)
         if is_active_feed(result, now):
             active_scores.append(score)
+            if (result.get("entries_count") or 0) > 0:
+                active_with_entries_count += 1
         else:
             age = recency_age_days(result, now)
             if age is None:
@@ -60,6 +63,7 @@ def build_quality_summary(
         "active": {
             "mean": round(_mean(active_scores), 3),
             "n": len(active_scores),
+            "with_entries": active_with_entries_count,
             "pct": (
                 round(len(active_scores) / len(quality_scores) * 100, 1)
                 if quality_scores

@@ -78,6 +78,7 @@ def test_quality_summary_sets() -> None:
 
     assert sum(summary["hist"].values()) == 4
     assert summary["active"]["n"] == 2
+    assert summary["active"]["with_entries"] == 2
     assert summary["active"]["mean"] > 0
     assert summary["inactive"] == {
         "n": 2,
@@ -250,7 +251,7 @@ def test_report_runtime_lang_counts() -> None:
     quality = {
         "hist": {},
         "mean": 0.0,
-        "active": {"mean": 0.0, "n": 0, "pct": 0.0},
+        "active": {"mean": 0.0, "n": 0, "with_entries": 0, "pct": 0.0},
         "inactive": {"n": 0, "undated": 0, "stale": 0, "cutoff_days": 365},
         "components": [],
     }
