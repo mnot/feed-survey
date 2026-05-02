@@ -548,33 +548,32 @@
 </div>
 
 <script>
-    const baseOpts = {
+    const baseScales = () => ({
+        x: {
+            ticks: { maxRotation: 0, minRotation: 0, autoSkip: true, maxTicksLimit: 16, font: { size: 11 } },
+            grid: { display: false }
+        },
+        y: {
+            beginAtZero: true,
+            ticks: { callback: v => v.toLocaleString(), font: { size: 11 } }
+        }
+    });
+
+    const baseOpts = () => ({
         responsive: true,
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         plugins: { legend: { display: false } },
-        scales: {
-            x: {
-                ticks: { maxRotation: 0, minRotation: 0, autoSkip: true, maxTicksLimit: 16, font: { size: 11 } },
-                grid: { display: false }
-            },
-            y: {
-                beginAtZero: true,
-                ticks: { callback: v => v.toLocaleString(), font: { size: 11 } }
-            }
-        }
-    };
-
-    // Deep-clone helper
-    const cloneOpts = o => JSON.parse(JSON.stringify(o));
+        scales: baseScales()
+    });
 
     // Integer-only y-axis (for duplicate counts)
-    const intYOpts = cloneOpts(baseOpts);
+    const intYOpts = baseOpts();
     intYOpts.scales.y.ticks.stepSize = 1;
     intYOpts.scales.y.ticks.callback = v => Number.isInteger(v) ? v.toLocaleString() : '';
 
     // Rotated x-axis labels for recency
-    const rotOpts = cloneOpts(baseOpts);
+    const rotOpts = baseOpts();
     rotOpts.scales.x.ticks.maxRotation = 45;
     rotOpts.scales.x.ticks.minRotation = 45;
 
@@ -599,11 +598,11 @@
 
     // Stacked bar options
     const stackedOpts = {
-        ...cloneOpts(baseOpts),
+        ...baseOpts(),
         plugins: { legend: { display: true, position: 'bottom' } },
         scales: {
-            x: { ...cloneOpts(baseOpts).scales.x, stacked: true },
-            y: { ...cloneOpts(baseOpts).scales.y, stacked: true }
+            x: { ...baseScales().x, stacked: true },
+            y: { ...baseScales().y, stacked: true }
         }
     };
 
@@ -617,7 +616,7 @@
                 { label: 'Pages', data: stackedPageData.counts, backgroundColor: 'rgba(99,102,241,0.55)', borderColor: '#6366f1', borderWidth: 1 }
             ]
         },
-        options: baseOpts
+        options: baseOpts()
     });
 
     const stackedSiteData = {{ stacked_site_json|safe }};
@@ -695,7 +694,7 @@
             labels: Object.keys(entriesData),
             datasets: [{ data: Object.values(entriesData), backgroundColor: 'rgba(99,102,241,0.5)', borderColor: '#6366f1', borderWidth: 1 }]
         },
-        options: baseOpts
+        options: baseOpts()
     });
 
     // ── Language count histogram ──────────────────────────────────────────────
@@ -706,7 +705,7 @@
             labels: Object.keys(langCountData).map(k => k === '0' ? 'No language' : k + (k==='3+' ? '' : ' language') + (k==='1'?'':'s')),
             datasets: [{ data: Object.values(langCountData), backgroundColor: ['#e2e8f0','#6366f1','#8b5cf6','#c4b5fd'] }]
         },
-        options: { ...cloneOpts(baseOpts), plugins: { legend: { display: false } } }
+        options: { ...baseOpts(), plugins: { legend: { display: false } } }
     });
 
     // ── Recency CDFs ──────────────────────────────────────────────────────────
@@ -797,7 +796,7 @@
                 borderWidth: 0
             }]
         },
-        options: baseOpts
+        options: baseOpts()
     });
 
     const qualityComponents = {{ quality_components_json|safe }};
@@ -812,10 +811,10 @@
             }]
         },
         options: {
-            ...cloneOpts(baseOpts),
+            ...baseOpts(),
             scales: {
-                x: { ...cloneOpts(baseOpts).scales.x, ticks: { maxRotation: 35, minRotation: 35, font: { size: 11 } } },
-                y: { ...cloneOpts(baseOpts).scales.y, min: 0, max: 1 }
+                x: { ...baseScales().x, ticks: { maxRotation: 35, minRotation: 35, font: { size: 11 } } },
+                y: { ...baseScales().y, min: 0, max: 1 }
             },
             plugins: {
                 legend: { display: false },
@@ -832,7 +831,7 @@
             labels: Object.keys(contentLengthData),
             datasets: [{ data: Object.values(contentLengthData), backgroundColor: 'rgba(16,185,129,0.5)', borderColor: '#10b981', borderWidth: 1 }]
         },
-        options: baseOpts
+        options: baseOpts()
     });
 </script>
 </body>
