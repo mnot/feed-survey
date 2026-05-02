@@ -10,6 +10,9 @@ def aggregate_feed_data(results: Dict[str, Any]) -> Dict[str, Any]:
     feeds_with_content = 0
     feeds_with_summary = 0
     feeds_with_neither = 0
+    feeds_with_entries = 0
+    feeds_with_entry_dates = 0
+    feeds_with_updated_date = 0
     charsets_per_format: Dict[str, Dict[str, int]] = {}
 
     total_entries = 0
@@ -48,12 +51,17 @@ def aggregate_feed_data(results: Dict[str, Any]) -> Dict[str, Any]:
         entries = res.get("entries_count", 0)
         total_entries += entries
         entry_counts.append(entries)
+        if entries:
+            feeds_with_entries += 1
+            if res.get("newest_entry_date"):
+                feeds_with_entry_dates += 1
 
         for ext in res.get("extensions", []):
             ext_key = tuple(ext) if isinstance(ext, (list, tuple)) else ext
             extensions[ext_key] = extensions.get(ext_key, 0) + 1
 
         if res.get("updated_date"):
+            feeds_with_updated_date += 1
             last_updated_dates.append(res["updated_date"])
 
         http_lang = res.get("lang_http")
@@ -86,6 +94,9 @@ def aggregate_feed_data(results: Dict[str, Any]) -> Dict[str, Any]:
         "feeds_with_content": feeds_with_content,
         "feeds_with_summary": feeds_with_summary,
         "feeds_with_neither": feeds_with_neither,
+        "feeds_with_entries": feeds_with_entries,
+        "feeds_with_entry_dates": feeds_with_entry_dates,
+        "feeds_with_updated_date": feeds_with_updated_date,
         "charsets_per_format": charsets_per_format,
         "total_entries": total_entries,
         "lang_src_http": lang_src_http,

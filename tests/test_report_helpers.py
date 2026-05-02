@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from cc_feeds.analysis.stats import Stats
+from cc_feeds.report.aggregate import aggregate_feed_data
 from cc_feeds.report.context import ReportContext, build_report_stats
 from cc_feeds.report.discovery import DiscoverySummary, build_discovery_summary
 from cc_feeds.report.distributions import collapse_content_types
@@ -95,6 +96,30 @@ def test_quality_summary_sets() -> None:
     assert summary["autodiscovery"]["n"] == 1
     assert summary["no_autodiscovery"]["n"] == 3
     assert [row["fmt"] for row in summary["format_rows"]] == ["atom10", "rss20"]
+
+
+def test_aggregate_date_coverage() -> None:
+    all_valid = {
+        "https://example.com/feed.xml": _feed(fmt="rss20", days_old=0),
+        "https://nodates.example/feed.xml": {
+            **_feed(fmt="atom10", days_old=0),
+            "newest_entry_date": None,
+            "oldest_entry_date": None,
+            "updated_date": None,
+        },
+        "https://empty.example/feed.xml": {
+            **_feed(fmt="rss20", days_old=0),
+            "entries_count": 0,
+            "newest_entry_date": None,
+            "oldest_entry_date": None,
+        },
+    }
+
+    aggregate = aggregate_feed_data(all_valid)
+
+    assert aggregate["feeds_with_entries"] == 2
+    assert aggregate["feeds_with_entry_dates"] == 1
+    assert aggregate["feeds_with_updated_date"] == 2
 
 
 def test_discovery_summary_counts() -> None:
@@ -198,6 +223,9 @@ def test_report_runtime_lang_counts() -> None:
         "feeds_with_content": 0,
         "feeds_with_summary": 0,
         "feeds_with_neither": 0,
+        "feeds_with_entries": 0,
+        "feeds_with_entry_dates": 0,
+        "feeds_with_updated_date": 0,
         "total_entries": 0,
         "lang_src_http": 1,
         "lang_src_feed": 1,

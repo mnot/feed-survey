@@ -111,6 +111,9 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         "feeds_with_content": aggregate["feeds_with_content"],
         "feeds_with_summary": aggregate["feeds_with_summary"],
         "feeds_with_neither": aggregate["feeds_with_neither"],
+        "feeds_with_entries": aggregate["feeds_with_entries"],
+        "feeds_with_entry_dates": aggregate["feeds_with_entry_dates"],
+        "feeds_with_updated_date": aggregate["feeds_with_updated_date"],
         "pages_with_autodiscovery": getattr(
             stats, "discovery_pages_count", len(discovery.page_to_feeds)
         ),
