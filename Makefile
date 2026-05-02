@@ -1,5 +1,5 @@
 PROJECT = cc_feeds
-PYTHON_TARGETS = cc_feeds tests
+PYTHON_TARGETS = cc_feeds $(wildcard tests/*.py)
 
 .PHONY: help
 help:
@@ -92,7 +92,7 @@ LIMIT ?= 1
 .PHONY: test-emr
 test-emr: venv
 	$(VENV)/python -m cc_feeds.emr.split_paths \
-		test/warc.paths.txt \
+		tests/fixtures/warc.paths.txt \
 		$(PATHS_PREFIX)test-$(RUN_ID)/ \
 		$(TEST_MAP_TASKS) \
 		$(LIMIT)

@@ -10,7 +10,7 @@ TRANCO_URL = "https://tranco-list.eu/top-1m.csv.zip"
 def get_tranco_list(top_n: Optional[int] = None) -> Set[str]:
     """Download, unzip and return the Tranco top list as a set of domains."""
     local_csv = "top-1m.csv"
-    test_csv = "test/top-1m.csv"
+    test_csv = "tests/fixtures/top-1m.csv"
     if os.path.exists(local_csv):
         csv_path = local_csv
     elif os.path.exists(test_csv):

@@ -56,4 +56,4 @@ def generate_sample_warc(output_path, num_records=1000):
             f.write(create_warc_record(url, ct, body))
 
 if __name__ == "__main__":
-    generate_sample_warc("profile_sample.warc.gz", 20000)
+    generate_sample_warc("tests/fixtures/profile_sample.warc.gz", 20000)

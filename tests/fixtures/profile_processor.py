@@ -30,7 +30,7 @@ def run_profile(warc_path):
 
 
 if __name__ == "__main__":
-    warc_path = "test/profile_sample.warc.gz"
+    warc_path = "tests/fixtures/profile_sample.warc.gz"
 
     profiler, processor = run_profile(warc_path)
 
