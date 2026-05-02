@@ -222,7 +222,7 @@
             <div class="card">
                 <div class="card-title">Feed URLs Checked</div>
                 <div class="card-value">{{ stats.feed_results_count|comma }}</div>
-                <div class="card-sub">{{ stats.feeds_sniffed|comma }} discovered by content sniffing</div>
+                <div class="card-sub">{{ stats.feeds_sniffed|comma }} discovered by content sniffing; the rest were feed-looking responses.</div>
             </div>
         </div>
 
@@ -316,7 +316,7 @@
             <div class="chart-card">
                 <div class="chart-title">Quality: Autodiscovered vs. Not</div>
                 <p class="chart-sub">
-                    Distribution of quality scores (% of each group per decile).
+                    Distribution of quality scores among successfully parsed feeds (% of each group per decile).
                     With autodiscovery: {{ autodiscovery_quality.n|comma }} feeds, mean <strong>{{ "%.3f"|format(autodiscovery_quality.mean) }}</strong>.
                     Without: {{ no_autodiscovery_quality.n|comma }} feeds, mean <strong>{{ "%.3f"|format(no_autodiscovery_quality.mean) }}</strong>.
                 </p>
@@ -331,10 +331,11 @@
         <div class="stats-grid">
             <div class="card">
                 <div class="card-title">Successfully Parsed</div>
-                <div class="card-value">{{ (stats.feeds_with_content + stats.feeds_with_summary + stats.feeds_with_neither)|comma }}</div>
+                <div class="card-value">{{ stats.parsed_feeds|comma }}</div>
                 <div class="card-sub">
-                    {% set total_parsed = stats.feeds_with_content + stats.feeds_with_summary + stats.feeds_with_neither %}
-                    <div class="row"><span>Parse success rate</span> <strong>{{ "%.1f"|format(total_parsed / stats.feed_results_count * 100 if stats.feed_results_count else 0) }}%</strong></div>
+                    {% set total_parsed = stats.parsed_feeds %}
+                    <div class="row"><span>Parse success rate</span> <strong>{{ "%.1f"|format(stats.parse_success_pct) }}%</strong></div>
+                    <div class="row"><span>Broken/unparseable</span> <strong>{{ stats.unparsed_feeds|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.unparsed_pct) }}%)</span></strong></div>
                     <div class="row"><span>With autodiscovery link</span> <strong>{{ stats.feeds_with_autodiscovery|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.feeds_with_autodiscovery / total_parsed * 100 if total_parsed else 0) }}%)</span></strong></div>
                     <div class="row"><span>Without autodiscovery link</span> <strong>{{ stats.feeds_without_autodiscovery|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.feeds_without_autodiscovery / total_parsed * 100 if total_parsed else 0) }}%)</span></strong></div>
                 </div>
@@ -360,13 +361,15 @@
                 </div>
             </div>
             <div class="card">
-                <div class="card-title">Mean Feed Quality</div>
+                <div class="card-title">Operational Quality</div>
                 <div class="card-value">{{ "%.3f"|format(stats.mean_quality) }}</div>
                 <div class="card-sub">
                     <div class="row"><span>All parsed feeds</span> <strong>{{ "%.3f"|format(stats.mean_quality) }}</strong></div>
-                    <div class="row"><span>Recent/datable feeds</span> <strong>{{ "%.3f"|format(stats.active_quality.mean) }}</strong></div>
+                    <div class="row"><span>Active-only mean</span> <strong>{{ "%.3f"|format(stats.active_quality.mean) }}</strong></div>
                     <div class="row"><span>Recent/datable share</span> <strong>{{ stats.active_quality.n|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.active_quality.pct) }}%)</span></strong></div>
-                    <div class="row"><span>Undated or stale</span> <strong>{{ stats.inactive_quality.n|comma }}</strong></div>
+                    <div class="row"><span>Active with entries</span> <strong>{{ stats.active_quality.with_entries|comma }}</strong></div>
+                    <div class="row"><span>Active, zero-entry</span> <strong>{{ stats.active_quality.without_entries|comma }}</strong></div>
+                    <div class="row divider"><span>Undated or stale</span> <strong>{{ stats.inactive_quality.n|comma }}</strong></div>
                 </div>
             </div>
         </div>
@@ -394,8 +397,8 @@
         {% endif %}
 
         <div class="chart-card" style="margin-bottom: 2rem;">
-            <div class="chart-title">Feed Health Funnel</div>
-            <div class="chart-sub">Step-down view from every feed URL check to feeds that appear active. Active means successfully parsed with a usable freshness signal within {{ stats.inactive_quality.cutoff_days|comma }} days.</div>
+            <div class="chart-title">Feed Availability and Freshness</div>
+            <div class="chart-sub">Step-down view from every feed URL check to feeds that appear active. Active means successfully parsed with a usable freshness signal within {{ stats.inactive_quality.cutoff_days|comma }} days; a feed can be active but still have zero entries in the captured response.</div>
             <div class="funnel">
                 <div class="funnel-row">
                     <div class="funnel-label">Feed URL checks</div>
@@ -417,6 +420,11 @@
                     <div class="funnel-track"><div class="funnel-fill" style="width:{{ "%.1f"|format(stats.active_quality.with_entries / stats.feed_results_count * 100 if stats.feed_results_count else 0) }}%;"></div></div>
                     <div class="funnel-value">{{ stats.active_quality.with_entries|comma }}</div>
                 </div>
+                <div class="funnel-row">
+                    <div class="funnel-label">Active, zero-entry</div>
+                    <div class="funnel-track"><div class="funnel-fill" style="width:{{ "%.1f"|format(stats.active_quality.without_entries / stats.feed_results_count * 100 if stats.feed_results_count else 0) }}%;"></div></div>
+                    <div class="funnel-value">{{ stats.active_quality.without_entries|comma }}</div>
+                </div>
             </div>
         </div>
 
@@ -425,7 +433,7 @@
             <div class="chart-card">
                 <div class="chart-title">Feed Quality Distribution</div>
                 <div class="chart-sub">
-                    Score 0–1 among successfully parsed feeds. Feeds with no usable
+                    Operational score 0–1 among successfully parsed feeds. Feeds with no usable
                     date, or no freshness signal within {{ stats.inactive_quality.cutoff_days|comma }}
                     days, score 0 here; the card above also shows the mean after
                     counting those feeds out. Excluded from the recent/datable mean:
@@ -538,7 +546,7 @@
             </div>
             <div class="chart-card">
                 <div class="chart-title">Language Tagging</div>
-                <div class="chart-sub">Language signals are read from <code>xml:lang</code> attributes, RSS <code>&lt;language&gt;</code>, Dublin Core <code>dc:language</code>, and HTTP <code>Content-Language</code>.</div>
+                <div class="chart-sub">Language signals are read from <code>xml:lang</code> attributes, RSS <code>&lt;language&gt;</code>, Dublin Core <code>dc:language</code>, and HTTP <code>Content-Language</code>. Multi-language feeds count distinct language tags inside one feed; multi-feed pages are tracked separately in autodiscovery.</div>
                 <canvas id="langCountChart"></canvas>
                 <div class="card-sub" style="margin-top: 1.5rem;">
                     <div class="row"><span>HTTP <code>Content-Language</code></span> <strong>{{ stats.lang_src_http|comma }}</strong></div>

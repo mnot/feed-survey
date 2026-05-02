@@ -90,6 +90,176 @@ def render_report_html(context: ReportContext) -> str:
     )
 
 
+def render_report_markdown(context: ReportContext) -> str:
+    stats = build_report_stats(context)
+    total_parsed = stats["parsed_feeds"]
+    lines = [
+        f"# Feed Analysis Report: {context.crawl_id}",
+        "",
+        "Percentages describe this Common Crawl result set, not the entire Web. "
+        "Common Crawl reflects what its crawler fetched, what sites allowed, and "
+        "the configured domain/sample limits for this run.",
+        "",
+        "## Run Summary",
+        "",
+        _markdown_table(
+            ["Metric", "Value"],
+            [
+                ["Crawl responses scanned", format_number(stats["pages_seen"])],
+                ["Unique domains", format_number(stats["sites_seen"])],
+                ["Feed URL checks", format_number(stats["feed_results_count"])],
+                ["Successfully parsed feeds", format_number(total_parsed)],
+                ["Broken/unparseable checks", format_number(stats["unparsed_feeds"])],
+                ["Parse success rate", f"{stats['parse_success_pct']:.1f}%"],
+            ],
+        ),
+        "",
+        "## Autodiscovery",
+        "",
+        _markdown_table(
+            ["Metric", "Value"],
+            [
+                [
+                    "Pages with feed links",
+                    f"{format_number(stats['pages_with_autodiscovery'])} "
+                    f"({_pct(stats['pages_with_autodiscovery'], stats['pages_seen'], 2)})",
+                ],
+                [
+                    "Sites with feed links",
+                    f"{format_number(stats['sites_with_autodiscovery'])} "
+                    f"({_pct(stats['sites_with_autodiscovery'], stats['sites_seen'], 2)})",
+                ],
+                [
+                    "rel=alternate pages",
+                    format_number(stats["discovery_rel_alternate"]),
+                ],
+                ["rel=feed pages", format_number(stats["discovery_rel_feed"])],
+                [
+                    "Pages with both rels",
+                    format_number(stats["discovery_rel_both_page"]),
+                ],
+                [
+                    "Multi-rel feed URLs",
+                    format_number(stats["discovery_multi_rel_url"]),
+                ],
+                [
+                    "Multi-feed pages sampled",
+                    format_number(context.discovery.multi_feed_pages_total),
+                ],
+                [
+                    "Duplicate feed variant pages",
+                    format_number(context.discovery.pages_with_duplicates),
+                ],
+            ],
+        ),
+        "",
+        "## Feed Availability and Freshness",
+        "",
+        _markdown_table(
+            ["Stage", "Count", "Share of feed URL checks"],
+            [
+                [
+                    "Feed URL checks",
+                    format_number(stats["feed_results_count"]),
+                    "100.0%",
+                ],
+                [
+                    "Parsed RSS/Atom",
+                    format_number(stats["parsed_feeds"]),
+                    _pct(stats["parsed_feeds"], stats["feed_results_count"]),
+                ],
+                [
+                    "Recent/datable",
+                    format_number(stats["active_quality"]["n"]),
+                    _pct(stats["active_quality"]["n"], stats["feed_results_count"]),
+                ],
+                [
+                    "Active with entries",
+                    format_number(stats["active_quality"]["with_entries"]),
+                    _pct(
+                        stats["active_quality"]["with_entries"],
+                        stats["feed_results_count"],
+                    ),
+                ],
+                [
+                    "Active, zero-entry",
+                    format_number(stats["active_quality"]["without_entries"]),
+                    _pct(
+                        stats["active_quality"]["without_entries"],
+                        stats["feed_results_count"],
+                    ),
+                ],
+            ],
+        ),
+        "",
+        "## Formats and Quality",
+        "",
+        f"RSS-family feeds: {format_number(stats['rss_count'])}. "
+        f"Atom feeds: {format_number(stats['atom_count'])}. "
+        "Denominator: successfully parsed feeds.",
+        "",
+        _markdown_table(
+            ["Metric", "Value"],
+            [
+                [
+                    "Mean operational quality, all parsed feeds",
+                    f"{stats['mean_quality']:.3f}",
+                ],
+                [
+                    "Mean operational quality, active-only",
+                    f"{stats['active_quality']['mean']:.3f}",
+                ],
+                [
+                    "Undated parsed feeds",
+                    format_number(stats["inactive_quality"]["undated"]),
+                ],
+                [
+                    "Stale parsed feeds",
+                    format_number(stats["inactive_quality"]["stale"]),
+                ],
+            ],
+        ),
+        "",
+        _markdown_table(
+            ["Format", "Count", "Mean quality"],
+            [
+                [row["fmt"], format_number(row["count"]), f"{row['mean']:.3f}"]
+                for row in context.quality["format_rows"][:20]
+            ],
+        ),
+        "",
+        "## Languages",
+        "",
+        _markdown_table(
+            ["Metric", "Value"],
+            [
+                ["HTTP Content-Language", format_number(stats["lang_src_http"])],
+                ["Feed-level language tag", format_number(stats["lang_src_feed"])],
+                [
+                    "Entry language tags, distinct",
+                    format_number(stats["lang_src_entry"]),
+                ],
+                ["HTTP/feed mismatches", format_number(stats["lang_mismatches"])],
+                ["Multi-language feeds", format_number(stats["lang_multiple_in_feed"])],
+            ],
+        ),
+        "",
+        _markdown_table(
+            ["Language", "Feeds"],
+            [[lang, format_number(count)] for lang, count in context.languages[:20]],
+        ),
+        "",
+        "## Parse Errors",
+        "",
+        _markdown_table(
+            ["Error", "Count"],
+            [[err, format_number(count)] for err, count in context.errors[:20]],
+        ),
+        "",
+    ]
+    return "\n".join(lines)
+
+
 def build_report_stats(context: ReportContext) -> Dict[str, Any]:
     stats = context.stats
     aggregate = context.aggregate
@@ -117,6 +287,13 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         "unparsed_feeds": max(0, feed_results_count - parsed_feeds),
         "parse_success_pct": (
             round(parsed_feeds / feed_results_count * 100, 1)
+            if feed_results_count
+            else 0.0
+        ),
+        "unparsed_pct": (
+            round(
+                max(0, feed_results_count - parsed_feeds) / feed_results_count * 100, 1
+            )
             if feed_results_count
             else 0.0
         ),
@@ -159,3 +336,26 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         "active_quality": quality["active"],
         "inactive_quality": quality["inactive"],
     }
+
+
+def _pct(numerator: int, denominator: int, digits: int = 1) -> str:
+    if not denominator:
+        return f"{0.0:.{digits}f}%"
+    return f"{numerator / denominator * 100:.{digits}f}%"
+
+
+def _markdown_table(headers: List[str], rows: List[List[str]]) -> str:
+    escaped_headers = [_escape_markdown_cell(header) for header in headers]
+    lines = [
+        "| " + " | ".join(escaped_headers) + " |",
+        "| " + " | ".join("---" for _ in headers) + " |",
+    ]
+    for row in rows:
+        lines.append(
+            "| " + " | ".join(_escape_markdown_cell(cell) for cell in row) + " |"
+        )
+    return "\n".join(lines)
+
+
+def _escape_markdown_cell(value: object) -> str:
+    return str(value).replace("|", "\\|").replace("\n", " ")

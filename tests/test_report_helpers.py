@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from pathlib import Path
 
 from cc_feeds.analysis.stats import Stats
 from cc_feeds.report.aggregate import aggregate_feed_data
@@ -6,6 +7,7 @@ from cc_feeds.report.context import ReportContext, build_report_stats
 from cc_feeds.report.discovery import DiscoverySummary, build_discovery_summary
 from cc_feeds.report.distributions import collapse_content_types
 from cc_feeds.report.quality_summary import build_quality_summary
+from cc_feeds.report.render import generate_report
 
 
 def _feed(
@@ -79,6 +81,7 @@ def test_quality_summary_sets() -> None:
     assert sum(summary["hist"].values()) == 4
     assert summary["active"]["n"] == 2
     assert summary["active"]["with_entries"] == 2
+    assert summary["active"]["without_entries"] == 0
     assert summary["active"]["mean"] > 0
     assert summary["inactive"] == {
         "n": 2,
@@ -251,7 +254,13 @@ def test_report_runtime_lang_counts() -> None:
     quality = {
         "hist": {},
         "mean": 0.0,
-        "active": {"mean": 0.0, "n": 0, "with_entries": 0, "pct": 0.0},
+        "active": {
+            "mean": 0.0,
+            "n": 0,
+            "with_entries": 0,
+            "without_entries": 0,
+            "pct": 0.0,
+        },
         "inactive": {"n": 0, "undated": 0, "stale": 0, "cutoff_days": 365},
         "components": [],
     }
@@ -287,3 +296,24 @@ def test_report_runtime_lang_counts() -> None:
     assert report_stats["lang_multiple_in_feed"] == 11
     assert report_stats["active_quality"]["n"] == 0
     assert report_stats["inactive_quality"]["n"] == 0
+
+
+def test_generate_report_writes_md(tmp_path: Path) -> None:
+    stats = Stats()
+    stats.pages_seen = 1
+    stats.max_crawl_time_str = "2026-05-01T00:00:00Z"
+    stats.content_type_counts = {"application/rss+xml": 1}
+    stats.feed_results = {
+        "https://example.com/feed.xml": _feed(fmt="rss2.0", days_old=0)
+    }
+
+    html_path = tmp_path / "report.html"
+
+    generate_report(stats, "CC-MAIN-2026-12", str(html_path))
+
+    markdown_path = tmp_path / "report.md"
+    assert html_path.exists()
+    assert markdown_path.exists()
+    markdown = markdown_path.read_text(encoding="utf-8")
+    assert "# Feed Analysis Report: CC-MAIN-2026-12" in markdown
+    assert "## Feed Availability and Freshness" in markdown

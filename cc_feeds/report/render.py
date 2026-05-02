@@ -1,11 +1,16 @@
+import os
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import dateutil.parser
 
 from cc_feeds.analysis import Stats
 from cc_feeds.report.aggregate import aggregate_feed_data
-from cc_feeds.report.context import ReportContext, render_report_html
+from cc_feeds.report.context import (
+    ReportContext,
+    render_report_html,
+    render_report_markdown,
+)
 from cc_feeds.report.discovery import build_discovery_summary
 from cc_feeds.report.distributions import (
     collapse_content_types,
@@ -17,7 +22,9 @@ from cc_feeds.report.histograms import build_recency_cdf
 from cc_feeds.report.quality_summary import build_quality_summary
 
 
-def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
+def generate_report(
+    stats: Stats, crawl_id: str, output_path: str, markdown_path: Optional[str] = None
+) -> None:
     # --- Feed result sets ---
     discovered_urls = set(stats.autodiscovery_links.keys())
 
@@ -87,29 +94,40 @@ def generate_report(stats: Stats, crawl_id: str, output_path: str) -> None:
     ext_formatted = format_extension_counts(agg["extensions"])
     extensions = sorted(ext_formatted.items(), key=lambda x: x[1], reverse=True)[:15]
 
-    html = render_report_html(
-        ReportContext(
-            stats=stats,
-            crawl_id=crawl_id,
-            aggregate=agg,
-            discovery=discovery,
-            quality=quality,
-            content_types_collapsed=content_types_collapsed,
-            content_profile_dist=content_profile_dist,
-            lang_count_hist=lang_count_hist,
-            feed_recency_cdf=feed_recency_cdf,
-            entry_recency_cdf=entry_recency_cdf,
-            oldest_entry_cdf=oldest_entry_cdf,
-            n_zero_entry=n_zero_entry,
-            max_crawl_time=max_crawl_time,
-            all_valid_count=len(all_valid_results),
-            discovered_count=len(discovered_results),
-            formats=formats,
-            languages=languages,
-            extensions=extensions,
-            errors=errors,
-        )
+    context = ReportContext(
+        stats=stats,
+        crawl_id=crawl_id,
+        aggregate=agg,
+        discovery=discovery,
+        quality=quality,
+        content_types_collapsed=content_types_collapsed,
+        content_profile_dist=content_profile_dist,
+        lang_count_hist=lang_count_hist,
+        feed_recency_cdf=feed_recency_cdf,
+        entry_recency_cdf=entry_recency_cdf,
+        oldest_entry_cdf=oldest_entry_cdf,
+        n_zero_entry=n_zero_entry,
+        max_crawl_time=max_crawl_time,
+        all_valid_count=len(all_valid_results),
+        discovered_count=len(discovered_results),
+        formats=formats,
+        languages=languages,
+        extensions=extensions,
+        errors=errors,
     )
 
+    html = render_report_html(context)
     with open(output_path, "w", encoding="utf-8") as f_out:
         f_out.write(html)
+
+    markdown = render_report_markdown(context)
+    markdown_output_path = markdown_path or default_markdown_path(output_path)
+    with open(markdown_output_path, "w", encoding="utf-8") as f_out:
+        f_out.write(markdown)
+
+
+def default_markdown_path(output_path: str) -> str:
+    root, _ext = os.path.splitext(output_path)
+    if not root:
+        return f"{output_path}.md"
+    return f"{root}.md"

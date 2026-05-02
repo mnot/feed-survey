@@ -13,3 +13,6 @@ __pycache__
 /results
 /wheels
 /mock_report.html
+/mock_report.md
+/test_report.html
+/test_report.md

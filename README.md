@@ -4,7 +4,7 @@ A high-performance, distributed tool to analyze the prevalence and quality of RS
 
 ## Overview
 
-`cc-feeds` uses MapReduce to process Common Crawl WARC files in parallel. It measures feed autodiscovery, fetches and parses discovered RSS/Atom feeds, and renders an HTML report from the aggregated results.
+`cc-feeds` uses MapReduce to process Common Crawl WARC files in parallel. It measures feed autodiscovery, fetches and parses discovered RSS/Atom feeds, and renders HTML and Markdown reports from the aggregated results.
 
 ## Key Features
 
@@ -81,13 +81,14 @@ Run `make help` for the local development, report, EMR, and wheel targets.
 
 - `cc_feeds/emr/`: EMR orchestration, WARC input, and MapReduce wire-format code.
 - `cc_feeds/analysis/`: Core logic for parsing WARC records and extracting feed metadata.
-- `cc_feeds/report/`: Report-time aggregation, quality scoring, and HTML rendering.
+- `cc_feeds/report/`: Report-time aggregation, quality scoring, and HTML/Markdown rendering.
 - `cc_feeds/commoncrawl.py`: Common Crawl metadata and WARC path discovery.
 - `cc_feeds/tranco.py`: Tranco list loading for top-site scoping.
 - `cc_feeds/url.py`: URL normalization and domain extraction helpers.
 - `cc_feeds/download.py`: Shared download and cache helpers.
 - `tests/`: Unit tests and integration tests.
 - `tests/fixtures/`: Small local fixtures and profiling helpers used by tests and smoke runs.
+- `docs/`: Research notes and plans for future analysis dimensions.
 - `mrjob.conf`: EMR orchestration settings (Python 3.12, dependencies, instance fleets).
 - `.mrjobignore`: Prevents local virtual environments and caches from being uploaded to workers.
 

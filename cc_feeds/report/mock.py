@@ -343,7 +343,7 @@ def main() -> None:
     n_feeds = len(stats.feed_results)
     n_auto = len(stats.autodiscovery_links)
     print(f"done ({n_feeds:,} feeds, {n_auto:,} with autodiscovery).")
-    print(f"Generating report → {args.output_path}… ", end="", flush=True)
+    print(f"Generating reports → {args.output_path}… ", end="", flush=True)
     generate_report(stats, CRAWL_ID, args.output_path)
     print("done.")
 

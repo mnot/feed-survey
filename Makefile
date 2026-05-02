@@ -67,7 +67,7 @@ emr: venv
 	mkdir -p results/$(CRAWL_ID)-$(RUN_ID)
 	aws s3 sync $(OUTPUT_DIR)$(CRAWL_ID)-$(RUN_ID)/ results/$(CRAWL_ID)-$(RUN_ID)/
 	$(VENV)/python -m cc_feeds.emr.finalize results/$(CRAWL_ID)-$(RUN_ID)/ $(CRAWL_ID) results/$(CRAWL_ID)-$(RUN_ID)/report.html
-	@echo "Report generated at results/$(CRAWL_ID)-$(RUN_ID)/report.html"
+	@echo "Reports generated at results/$(CRAWL_ID)-$(RUN_ID)/report.html and results/$(CRAWL_ID)-$(RUN_ID)/report.md"
 
 WHEEL_S3_PATH = s3://mnot-cc-feeds/wheels/
 MOCK_REPORT ?= mock_report.html
@@ -83,7 +83,7 @@ wheels:
 .PHONY: mock-report mock_report
 mock-report mock_report: venv
 	$(VENV)/python -m cc_feeds.report.mock $(MOCK_REPORT)
-	@echo "Report generated at $(MOCK_REPORT)"
+	@echo "Report generated at $(MOCK_REPORT) with Markdown sibling"
 
 .PHONY: upload-wheels
 upload-wheels: wheels
@@ -108,7 +108,7 @@ test-emr: venv
 	mkdir -p results/test-$(RUN_ID)
 	aws s3 sync $(OUTPUT_DIR)test-$(RUN_ID)/ results/test-$(RUN_ID)/
 	$(VENV)/python -m cc_feeds.emr.finalize results/test-$(RUN_ID)/ $(CRAWL_ID) results/test-$(RUN_ID)/report.html
-	@echo "Report generated at results/test-$(RUN_ID)/report.html"
+	@echo "Reports generated at results/test-$(RUN_ID)/report.html and results/test-$(RUN_ID)/report.md"
 
 # Update a specific report: make results/test-xxx/report.html
 .PHONY: results/%/report.html
@@ -119,6 +119,6 @@ results/%/report.html: venv
 report: venv
 	@test -n "$(RESULTS_DIR)" || (echo "Usage: make report RESULTS_DIR=results/test-YYYYMMDD-HHMMSS" && exit 1)
 	$(VENV)/python -m cc_feeds.emr.finalize $(RESULTS_DIR) $(CRAWL_ID) $(RESULTS_DIR)/report.html
-	@echo "Report generated at $(RESULTS_DIR)/report.html"
+	@echo "Reports generated at $(RESULTS_DIR)/report.html and $(RESULTS_DIR)/report.md"
 
 include Makefile.pyproject

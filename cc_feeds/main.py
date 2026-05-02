@@ -129,7 +129,7 @@ def main() -> None:
             print(f"Saving stats to {args.save_stats}...")
             stats.save(args.save_stats)
 
-    print("Processing complete. Generating report...")
+    print("Processing complete. Generating reports...")
     generate_report(stats, crawl_id, args.output)
     print("Done.")
 

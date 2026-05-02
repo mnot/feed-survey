@@ -64,6 +64,7 @@ def build_quality_summary(
             "mean": round(_mean(active_scores), 3),
             "n": len(active_scores),
             "with_entries": active_with_entries_count,
+            "without_entries": len(active_scores) - active_with_entries_count,
             "pct": (
                 round(len(active_scores) / len(quality_scores) * 100, 1)
                 if quality_scores
