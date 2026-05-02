@@ -90,13 +90,12 @@ class FastFeedParser:
 
             # Capture any xml:lang on the root element immediately
             track_lang(root_elem, result, entry_level=False)
+            root_lang = root_elem.get(XML_LANG)
+            if root_lang:
+                result["feed"]["language"] = root_lang.strip().lower()
 
             if local == "feed" and ns in (ATOM_NS, ""):
                 result["version"] = "atom10"
-                # For Atom, xml:lang on the root <feed> is the feed-level language
-                root_lang = root_elem.get(XML_LANG)
-                if root_lang:
-                    result["feed"]["language"] = root_lang.strip().lower()
                 FastFeedParser._parse_atom(context, result)
             elif local == "rss":
                 result["version"] = f"rss{root_elem.get('version', '2.0')}"
@@ -281,6 +280,8 @@ class FastFeedParser:
                 )
             elif local == "language" and not result["feed"]["language"]:
                 result["feed"]["language"] = (elem.text or "").strip().lower()
+            elif local == "channel" and not result["feed"]["language"]:
+                FastFeedParser._set_feed_lang_from_xml_lang(elem, result)
         elif ns == DC_NS and local == "language" and not result["feed"]["language"]:
             result["feed"]["language"] = (elem.text or "").strip().lower()
         elif ns == DC_NS and local == "date":
@@ -321,6 +322,8 @@ class FastFeedParser:
             result["feed"]["title"] = (elem.text or "").strip()
         elif local == "link" and not result["feed"]["link"]:
             result["feed"]["link"] = (elem.text or "").strip()
+        elif local == "channel" and not result["feed"]["language"]:
+            FastFeedParser._set_feed_lang_from_xml_lang(elem, result)
         elif ns == DC_NS and local == "date" and not result["feed"]["updated_parsed"]:
             result["feed"]["updated_parsed"] = parse_date(elem.text)
         elif ns == DC_NS and local == "language" and not result["feed"]["language"]:
@@ -350,6 +353,12 @@ class FastFeedParser:
         parsed_date = parse_date(text)
         if parsed_date and not entry.get("date"):
             entry["date"] = parsed_date
+
+    @staticmethod
+    def _set_feed_lang_from_xml_lang(elem: Any, result: Dict[str, Any]) -> None:
+        lang = elem.get(XML_LANG)
+        if lang:
+            result["feed"]["language"] = lang.strip().lower()
 
     @staticmethod
     def _set_preferred_date(

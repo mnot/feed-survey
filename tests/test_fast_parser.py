@@ -6,6 +6,11 @@ def _date_prefix(value: object) -> list[object]:
     return value[:3]
 
 
+def _time_part(value: object) -> list[object]:
+    assert isinstance(value, list)
+    return value[3:6]
+
+
 def test_parse_atom_feed() -> None:
     result = FastFeedParser.parse(b"""<?xml version="1.0"?>
         <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
@@ -100,6 +105,24 @@ def test_atom_updated_preferred() -> None:
     assert _date_prefix(result["newest_entry_date"]) == [2026, 1, 3]
 
 
+def test_dates_normalized_to_utc() -> None:
+    result = FastFeedParser.parse(b"""<?xml version="1.0"?>
+        <feed xmlns="http://www.w3.org/2005/Atom">
+          <title>Example Atom</title>
+          <updated>2026-01-03T01:00:00+02:00</updated>
+          <entry>
+            <title>Entry</title>
+            <updated>2026-01-03T01:30:00+02:00</updated>
+          </entry>
+        </feed>""")
+
+    assert result["valid"] is True
+    assert _date_prefix(result["feed"]["updated_parsed"]) == [2026, 1, 2]
+    assert _time_part(result["feed"]["updated_parsed"]) == [23, 0, 0]
+    assert _date_prefix(result["newest_entry_date"]) == [2026, 1, 2]
+    assert _time_part(result["newest_entry_date"]) == [23, 30, 0]
+
+
 def test_parse_rss2() -> None:
     result = FastFeedParser.parse(b"""<?xml version="1.0"?>
         <rss version="2.0">
@@ -124,6 +147,34 @@ def test_parse_rss2() -> None:
     assert result["has_summary"] is True
     assert result["content_type_profile"] == "plain"
     assert _date_prefix(result["newest_entry_date"]) == [2026, 1, 3]
+
+
+def test_rss_xml_lang_fallback() -> None:
+    result = FastFeedParser.parse(b"""<?xml version="1.0"?>
+        <rss version="2.0" xml:lang="fr">
+          <channel>
+            <title>Example RSS</title>
+            <link>https://example.com/</link>
+          </channel>
+        </rss>""")
+
+    assert result["valid"] is True
+    assert result["feed"]["language"] == "fr"
+    assert result["all_languages"] == {"fr"}
+
+
+def test_rss_channel_lang_fallback() -> None:
+    result = FastFeedParser.parse(b"""<?xml version="1.0"?>
+        <rss version="2.0">
+          <channel xml:lang="de">
+            <title>Example RSS</title>
+            <link>https://example.com/</link>
+          </channel>
+        </rss>""")
+
+    assert result["valid"] is True
+    assert result["feed"]["language"] == "de"
+    assert result["all_languages"] == {"de"}
 
 
 def test_rss_desc_html_profile() -> None:

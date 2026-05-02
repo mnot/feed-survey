@@ -94,6 +94,8 @@ def parse_date(date_str: Optional[str]) -> Optional[List[int]]:
         parsed = dateutil.parser.parse(date_str)
         if parsed.tzinfo is None:
             parsed = parsed.replace(tzinfo=timezone.utc)
+        else:
+            parsed = parsed.astimezone(timezone.utc)
         return [
             parsed.year,
             parsed.month,
