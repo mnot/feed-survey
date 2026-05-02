@@ -69,7 +69,11 @@ Control the cluster size and instance types.
 ### `Makefile`
 - **`CRAWL_ID`**: The Common Crawl index to process (e.g., `CC-MAIN-2026-12`).
 - **`MAP_TASKS`**: Number of WARC path chunks for a full run. The default is higher than the worker count so slow WARC files have less impact on overall progress.
+- **`REDUCES`**: Number of reducers for the full EMR run.
+- **`TEST_MAP_TASKS` / `TEST_REDUCES`**: Map and reduce sizing for `make test-emr`.
 - **`OUTPUT_DIR`**: The S3 bucket where results and logs will be stored.
+- **`MOCK_REPORT`**: Output path for `make mock-report`.
+- **`RESULTS_DIR`**: Existing local result directory to re-render with `make report`.
 
 Run `make help` for the local development, report, EMR, and wheel targets.
 
@@ -77,10 +81,13 @@ Run `make help` for the local development, report, EMR, and wheel targets.
 
 - `cc_feeds/emr/`: EMR orchestration, WARC input, and MapReduce wire-format code.
 - `cc_feeds/analysis/`: Core logic for parsing WARC records and extracting feed metadata.
+- `cc_feeds/report/`: Report-time aggregation, quality scoring, and HTML rendering.
 - `cc_feeds/commoncrawl.py`: Common Crawl metadata and WARC path discovery.
 - `cc_feeds/tranco.py`: Tranco list loading for top-site scoping.
 - `cc_feeds/url.py`: URL normalization and domain extraction helpers.
 - `cc_feeds/download.py`: Shared download and cache helpers.
+- `tests/`: Unit tests and integration tests.
+- `tests/fixtures/`: Small local fixtures and profiling helpers used by tests and smoke runs.
 - `mrjob.conf`: EMR orchestration settings (Python 3.12, dependencies, instance fleets).
 - `.mrjobignore`: Prevents local virtual environments and caches from being uploaded to workers.
 

@@ -4,6 +4,7 @@ PYTHON_TARGETS = cc_feeds $(wildcard tests/*.py)
 .PHONY: help
 help:
 	@echo "Common targets:"
+	@echo "  make venv          Create or update the local development environment"
 	@echo "  make test          Run fast unit tests"
 	@echo "  make tidy          Format Python code"
 	@echo "  make typecheck     Run mypy over package and tests"
@@ -47,6 +48,7 @@ PATHS_PREFIX = s3://mnot-cc-feeds/paths/
 RUN_ID := $(shell date +%Y%m%d-%H%M%S)
 
 MAP_TASKS ?= 800
+REDUCES ?= 20
 TEST_MAP_TASKS ?= 20
 TEST_REDUCES ?= 1
 
@@ -60,7 +62,7 @@ emr: venv
 		$(PATHS_PREFIX)$(CRAWL_ID)-$(RUN_ID)/ \
 		--output-dir $(OUTPUT_DIR)$(CRAWL_ID)-$(RUN_ID)/ \
 		--no-read-logs --no-cat-output \
-		--jobconf mapreduce.job.reduces=20 \
+		--jobconf mapreduce.job.reduces=$(REDUCES) \
 		--topn 500000
 	mkdir -p results/$(CRAWL_ID)-$(RUN_ID)
 	aws s3 sync $(OUTPUT_DIR)$(CRAWL_ID)-$(RUN_ID)/ results/$(CRAWL_ID)-$(RUN_ID)/

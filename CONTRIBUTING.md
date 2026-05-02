@@ -19,6 +19,8 @@ This document contains information for developers who want to modify or extend `
 - `cc_feeds/commoncrawl.py`: Common Crawl metadata and WARC path discovery.
 - `cc_feeds/tranco.py`: Tranco list loading and caching.
 - `cc_feeds/url.py`: URL normalization and domain extraction helpers.
+- `tests/`: Unit tests and integration tests.
+- `tests/fixtures/`: Small local fixtures and profiling helpers used by tests and smoke runs.
 
 ## Code Standards
 
@@ -41,6 +43,8 @@ make mock-report
 Common Crawl analysis and may need network access.
 Use `make test-emr` for an end-to-end cloud smoke test after changes that affect
 EMR packaging, WARC processing, or report finalization.
+Use `make report RESULTS_DIR=results/...` to re-render an existing EMR result
+without rerunning the distributed job.
 
 ## Scaling to Distributed EMR
 
