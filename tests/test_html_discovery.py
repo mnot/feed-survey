@@ -77,6 +77,23 @@ def test_discovers_type_whitespace() -> None:
     assert set(stats.autodiscovery_links) == {"https://example.com/feed.xml"}
 
 
+def test_discovers_rel_whitespace() -> None:
+    stats = Stats()
+    discovery = HtmlDiscovery(stats)
+
+    discovery.process(
+        "https://example.com/",
+        b"""
+        <html><head>
+          <link rel = "alternate" type="application/rss+xml" href="/feed.xml">
+        </head></html>
+        """,
+    )
+
+    assert stats.discovery_pages_count == 1
+    assert set(stats.autodiscovery_links) == {"https://example.com/feed.xml"}
+
+
 def test_ignores_pages_no_feeds() -> None:
     stats = Stats()
     discovery = HtmlDiscovery(stats)

@@ -8,7 +8,7 @@ from cc_feeds.analysis.stats import Stats
 from cc_feeds.url import get_domain, normalize_url
 
 _LINK_RE = re.compile(
-    b"<link\\s+[^>]*rel=[\"'][^\"']*(?:alternate|feed)[^\"']*[\"'][^>]*>",
+    b"<link\\s+[^>]*rel\\s*=\\s*[\"'][^\"']*(?:alternate|feed)[^\"']*[\"'][^>]*>",
     re.IGNORECASE,
 )
 _FEED_TYPE_RE = re.compile(
