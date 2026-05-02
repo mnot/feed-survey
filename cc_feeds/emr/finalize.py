@@ -1,7 +1,7 @@
+import argparse
 import glob
 import json
 import os
-import sys
 from datetime import datetime
 from typing import Any, Dict, Iterator, Tuple
 
@@ -188,17 +188,20 @@ def finalize_mr_results(results_dir: str, crawl_id: str, output_path: str) -> No
 
 
 def main() -> None:
-    if len(sys.argv) < 3:
-        print(
-            "Usage: python -m cc_feeds.emr.finalize "
-            "<results_dir> <crawl_id> [output_file]"
-        )
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        description="Aggregate EMR part files and render an HTML report."
+    )
+    parser.add_argument("results_dir", help="Local directory containing EMR part files")
+    parser.add_argument("crawl_id", help="Common Crawl crawl id for the report")
+    parser.add_argument(
+        "output_path",
+        nargs="?",
+        default="cc_feeds_report.html",
+        help="HTML report output path",
+    )
+    args = parser.parse_args()
 
-    dir_path = sys.argv[1]
-    cid = sys.argv[2]
-    out = sys.argv[3] if len(sys.argv) > 3 else "cc_feeds_report.html"
-    finalize_mr_results(dir_path, cid, out)
+    finalize_mr_results(args.results_dir, args.crawl_id, args.output_path)
 
 
 if __name__ == "__main__":

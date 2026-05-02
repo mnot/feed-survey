@@ -6,11 +6,11 @@ Usage: python -m cc_feeds.emr.split_paths <input> <s3-output-prefix> <n-tasks> [
   max-paths: optional global cap on the number of paths to upload
 """
 
+import argparse
 import gzip
 import math
 import os
 import subprocess
-import sys
 import tempfile
 from typing import List
 
@@ -38,16 +38,25 @@ def read_paths(source: str) -> List[str]:
 
 
 def main() -> None:
-    if len(sys.argv) not in (4, 5):
-        print(
-            f"Usage: {sys.argv[0]} <input> <s3-output-prefix> " "<n-tasks> [max-paths]"
-        )
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        description="Split a WARC paths file into chunks and upload them to S3."
+    )
+    parser.add_argument("source", help="Local .txt/.gz file or s3:// WARC paths file")
+    parser.add_argument("dest", help="S3 prefix where chunk files should be uploaded")
+    parser.add_argument("n_tasks", type=int, help="Number of path chunks to create")
+    parser.add_argument(
+        "max_paths",
+        nargs="?",
+        type=int,
+        default=0,
+        help="Optional cap on the total number of paths to upload",
+    )
+    args = parser.parse_args()
 
-    source = sys.argv[1]
-    dest = sys.argv[2].rstrip("/") + "/"
-    n_tasks = int(sys.argv[3])
-    max_paths = int(sys.argv[4]) if len(sys.argv) == 5 else 0
+    source = args.source
+    dest = args.dest.rstrip("/") + "/"
+    n_tasks = args.n_tasks
+    max_paths = args.max_paths
 
     print(f"Reading paths from {source}...")
     lines = read_paths(source)

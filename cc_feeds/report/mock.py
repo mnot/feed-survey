@@ -8,8 +8,8 @@ Default output_path: mock_report.html
 """
 
 import random
-import sys
 import zlib
+from argparse import ArgumentParser
 from datetime import datetime, timedelta, timezone
 from typing import Any, List
 
@@ -329,14 +329,22 @@ def build_mock_stats() -> Stats:
 
 
 def main() -> None:
-    output_path = sys.argv[1] if len(sys.argv) > 1 else "mock_report.html"
+    parser = ArgumentParser(description="Generate a realistic synthetic feed report.")
+    parser.add_argument(
+        "output_path",
+        nargs="?",
+        default="mock_report.html",
+        help="HTML report output path",
+    )
+    args = parser.parse_args()
+
     print("Building mock stats… ", end="", flush=True)
     stats = build_mock_stats()
     n_feeds = len(stats.feed_results)
     n_auto = len(stats.autodiscovery_links)
     print(f"done ({n_feeds:,} feeds, {n_auto:,} with autodiscovery).")
-    print(f"Generating report → {output_path}… ", end="", flush=True)
-    generate_report(stats, CRAWL_ID, output_path)
+    print(f"Generating report → {args.output_path}… ", end="", flush=True)
+    generate_report(stats, CRAWL_ID, args.output_path)
     print("done.")
 
 
