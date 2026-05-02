@@ -12,7 +12,7 @@ _LINK_RE = re.compile(
     re.IGNORECASE,
 )
 _FEED_TYPE_RE = re.compile(
-    b"type=[\"']application/(?:rss\\+xml|atom\\+xml|rdf\\+xml)"
+    b"type\\s*=\\s*[\"']application/(?:rss\\+xml|atom\\+xml|rdf\\+xml)"
     b"(?:\\s*;[^\"']*)?[\"']",
     re.IGNORECASE,
 )
