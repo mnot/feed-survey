@@ -183,7 +183,10 @@ def finalize_mr_results(results_dir: str, crawl_id: str, output_path: str) -> No
 
     overall_stats.sites_seen_count = overall_stats.get_unique_sites_estimate()
 
-    print(f"Aggregated {overall_stats.pages_seen} pages. Generating reports...")
+    print(
+        f"Aggregated {overall_stats.pages_seen} candidate responses. "
+        "Generating reports..."
+    )
     markdown_path = default_markdown_path(output_path)
     generate_report(overall_stats, crawl_id, output_path, markdown_path)
     print(f"HTML report generated: {output_path}")

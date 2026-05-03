@@ -217,7 +217,7 @@
             <div class="card">
                 <div class="card-title">Unique Domains</div>
                 <div class="card-value">{{ total_sites_f }}</div>
-                <div class="card-sub">Distinct sites (HyperLogLog estimate)</div>
+                <div class="card-sub">Distinct domains among candidate responses (HyperLogLog estimate)</div>
             </div>
             <div class="card">
                 <div class="card-title">Feed URLs Checked</div>
@@ -277,7 +277,7 @@
                 <div class="card-title">Sites with Feed Links</div>
                 <div class="card-value">{{ sites_with_auto_f }}</div>
                 <div class="card-sub">
-                    {{ "%.2f"|format(stats.sites_with_autodiscovery / stats.sites_seen * 100 if stats.sites_seen else 0) }}% of crawled sites (est. lower bound)
+                    {{ "%.2f"|format(stats.sites_with_autodiscovery / stats.sites_seen * 100 if stats.sites_seen else 0) }}% of analyzed domains (est. lower bound)
                 </div>
             </div>
             <div class="card">

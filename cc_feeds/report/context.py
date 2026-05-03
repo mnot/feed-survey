@@ -107,7 +107,7 @@ def render_report_markdown(context: ReportContext) -> str:
             [
                 ["Candidate responses analyzed", format_number(stats["pages_seen"])],
                 ["HTML responses analyzed", format_number(stats["html_responses"])],
-                ["Unique domains", format_number(stats["sites_seen"])],
+                ["Unique analyzed domains", format_number(stats["sites_seen"])],
                 ["Feed URL checks", format_number(stats["feed_results_count"])],
                 ["Successfully parsed feeds", format_number(total_parsed)],
                 ["Broken/unparseable checks", format_number(stats["unparsed_feeds"])],
