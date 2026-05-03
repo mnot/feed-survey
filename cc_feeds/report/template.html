@@ -311,7 +311,7 @@
                 <div class="chart-title">Pages with Duplicate Feeds</div>
                 <div style="font-size:2.8rem;font-weight:700;color:var(--danger);margin:0.5rem 0;">{{ pages_with_duplicates|comma }}</div>
                 <div style="font-size:1.4rem;font-weight:600;color:var(--muted);margin-bottom:0.5rem;">{{ "%.1f"|format(duplicate_prevalence_pct) }}% of {{ multi_feed_pages_total|comma }} multi-feed pages</div>
-                <p class="chart-sub">Pages that link to redundant format variants of the same feed (identical internal title &amp; link).</p>
+                <p class="chart-sub">Pages that link to redundant format variants of the same feed (same internal title and link after light normalization).</p>
             </div>
             <div class="chart-card">
                 <div class="chart-title">Quality: Autodiscovered vs. Not</div>

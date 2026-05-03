@@ -240,6 +240,32 @@ def test_duplicate_no_query() -> None:
     assert summary.pages_with_duplicates == 1
 
 
+def test_duplicate_normalizes_title() -> None:
+    stats = Stats()
+    stats.multi_feed_pages = {
+        "https://example.com/": [
+            "https://example.com/rss.xml",
+            "https://example.com/atom.xml",
+        ]
+    }
+    stats.feed_results = {
+        "https://example.com/rss.xml": {
+            "valid": True,
+            "link": "https://example.com/",
+            "title": "Example Feed",
+        },
+        "https://example.com/atom.xml": {
+            "valid": True,
+            "link": "https://example.com/",
+            "title": " example   feed ",
+        },
+    }
+
+    summary = build_discovery_summary(stats)
+
+    assert summary.pages_with_duplicates == 1
+
+
 def test_content_types_exclude_json() -> None:
     collapsed = collapse_content_types(
         {

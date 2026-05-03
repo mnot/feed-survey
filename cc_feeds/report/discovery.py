@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from cc_feeds.analysis import Stats
+from cc_feeds.analysis.feed_helpers import normalize_entry_title
 from cc_feeds.report.histograms import make_histogram
 from cc_feeds.url import normalize_url_for_grouping
 
@@ -127,7 +128,10 @@ def detect_duplicates(
             link = res.get("link")
             title = res.get("title")
             if link or title:
-                key = (normalize_url_for_grouping(link) if link else None, title)
+                key = (
+                    normalize_url_for_grouping(link) if link else None,
+                    normalize_entry_title(title),
+                )
                 if key not in link_to_feeds:
                     link_to_feeds[key] = set()
                 link_to_feeds[key].add(url)
