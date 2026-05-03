@@ -80,7 +80,9 @@ class WarcProcessor:
                 and guess_feed_format(record.reader.peek(1024)) != "unknown"
             ):
                 self.stats.feeds_sniffed += 1
-                self._process_feed(record, url, status_code, request_time_str)
+                self._process_feed(
+                    record, normalize_url(url), status_code, request_time_str
+                )
         except (AttributeError, OSError, RuntimeError, TypeError, ValueError):
             pass
 

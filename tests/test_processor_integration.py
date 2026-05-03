@@ -112,3 +112,20 @@ def test_plain_text_feed_sniffed() -> None:
     assert result["valid"] is True
     assert result["format"] == "rss2.0"
     assert processor.stats.feeds_sniffed == 1
+
+
+def test_sniffed_url_normalized() -> None:
+    processor = WarcProcessor()
+    content = b"""<?xml version="1.0"?>
+    <rss version="2.0">
+      <channel>
+        <title>Plain Feed</title>
+        <link>http://example.org/</link>
+      </channel>
+    </rss>"""
+
+    processor.process_record(
+        _Record("HTTP://Example.ORG/feed.txt/", "text/plain", content)
+    )
+
+    assert set(processor.stats.feed_results) == {"http://example.org/feed.txt"}
