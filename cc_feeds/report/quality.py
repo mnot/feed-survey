@@ -42,6 +42,7 @@ __all__ = [
     "WEIGHTS",
     "RECENCY_HALF_LIFE_DAYS",
     "ENTRY_RECENCY_CUTOFF_DAYS",
+    "QUALITY_SPLIT_THRESHOLD",
     "FUTURE_DATE_TOLERANCE_DAYS",
     "is_active_feed",
     "recency_age_days",
@@ -49,6 +50,7 @@ __all__ = [
 
 RECENCY_HALF_LIFE_DAYS: float = 120.0
 ENTRY_RECENCY_CUTOFF_DAYS: float = 365.0  # no usable freshness signal → score 0
+QUALITY_SPLIT_THRESHOLD: float = 0.5
 FUTURE_DATE_TOLERANCE_DAYS: float = 1.0
 
 WEIGHTS: Dict[str, float] = {

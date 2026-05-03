@@ -2,9 +2,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, cast
 
 from cc_feeds.report.formatting import format_extension
-from cc_feeds.report.quality import score_feed
-
-QUALITY_SPLIT_THRESHOLD = 0.5
+from cc_feeds.report.quality import QUALITY_SPLIT_THRESHOLD, score_feed
 
 
 def aggregate_feed_data(results: Dict[str, Any]) -> Dict[str, Any]:

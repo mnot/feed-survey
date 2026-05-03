@@ -3,6 +3,7 @@ from typing import Any, Dict, List, cast
 
 from cc_feeds.report.quality import (
     ENTRY_RECENCY_CUTOFF_DAYS,
+    QUALITY_SPLIT_THRESHOLD,
     WEIGHTS,
     is_active_feed,
     recency_age_days,
@@ -32,7 +33,7 @@ def build_quality_summary(
     for result in all_valid_results.values():
         score = score_feed(result, now)
         quality_scores.append(score)
-        if score > 0.5:
+        if score > QUALITY_SPLIT_THRESHOLD:
             mid_quality_count += 1
         if is_active_feed(result, now):
             active_scores.append(score)
