@@ -101,6 +101,13 @@ def _merge_summary(stats: Stats, data: Dict[str, Any]) -> None:
 
     _merge_multi_feed_pages(stats, data.get("multi_feed_pages", {}))
     _merge_counts(
+        stats.html_fingerprint_counts, data.get("html_fingerprint_counts", {})
+    )
+    _merge_counts(
+        stats.html_fingerprint_auto_counts,
+        data.get("html_fingerprint_auto_counts", {}),
+    )
+    _merge_counts(
         stats.discovery_domain_counts, data.get("discovery_domain_counts", {})
     )
     _merge_hll_registers(stats, data.get("hll_registers"))

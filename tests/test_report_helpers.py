@@ -7,6 +7,7 @@ from cc_feeds.report.aggregate import (
     content_profile_prevalence_rows,
     extension_prevalence_rows,
     fingerprint_prevalence_rows,
+    html_fingerprint_rows,
     language_prevalence_rows,
 )
 from cc_feeds.report.context import ReportContext, build_report_stats
@@ -259,6 +260,20 @@ def test_fingerprint_quality_split() -> None:
     assert rows[0]["quality_count"] == 1
 
 
+def test_html_fingerprint_rows() -> None:
+    rows = html_fingerprint_rows(
+        {"wordpress": 10, "drupal": 5},
+        {"wordpress": 4, "drupal": 1},
+    )
+
+    assert rows[0] == {
+        "fingerprint": "wordpress",
+        "html_pages": 10,
+        "autodiscovery_pages": 4,
+        "autodiscovery_pct": 40.0,
+    }
+
+
 def test_agg_http_feed_mismatch() -> None:
     all_valid = {
         "https://entry.example/feed.xml": {
@@ -487,6 +502,7 @@ def test_report_runtime_lang_counts() -> None:
             languages=[],
             language_prevalence=[],
             fingerprint_prevalence=[],
+            html_fingerprints=[],
             extension_prevalence=[],
             errors=[],
         )

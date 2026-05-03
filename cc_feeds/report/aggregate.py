@@ -183,6 +183,26 @@ def fingerprint_prevalence_rows(
     )
 
 
+def html_fingerprint_rows(
+    counts: Dict[str, int],
+    autodiscovery_counts: Dict[str, int],
+    limit: Optional[int] = 15,
+) -> List[Dict[str, Any]]:
+    rows = [
+        {
+            "fingerprint": label,
+            "html_pages": count,
+            "autodiscovery_pages": autodiscovery_counts.get(label, 0),
+            "autodiscovery_pct": _pct(autodiscovery_counts.get(label, 0), count),
+        }
+        for label, count in counts.items()
+    ]
+    rows.sort(key=lambda row: cast(int, row["html_pages"]), reverse=True)
+    if limit is None:
+        return rows
+    return rows[:limit]
+
+
 def _quality_prevalence_rows(
     results: Dict[str, Any],
     now: datetime,

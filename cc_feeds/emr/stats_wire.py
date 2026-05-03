@@ -43,6 +43,10 @@ def serialize_stats(stats: Stats) -> Dict[str, Any]:
                 "discovery_pages_count": stats.discovery_pages_count,
                 "discovery_links_per_page_counts": stats.discovery_links_per_page_counts,
                 "multi_feed_pages": stats.multi_feed_pages,
+                "html_fingerprint_counts": stats.html_fingerprint_counts,
+                "html_fingerprint_auto_counts": (
+                    stats.html_fingerprint_auto_counts
+                ),
                 "content_length_counts": stats.content_length_counts,
                 "discovery_domain_counts": stats.discovery_domain_counts,
                 "top_n": stats.top_n,
@@ -122,6 +126,15 @@ def merge_serialized_stats(merged: Dict[str, Any], incoming: Dict[str, Any]) -> 
         for page_url, feed_urls in incoming.get("multi_feed_pages", {}).items():
             if page_url not in merged["multi_feed_pages"]:
                 merged["multi_feed_pages"][page_url] = feed_urls
+
+    for field in (
+        "html_fingerprint_counts",
+        "html_fingerprint_auto_counts",
+    ):
+        if field not in merged:
+            merged[field] = {}
+        for label, count in incoming.get(field, {}).items():
+            merged[field][label] = merged[field].get(label, 0) + count
 
 
 def merge_stats_values(values: Generator[Any, None, None]) -> Dict[str, Any]:
@@ -206,6 +219,17 @@ def reduce_stats(values: Generator[Any, None, None]) -> Stats:
                 if page_url not in final_stats.multi_feed_pages:
                     final_stats.multi_feed_pages[page_url] = feed_urls
 
+        for label, count in value.get("html_fingerprint_counts", {}).items():
+            final_stats.html_fingerprint_counts[label] = (
+                final_stats.html_fingerprint_counts.get(label, 0) + count
+            )
+        for label, count in value.get(
+            "html_fingerprint_auto_counts", {}
+        ).items():
+            final_stats.html_fingerprint_auto_counts[label] = (
+                final_stats.html_fingerprint_auto_counts.get(label, 0) + count
+            )
+
     return final_stats
 
 
@@ -232,6 +256,10 @@ def summary_record(stats: Stats) -> Dict[str, Any]:
         "discovery_multi_rel_url": stats.discovery_multi_rel_url,
         "discovery_links_per_page_counts": stats.discovery_links_per_page_counts,
         "multi_feed_pages": stats.multi_feed_pages,
+        "html_fingerprint_counts": stats.html_fingerprint_counts,
+        "html_fingerprint_auto_counts": (
+            stats.html_fingerprint_auto_counts
+        ),
         "top_n": stats.top_n,
     }
 

@@ -1,3 +1,4 @@
+import re
 from typing import Any, Iterable, Mapping, Set
 
 KNOWN_PLATFORM_PATTERNS = {
@@ -21,6 +22,21 @@ HEADER_FIELDS = (
     "X-Drupal-Dynamic-Cache",
 )
 
+_META_GENERATOR_RE = re.compile(
+    rb"<meta\s+[^>]*name\s*=\s*['\"]generator['\"][^>]*content\s*=\s*['\"]([^'\"]+)",
+    re.IGNORECASE,
+)
+
+HTML_MARKERS = {
+    "drupal": (b"/sites/default/files/", b"drupal-settings-json"),
+    "ghost": (b"ghost/content/", b"ghost.org"),
+    "shopify": (b"cdn.shopify.com", b"shopify.theme"),
+    "squarespace": (b"static1.squarespace.com", b"squarespace-cdn.com"),
+    "substack": (b"substackcdn.com", b"substack.com"),
+    "wix": (b"static.wixstatic.com", b"wix-code-sdk"),
+    "wordpress": (b"/wp-content/", b"/wp-includes/"),
+}
+
 
 def fingerprint_http_headers(headers: Mapping[str, Any]) -> Set[str]:
     fingerprints: Set[str] = set()
@@ -31,6 +47,21 @@ def fingerprint_http_headers(headers: Mapping[str, Any]) -> Set[str]:
 
 def fingerprint_feed_generator(generator: Any) -> Set[str]:
     return _fingerprints_from_values([str(generator or "")])
+
+
+def fingerprint_html(content: bytes) -> Set[str]:
+    fingerprints: Set[str] = set()
+    match = _META_GENERATOR_RE.search(content[:32768])
+    if match:
+        fingerprints.update(
+            _fingerprints_from_values([match.group(1).decode("utf-8", "ignore")])
+        )
+
+    normalized = content[:32768].lower()
+    for label, markers in HTML_MARKERS.items():
+        if any(marker in normalized for marker in markers):
+            fingerprints.add(label)
+    return fingerprints
 
 
 def _fingerprints_from_values(values: Iterable[str]) -> Set[str]:

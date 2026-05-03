@@ -33,6 +33,37 @@ def test_discovers_feed_links() -> None:
     assert stats.discovery_domain_counts["https://example.com/feed.xml"] == 1
 
 
+def test_html_fingerprint_auto() -> None:
+    stats = Stats()
+    discovery = HtmlDiscovery(stats)
+
+    discovery.process(
+        "https://example.com/",
+        b"""
+        <html><head>
+          <meta name="generator" content="WordPress">
+          <link rel="alternate" type="application/rss+xml" href="/feed.xml">
+        </head></html>
+        """,
+    )
+
+    assert stats.html_fingerprint_counts == {"wordpress": 1}
+    assert stats.html_fingerprint_auto_counts == {"wordpress": 1}
+
+
+def test_html_fingerprint_no_auto() -> None:
+    stats = Stats()
+    discovery = HtmlDiscovery(stats)
+
+    discovery.process(
+        "https://example.com/",
+        b'<html><head><meta name="generator" content="WordPress"></head></html>',
+    )
+
+    assert stats.html_fingerprint_counts == {"wordpress": 1}
+    assert not stats.html_fingerprint_auto_counts
+
+
 def test_discovers_rel_tokens() -> None:
     stats = Stats()
     discovery = HtmlDiscovery(stats)

@@ -323,6 +323,27 @@
                 <canvas id="autodiscoveryQualityChart"></canvas>
             </div>
         </div>
+
+        <div class="chart-grid">
+            <div class="chart-card">
+                <div class="chart-title">HTML Platform Fingerprints</div>
+                <div class="chart-sub">Known page-side platform hints and how often those HTML pages expose RSS/Atom autodiscovery links. Detection is conservative and based on generator metadata plus common asset markers.</div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead><tr><th>Fingerprint</th><th>HTML pages</th><th>With autodiscovery</th></tr></thead>
+                        <tbody>
+                            {% for row in stats.html_fingerprints %}
+                            <tr>
+                                <td>{{ row.fingerprint }}</td>
+                                <td>{{ row.html_pages|comma }}</td>
+                                <td>{{ row.autodiscovery_pages|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.autodiscovery_pct) }}%)</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </section>
 
     <!-- ═════════════════════════════════════════════════════════════ 3. FEEDS -->

@@ -4,6 +4,7 @@ from urllib.parse import urljoin
 
 import lxml.html
 
+from cc_feeds.analysis.fingerprints import fingerprint_html
 from cc_feeds.analysis.stats import Stats
 from cc_feeds.url import get_domain, normalize_url
 
@@ -28,6 +29,12 @@ class HtmlDiscovery:
             return
 
         try:
+            fingerprints = fingerprint_html(content)
+            for fingerprint in fingerprints:
+                self.stats.html_fingerprint_counts[fingerprint] = (
+                    self.stats.html_fingerprint_counts.get(fingerprint, 0) + 1
+                )
+
             if not _LINK_RE.search(content) or not _FEED_TYPE_RE.search(content):
                 return
 
@@ -42,7 +49,17 @@ class HtmlDiscovery:
                 if hasattr(link, "get"):
                     self._record_link(page_url, link, found_rels, page_discoveries)
 
-            self._record_page_stats(page_url, found_rels, page_discoveries)
+            has_discovery = self._record_page_stats(
+                page_url, found_rels, page_discoveries
+            )
+            if has_discovery:
+                for fingerprint in fingerprints:
+                    self.stats.html_fingerprint_auto_counts[fingerprint] = (
+                        self.stats.html_fingerprint_auto_counts.get(
+                            fingerprint, 0
+                        )
+                        + 1
+                    )
         except (LookupError, RuntimeError, SyntaxError, TypeError, ValueError):
             pass
 
@@ -92,7 +109,7 @@ class HtmlDiscovery:
         page_url: str,
         found_rels: Set[str],
         page_discoveries: Dict[str, Set[str]],
-    ) -> None:
+    ) -> bool:
         if found_rels:
             self.stats.discovery_pages_count += 1
         if "alternate" in found_rels:
@@ -112,3 +129,4 @@ class HtmlDiscovery:
 
         if len(page_discoveries) > 1 and len(self.stats.multi_feed_pages) < 10000:
             self.stats.multi_feed_pages[page_url] = list(page_discoveries.keys())
+        return bool(found_rels)

@@ -35,6 +35,7 @@ class ReportContext:
     languages: List[Tuple[str, int]]
     language_prevalence: List[Dict[str, Any]]
     fingerprint_prevalence: List[Dict[str, Any]]
+    html_fingerprints: List[Dict[str, Any]]
     extension_prevalence: List[Dict[str, Any]]
     errors: List[Tuple[str, int]]
 
@@ -186,6 +187,21 @@ def render_report_markdown(context: ReportContext) -> str:
                     "Duplicate feed variant pages",
                     format_number(context.discovery.pages_with_duplicates),
                 ],
+            ],
+        ),
+        "",
+        "### HTML Platform Fingerprints",
+        "",
+        _markdown_table(
+            ["Fingerprint", "HTML pages", "Pages with autodiscovery"],
+            [
+                [
+                    row["fingerprint"],
+                    format_number(row["html_pages"]),
+                    f"{format_number(row['autodiscovery_pages'])} "
+                    f"({row['autodiscovery_pct']:.1f}%)",
+                ]
+                for row in context.html_fingerprints
             ],
         ),
         "",
@@ -421,6 +437,7 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         "languages": context.languages,
         "language_prevalence": context.language_prevalence,
         "fingerprint_prevalence": context.fingerprint_prevalence,
+        "html_fingerprints": context.html_fingerprints,
         "extension_prevalence": context.extension_prevalence,
         "error_types": context.errors,
         "total_errors": sum(count for _, count in context.errors),
