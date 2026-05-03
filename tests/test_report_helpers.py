@@ -105,6 +105,8 @@ def test_quality_summary_sets() -> None:
     assert summary["autodiscovery"]["n"] == 1
     assert summary["no_autodiscovery"]["n"] == 3
     assert [row["fmt"] for row in summary["format_rows"]] == ["atom10", "rss20"]
+    assert all("quality_count" in row for row in summary["format_rows"])
+    assert all("quality_pct" in row for row in summary["format_rows"])
 
 
 def test_recency_cdf_future_dates() -> None:

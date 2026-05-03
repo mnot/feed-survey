@@ -477,14 +477,15 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Feed Formats</div>
-                <div class="chart-sub">Successfully parsed feeds only. RSS-family feeds: {{ stats.rss_count|comma }}; Atom feeds: {{ stats.atom_count|comma }}.</div>
+                <div class="chart-sub">Successfully parsed feeds only. RSS-family feeds: {{ stats.rss_count|comma }}; Atom feeds: {{ stats.atom_count|comma }}. Quality split shows share of feeds with operational quality &gt; 0.5.</div>
                 <table class="data-table">
-                    <thead><tr><th>Format</th><th>Count</th><th>Mean quality</th></tr></thead>
+                    <thead><tr><th>Format</th><th>Count</th><th>Quality &gt; 0.5 feeds</th><th>Mean quality</th></tr></thead>
                     <tbody>
                         {% for row in format_quality_rows %}
                         <tr>
                             <td><span class="badge badge-primary">{{ row.fmt }}</span></td>
                             <td>{{ row.count|comma }}</td>
+                            <td>{{ row.quality_count|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.quality_pct) }}%)</span></td>
                             <td>
                                 <span style="font-weight:700; color:
                                     {% if row.mean >= 0.7 %}var(--success)

@@ -23,6 +23,7 @@ def build_quality_summary(
     quality_scores: List[float] = []
     active_scores: List[float] = []
     active_with_entries_count = 0
+    mid_quality_count = 0
     undated_count = 0
     stale_count = 0
     format_scores: Dict[str, List[float]] = {}
@@ -31,6 +32,8 @@ def build_quality_summary(
     for result in all_valid_results.values():
         score = score_feed(result, now)
         quality_scores.append(score)
+        if score > 0.5:
+            mid_quality_count += 1
         if is_active_feed(result, now):
             active_scores.append(score)
             if (result.get("entries_count") or 0) > 0:
@@ -78,7 +81,7 @@ def build_quality_summary(
             "cutoff_days": int(ENTRY_RECENCY_CUTOFF_DAYS),
         },
         "components": _component_rows(component_scores),
-        "format_rows": _format_quality_rows(format_scores),
+        "format_rows": _format_quality_rows(format_scores, mid_quality_count),
         "autodiscovery": _quality_dist(discovered_results, now),
         "no_autodiscovery": _quality_dist(no_autodiscovery_results, now),
     }
@@ -103,14 +106,23 @@ def _component_rows(component_scores: Dict[str, List[float]]) -> List[Dict[str, 
     ]
 
 
-def _format_quality_rows(format_scores: Dict[str, List[float]]) -> List[Dict[str, Any]]:
+def _format_quality_rows(
+    format_scores: Dict[str, List[float]], mid_quality_count: int
+) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     for feed_format, scores in format_scores.items():
         count = len(scores)
+        format_mid_quality_count = sum(1 for score in scores if score > 0.5)
         rows.append(
             {
                 "fmt": feed_format,
                 "count": count,
+                "quality_count": format_mid_quality_count,
+                "quality_pct": (
+                    round(format_mid_quality_count / mid_quality_count * 100, 1)
+                    if mid_quality_count
+                    else 0.0
+                ),
                 "mean": round(_mean(scores), 3),
                 "high_pct": round(
                     sum(1 for score in scores if score >= 0.7) / count * 100, 1

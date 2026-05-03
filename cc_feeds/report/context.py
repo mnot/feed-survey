@@ -235,9 +235,15 @@ def render_report_markdown(context: ReportContext) -> str:
         ),
         "",
         _markdown_table(
-            ["Format", "Count", "Mean quality"],
+            ["Format", "Count", "Quality > 0.5 feeds", "Mean quality"],
             [
-                [row["fmt"], format_number(row["count"]), f"{row['mean']:.3f}"]
+                [
+                    row["fmt"],
+                    format_number(row["count"]),
+                    f"{format_number(row['quality_count'])} "
+                    f"({row['quality_pct']:.1f}%)",
+                    f"{row['mean']:.3f}",
+                ]
                 for row in context.quality["format_rows"][:20]
             ],
         ),
