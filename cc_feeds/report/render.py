@@ -5,7 +5,11 @@ from typing import Any, Dict, Optional
 import dateutil.parser
 
 from cc_feeds.analysis import Stats
-from cc_feeds.report.aggregate import aggregate_feed_data, extension_prevalence_rows
+from cc_feeds.report.aggregate import (
+    aggregate_feed_data,
+    content_profile_prevalence_rows,
+    extension_prevalence_rows,
+)
 from cc_feeds.report.context import (
     ReportContext,
     render_report_html,
@@ -90,6 +94,7 @@ def generate_report(
     errors = sorted(stats.error_types.items(), key=lambda x: x[1], reverse=True)
 
     extension_prevalence = extension_prevalence_rows(all_valid_results, now)
+    content_profile_prevalence = content_profile_prevalence_rows(all_valid_results, now)
 
     context = ReportContext(
         stats=stats,
@@ -99,6 +104,7 @@ def generate_report(
         quality=quality,
         content_types_collapsed=content_types_collapsed,
         content_profile_dist=content_profile_dist,
+        content_profile_prevalence=content_profile_prevalence,
         lang_count_hist=lang_count_hist,
         feed_recency_cdf=feed_recency_cdf,
         entry_recency_cdf=entry_recency_cdf,

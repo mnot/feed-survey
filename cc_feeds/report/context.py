@@ -21,6 +21,7 @@ class ReportContext:
     quality: Dict[str, Any]
     content_types_collapsed: Dict[str, int]
     content_profile_dist: Dict[str, int]
+    content_profile_prevalence: List[Dict[str, Any]]
     lang_count_hist: Dict[str, int]
     feed_recency_cdf: Dict[str, Any]
     entry_recency_cdf: Dict[str, Any]
@@ -260,6 +261,21 @@ def render_report_markdown(context: ReportContext) -> str:
             ],
         ),
         "",
+        "## Entry Content Profiles",
+        "",
+        _markdown_table(
+            ["Profile", "All parsed feeds", "Quality > 0.5 feeds"],
+            [
+                [
+                    row["profile"],
+                    f"{format_number(row['all_count'])} ({row['all_pct']:.1f}%)",
+                    f"{format_number(row['quality_count'])} "
+                    f"({row['quality_pct']:.1f}%)",
+                ]
+                for row in context.content_profile_prevalence
+            ],
+        ),
+        "",
         "## Languages",
         "",
         _markdown_table(
@@ -368,6 +384,7 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         "discovery_multi_rel_url": stats.discovery_multi_rel_url,
         "content_types_collapsed": context.content_types_collapsed,
         "content_profile_dist": context.content_profile_dist,
+        "content_profile_prevalence": context.content_profile_prevalence,
         "lang_count_hist": context.lang_count_hist,
         "quality_hist": quality["hist"],
         "mean_quality": round(quality["mean"], 3),

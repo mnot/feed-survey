@@ -2,7 +2,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from cc_feeds.analysis.stats import Stats
-from cc_feeds.report.aggregate import aggregate_feed_data, extension_prevalence_rows
+from cc_feeds.report.aggregate import (
+    aggregate_feed_data,
+    content_profile_prevalence_rows,
+    extension_prevalence_rows,
+)
 from cc_feeds.report.context import ReportContext, build_report_stats
 from cc_feeds.report.discovery import DiscoverySummary, build_discovery_summary
 from cc_feeds.report.distributions import collapse_content_types
@@ -181,6 +185,28 @@ def test_extension_quality_split() -> None:
     assert rows[0]["all_pct"] == 100.0
     assert rows[0]["quality_count"] == 1
     assert rows[0]["quality_pct"] == 100.0
+
+
+def test_profile_quality_split() -> None:
+    now = datetime(2026, 5, 1, tzinfo=timezone.utc)
+    fresh_html = _feed(fmt="rss20", days_old=0, has_content=True)
+    stale_plain = _feed(fmt="rss20", days_old=0, has_content=False)
+    stale_plain["newest_entry_date"] = [2024, 1, 1, 0, 0, 0, 0, 0, 0]
+    stale_plain["updated_date"] = None
+
+    rows = content_profile_prevalence_rows(
+        {
+            "https://fresh.example/feed.xml": fresh_html,
+            "https://stale.example/feed.xml": stale_plain,
+        },
+        now,
+    )
+    by_profile = {row["profile"]: row for row in rows}
+
+    assert by_profile["html"]["all_count"] == 1
+    assert by_profile["html"]["quality_count"] == 1
+    assert by_profile["plain"]["all_count"] == 1
+    assert by_profile["plain"]["quality_count"] == 0
 
 
 def test_agg_http_feed_mismatch() -> None:
@@ -398,6 +424,7 @@ def test_report_runtime_lang_counts() -> None:
             quality=quality,
             content_types_collapsed={},
             content_profile_dist={},
+            content_profile_prevalence=[],
             lang_count_hist={},
             feed_recency_cdf={},
             entry_recency_cdf={},

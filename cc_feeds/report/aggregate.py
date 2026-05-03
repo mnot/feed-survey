@@ -163,6 +163,42 @@ def extension_prevalence_rows(
     return rows[:limit]
 
 
+def content_profile_prevalence_rows(
+    results: Dict[str, Any],
+    now: datetime,
+    quality_threshold: float = QUALITY_SPLIT_THRESHOLD,
+) -> List[Dict[str, Any]]:
+    labels = ["html", "xhtml", "mixed", "plain", "unknown"]
+    all_counts: Dict[str, int] = {label: 0 for label in labels}
+    quality_counts: Dict[str, int] = {label: 0 for label in labels}
+    all_feed_count = 0
+    quality_feed_count = 0
+
+    for result in results.values():
+        result = cast(Dict[str, Any], result)
+        if not result.get("valid"):
+            continue
+        profile = str(result.get("content_type_profile") or "unknown").lower()
+        all_counts[profile] = all_counts.get(profile, 0) + 1
+        all_feed_count += 1
+
+        if score_feed(result, now) > quality_threshold:
+            quality_counts[profile] = quality_counts.get(profile, 0) + 1
+            quality_feed_count += 1
+
+    rows = [
+        {
+            "profile": profile,
+            "all_count": all_counts.get(profile, 0),
+            "all_pct": _pct(all_counts.get(profile, 0), all_feed_count),
+            "quality_count": quality_counts.get(profile, 0),
+            "quality_pct": _pct(quality_counts.get(profile, 0), quality_feed_count),
+        }
+        for profile in sorted(all_counts, key=lambda key: all_counts[key], reverse=True)
+    ]
+    return rows
+
+
 def _pct(numerator: int, denominator: int) -> float:
     if not denominator:
         return 0.0

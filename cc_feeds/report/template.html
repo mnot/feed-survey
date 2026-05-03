@@ -524,8 +524,22 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Entry Content Profile</div>
-                <div class="chart-sub">Content type classification based on Atom <code>type</code> attribute and RSS element semantics.</div>
+                <div class="chart-sub">Content type classification based on Atom <code>type</code> attribute and RSS element semantics. The table splits prevalence across all parsed feeds and feeds with operational quality &gt; 0.5.</div>
                 <canvas id="contentProfileChart"></canvas>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead><tr><th>Profile</th><th>All parsed feeds</th><th>Quality &gt; 0.5 feeds</th></tr></thead>
+                        <tbody>
+                            {% for row in stats.content_profile_prevalence %}
+                            <tr>
+                                <td>{{ row.profile }}</td>
+                                <td>{{ row.all_count|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.all_pct) }}%)</span></td>
+                                <td>{{ row.quality_count|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.quality_pct) }}%)</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div class="chart-card">
                 <div class="chart-title">Entry Counts per Feed</div>
