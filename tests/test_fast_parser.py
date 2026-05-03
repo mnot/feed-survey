@@ -1,4 +1,5 @@
 from cc_feeds.analysis.fast_parser import FastFeedParser
+from cc_feeds.analysis.formats import guess_feed_format
 
 
 def _date_prefix(value: object) -> list[object]:
@@ -9,6 +10,26 @@ def _date_prefix(value: object) -> list[object]:
 def _time_part(value: object) -> list[object]:
     assert isinstance(value, list)
     return value[3:6]
+
+
+def test_sniffer_rejects_rdf() -> None:
+    assert (
+        guess_feed_format(
+            b"<?xml version='1.0'?><rdf:RDF "
+            b"xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'></rdf:RDF>"
+        )
+        == "unknown"
+    )
+
+
+def test_sniffer_accepts_rss1() -> None:
+    assert (
+        guess_feed_format(
+            b"<?xml version='1.0'?><rdf:RDF "
+            b"xmlns='http://purl.org/rss/1.0/'></rdf:RDF>"
+        )
+        == "rdf"
+    )
 
 
 def test_parse_atom_feed() -> None:

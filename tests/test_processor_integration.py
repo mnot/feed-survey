@@ -150,6 +150,42 @@ def test_generic_xml_feed_sniffed() -> None:
     assert processor.stats.feeds_sniffed == 1
 
 
+def test_rdf_media_type_must_sniff() -> None:
+    processor = WarcProcessor()
+
+    processor.process_record(
+        _Record(
+            "http://example.org/data.rdf",
+            "application/rdf+xml",
+            b"<?xml version='1.0'?><rdf:RDF></rdf:RDF>",
+        )
+    )
+
+    assert not processor.stats.feed_results
+    assert processor.stats.feeds_sniffed == 0
+
+
+def test_rss1_rdf_sniffed() -> None:
+    processor = WarcProcessor()
+    content = b"""<?xml version="1.0"?>
+    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+             xmlns="http://purl.org/rss/1.0/">
+      <channel rdf:about="http://example.org/">
+        <title>RDF Feed</title>
+        <link>http://example.org/</link>
+      </channel>
+    </rdf:RDF>"""
+
+    processor.process_record(
+        _Record("http://example.org/rss1.rdf", "application/rdf+xml", content)
+    )
+
+    result: dict[str, Any] = processor.stats.feed_results["http://example.org/rss1.rdf"]
+    assert result["valid"] is True
+    assert result["format"] == "rss10"
+    assert processor.stats.feeds_sniffed == 1
+
+
 def test_sniffed_url_normalized() -> None:
     processor = WarcProcessor()
     content = b"""<?xml version="1.0"?>

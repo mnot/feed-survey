@@ -6,7 +6,7 @@ def guess_feed_format(content: bytes) -> str:
             return "rss"
         if "<feed" in sniff and 'xmlns="http://www.w3.org/2005/atom"' in sniff:
             return "atom"
-        if "<rdf" in sniff:
+        if "<rdf" in sniff and "http://purl.org/rss/1.0/" in sniff:
             return "rdf"
     except (UnicodeDecodeError, AttributeError):
         pass

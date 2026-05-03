@@ -147,7 +147,6 @@ def _feed_content_type(content_type: str) -> bool:
         content_type in {
             "application/rss+xml",
             "application/atom+xml",
-            "application/rdf+xml",
             "application/xml+rss",
             "text/rss",
             "text/atom",
