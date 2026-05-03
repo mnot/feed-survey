@@ -57,6 +57,14 @@ def test_quality_stale_entry_wins() -> None:
     assert score_feed(feed, NOW) == 0.0
 
 
+def test_quality_future_date() -> None:
+    feed = _feed()
+    feed["updated_date"] = [2099, 1, 1, 0, 0, 0, 0, 0, 0]
+
+    assert score_feed(feed, NOW) == 0.0
+    assert is_active_feed(feed, NOW) is False
+
+
 def test_repeated_titles_penalty() -> None:
     feed = _feed()
     feed["updated_date"] = _date(1)

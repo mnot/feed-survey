@@ -6,6 +6,7 @@ from cc_feeds.report.aggregate import aggregate_feed_data
 from cc_feeds.report.context import ReportContext, build_report_stats
 from cc_feeds.report.discovery import DiscoverySummary, build_discovery_summary
 from cc_feeds.report.distributions import collapse_content_types
+from cc_feeds.report.histograms import build_recency_cdf
 from cc_feeds.report.quality_summary import build_quality_summary
 from cc_feeds.report.render import generate_report
 
@@ -100,6 +101,25 @@ def test_quality_summary_sets() -> None:
     assert summary["autodiscovery"]["n"] == 1
     assert summary["no_autodiscovery"]["n"] == 3
     assert [row["fmt"] for row in summary["format_rows"]] == ["atom10", "rss20"]
+
+
+def test_recency_cdf_future_dates() -> None:
+    now = datetime(2026, 5, 1, tzinfo=timezone.utc)
+    cdf = build_recency_cdf(
+        {
+            "https://future.example/feed.xml": {
+                "updated_date": [2099, 1, 1, 0, 0, 0, 0, 0, 0]
+            },
+            "https://fresh.example/feed.xml": {
+                "updated_date": [2026, 5, 1, 0, 0, 0, 0, 0, 0]
+            },
+        },
+        "updated_date",
+        now,
+    )
+
+    assert cdf["data"][0] == 100.0
+    assert cdf["no_date"] == 1
 
 
 def test_aggregate_date_coverage() -> None:

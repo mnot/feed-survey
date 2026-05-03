@@ -41,12 +41,14 @@ __all__ = [
     "WEIGHTS",
     "RECENCY_HALF_LIFE_DAYS",
     "ENTRY_RECENCY_CUTOFF_DAYS",
+    "FUTURE_DATE_TOLERANCE_DAYS",
     "is_active_feed",
     "recency_age_days",
 ]
 
 RECENCY_HALF_LIFE_DAYS: float = 120.0
 ENTRY_RECENCY_CUTOFF_DAYS: float = 365.0  # no usable freshness signal → score 0
+FUTURE_DATE_TOLERANCE_DAYS: float = 1.0
 
 WEIGHTS: Dict[str, float] = {
     "recency": 0.35,
@@ -166,7 +168,10 @@ def _date_to_age_days(date_list: Optional[List[int]], now: datetime) -> Optional
             date_list[5],
             tzinfo=timezone.utc,
         )
-        return max(0.0, (now - dt).total_seconds() / 86400.0)
+        age_days = (now - dt).total_seconds() / 86400.0
+        if age_days < -FUTURE_DATE_TOLERANCE_DAYS:
+            return None
+        return max(0.0, age_days)
     except (TypeError, ValueError, IndexError):
         return None
 

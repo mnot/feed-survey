@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
+from cc_feeds.report.quality import FUTURE_DATE_TOLERANCE_DAYS
+
 _CDF_BREAKPOINTS: List[Tuple[int, str]] = [
     (0, "Today"),
     (1, "1 day"),
@@ -66,7 +68,10 @@ def build_recency_cdf(
             dt = datetime(
                 val[0], val[1], val[2], val[3], val[4], val[5], tzinfo=timezone.utc
             )
-            ages.append(max(0, (now - dt).days))
+            age_days = (now - dt).total_seconds() / 86400.0
+            if age_days < -FUTURE_DATE_TOLERANCE_DAYS:
+                continue
+            ages.append(max(0, int(age_days)))
         except (ValueError, TypeError, IndexError):
             pass
 
