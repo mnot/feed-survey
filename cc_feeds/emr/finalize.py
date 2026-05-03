@@ -7,6 +7,7 @@ from typing import Any, Dict, Iterator, Tuple
 
 from cc_feeds.analysis import Stats
 from cc_feeds.report import generate_report
+from cc_feeds.report.render import default_markdown_path
 
 
 def _iter_result_records(results_dir: str) -> Iterator[Tuple[str, str, Any]]:
@@ -182,17 +183,16 @@ def finalize_mr_results(results_dir: str, crawl_id: str, output_path: str) -> No
 
     overall_stats.sites_seen_count = overall_stats.get_unique_sites_estimate()
 
-    print(
-        f"Aggregated {overall_stats.pages_seen} pages. Generating official reports..."
-    )
-    generate_report(overall_stats, crawl_id, output_path)
-    print(f"Official HTML report generated: {output_path}")
-    print("Official Markdown report generated next to HTML report")
+    print(f"Aggregated {overall_stats.pages_seen} pages. Generating reports...")
+    markdown_path = default_markdown_path(output_path)
+    generate_report(overall_stats, crawl_id, output_path, markdown_path)
+    print(f"HTML report generated: {output_path}")
+    print(f"Markdown report generated: {markdown_path}")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Aggregate EMR part files and render an HTML report."
+        description="Aggregate EMR part files and render HTML and Markdown reports."
     )
     parser.add_argument("results_dir", help="Local directory containing EMR part files")
     parser.add_argument("crawl_id", help="Common Crawl crawl id for the report")
@@ -200,7 +200,7 @@ def main() -> None:
         "output_path",
         nargs="?",
         default="cc_feeds_report.html",
-        help="HTML report output path",
+        help="HTML report output path; Markdown is written next to it",
     )
     args = parser.parse_args()
 

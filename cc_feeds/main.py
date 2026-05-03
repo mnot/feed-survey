@@ -13,6 +13,7 @@ from . import __version__
 from .analysis import Stats, WarcProcessor
 from .commoncrawl import get_latest_crawl_id, get_warc_paths
 from .report import generate_report
+from .report.render import default_markdown_path
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("cc-feeds")
@@ -39,7 +40,9 @@ def main() -> None:
         help="Run in local mode (downloading archives as necessary)",
     )
     parser.add_argument(
-        "--output", default="report.html", help="Path to the output HTML report"
+        "--output",
+        default="report.html",
+        help="Path to the output HTML report; Markdown is written next to it",
     )
     parser.add_argument(
         "--limit", type=int, help="Number of WARC files to process (default: all)"
@@ -131,7 +134,7 @@ def main() -> None:
 
     print("Processing complete. Generating reports...")
     generate_report(stats, crawl_id, args.output)
-    print("Done.")
+    print(f"Reports generated: {args.output} and {default_markdown_path(args.output)}")
 
 
 def process_warc(

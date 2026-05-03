@@ -41,7 +41,7 @@ pip install -e ".[dev]"
 You can run the analysis on your own machine for debugging. This uses the `local` runner and does not require AWS.
 
 ```bash
-# Run a one-WARC local analysis and render test_report.html.
+# Run a one-WARC local analysis and render test_report.html and test_report.md.
 make local-report
 ```
 
@@ -72,8 +72,8 @@ Control the cluster size and instance types.
 - **`REDUCES`**: Number of reducers for the full EMR run.
 - **`TEST_MAP_TASKS` / `TEST_REDUCES`**: Map and reduce sizing for `make test-emr`.
 - **`OUTPUT_DIR`**: The S3 bucket where results and logs will be stored.
-- **`MOCK_REPORT`**: Output path for `make mock-report`.
-- **`RESULTS_DIR`**: Existing local result directory to re-render with `make report`.
+- **`MOCK_REPORT`**: HTML output path for `make mock-report`; a Markdown sibling is written automatically.
+- **`RESULTS_DIR`**: Existing local result directory to re-render with `make report`, producing both `report.html` and `report.md`.
 
 Run `make help` for the local development, report, EMR, and wheel targets.
 

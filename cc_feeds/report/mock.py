@@ -1,10 +1,10 @@
 """
-Generate a mock HTML report with realistic dummy data.
+Generate mock HTML and Markdown reports with realistic dummy data.
 
 Usage:
     python -m cc_feeds.report.mock [output_path]
 
-Default output_path: mock_report.html
+Default output_path: mock_report.html; Markdown is written next to it.
 """
 
 import random
@@ -334,7 +334,7 @@ def main() -> None:
         "output_path",
         nargs="?",
         default="mock_report.html",
-        help="HTML report output path",
+        help="HTML report output path; Markdown is written next to it",
     )
     args = parser.parse_args()
 
