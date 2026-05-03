@@ -154,6 +154,11 @@ def merge_source_samples(values: Generator[Any, None, None]) -> list[Any]:
 def reduce_stats(values: Generator[Any, None, None]) -> Stats:
     final_stats = Stats()
     for value in values:
+        incoming_top_n = value.get("top_n")
+        if incoming_top_n is not None:
+            if final_stats.top_n is None or incoming_top_n > final_stats.top_n:
+                final_stats.top_n = incoming_top_n
+
         final_stats.pages_seen += value.get("pages_seen", 0)
         final_stats.pages_processed += value.get("pages_processed", 0)
         final_stats.feeds_sniffed += value.get("feeds_sniffed", 0)

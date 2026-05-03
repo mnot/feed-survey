@@ -1,6 +1,11 @@
 from cc_feeds.analysis.stats import Stats
 from cc_feeds.emr.finalize import _merge_summary
-from cc_feeds.emr.stats_wire import merge_stats_values, serialize_stats, summary_record
+from cc_feeds.emr.stats_wire import (
+    merge_stats_values,
+    reduce_stats,
+    serialize_stats,
+    summary_record,
+)
 
 
 def test_summary_record_counts() -> None:
@@ -169,3 +174,16 @@ def test_combiner_merges_summary() -> None:
         "https://example.com/feed.xml": {"wordpress": 56, "drupal": 38}
     }
     assert merged["top_n"] == 500000
+
+
+def test_reducer_preserves_top_n() -> None:
+    first = Stats()
+    first.top_n = 100000
+    second = Stats()
+    second.top_n = 500000
+
+    reduced = reduce_stats(
+        value for value in [serialize_stats(first), serialize_stats(second)]
+    )
+
+    assert reduced.top_n == 500000
