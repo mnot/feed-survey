@@ -1,4 +1,5 @@
 import os
+from collections import Counter
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
@@ -95,7 +96,7 @@ def generate_report(
     # --- Sort & format ---
     formats = sorted(agg["formats"].items(), key=lambda x: x[1], reverse=True)
     languages = sorted(agg["languages"].items(), key=lambda x: x[1], reverse=True)
-    errors = sorted(stats.error_types.items(), key=lambda x: x[1], reverse=True)
+    errors = _feed_error_rows(stats)
 
     extension_prevalence = extension_prevalence_rows(all_valid_results, now)
     content_profile_prevalence = content_profile_prevalence_rows(all_valid_results, now)
@@ -151,3 +152,17 @@ def default_markdown_path(output_path: str) -> str:
     if not root:
         return f"{output_path}.md"
     return f"{root}.md"
+
+
+def _feed_error_rows(stats: Stats) -> list[tuple[str, int]]:
+    error_counts: Counter[str] = Counter()
+    for result in stats.feed_results.values():
+        if not isinstance(result, dict):
+            continue
+        if result.get("valid") and not result.get("error"):
+            continue
+        error_type = result.get("error_type")
+        if not error_type:
+            error_type = "ParseError" if result.get("error") else "HTTPStatus"
+        error_counts[str(error_type)] += 1
+    return sorted(error_counts.items(), key=lambda item: item[1], reverse=True)

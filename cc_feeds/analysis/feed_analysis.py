@@ -48,14 +48,16 @@ class FeedAnalyzer:
             content = record.reader.read(10 * 1024 * 1024)
             if not content:
                 feed_info["error"] = "Empty response"
-                self._record_parse_error(feed_info)
+                self._record_parse_error(feed_info, "ParseError")
                 self.stats.feed_results[url] = feed_info
                 return
 
             parsed_data = FastFeedParser.parse(content)
             if not parsed_data.get("valid"):
-                self._record_parse_error(parsed_data)
+                err_type = self._error_type(parsed_data)
+                self._record_parse_error(parsed_data, err_type)
                 feed_info["error"] = parsed_data.get("error", "parse failed")
+                feed_info["error_type"] = err_type
                 self.stats.feed_results[url] = feed_info
                 return
 
@@ -66,10 +68,13 @@ class FeedAnalyzer:
 
         self.stats.feed_results[url] = feed_info
 
-    def _record_parse_error(self, parsed_data: Dict[str, Any]) -> None:
-        err = parsed_data.get("error", "parse failed")
-        err_type = type(err).__name__ if not isinstance(err, str) else "ParseError"
+    def _record_parse_error(self, parsed_data: Dict[str, Any], err_type: str) -> None:
+        parsed_data["error_type"] = err_type
         self.stats.error_types[err_type] = self.stats.error_types.get(err_type, 0) + 1
+
+    def _error_type(self, parsed_data: Dict[str, Any]) -> str:
+        err = parsed_data.get("error", "parse failed")
+        return type(err).__name__ if not isinstance(err, str) else "ParseError"
 
     def _record_http_language(self, record: Any, feed_info: Dict[str, Any]) -> None:
         lang_header = record.http_headers.get("Content-Language")
@@ -86,6 +91,7 @@ class FeedAnalyzer:
         logger.error(traceback.format_exc())
         feed_info["error"] = str(exc)
         err_type = type(exc).__name__
+        feed_info["error_type"] = err_type
         self.stats.error_types[err_type] = self.stats.error_types.get(err_type, 0) + 1
 
     def _analyze_parsed_feed(
