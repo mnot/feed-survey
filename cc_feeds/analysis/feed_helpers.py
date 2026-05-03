@@ -1,9 +1,21 @@
+import re
 from datetime import timezone
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import dateutil.parser
 
 XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
+DEFAULT_ENTRY_TITLES = frozenset(
+    {
+        "default title",
+        "untitled",
+        "no title",
+        "title",
+        "new post",
+        "post title",
+    }
+)
+_WHITESPACE_RE = re.compile(r"\s+")
 
 CORE_NAMESPACES = frozenset(
     {
@@ -52,6 +64,13 @@ def update_entry_dates(result: Dict[str, Any], date_value: Optional[List[int]]) 
         result["newest_entry_date"] = date_value
     if not result["oldest_entry_date"] or date_value < result["oldest_entry_date"]:
         result["oldest_entry_date"] = date_value
+
+
+def normalize_entry_title(text: Optional[str]) -> str:
+    """Normalize entry titles for low-cardinality repetition checks."""
+    if not text:
+        return ""
+    return _WHITESPACE_RE.sub(" ", text).strip().lower()
 
 
 def classify_content(seen: Set[str]) -> str:

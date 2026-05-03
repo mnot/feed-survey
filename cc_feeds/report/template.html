@@ -358,6 +358,8 @@
                     <div class="row"><span>Feeds with entries</span> <strong>{{ stats.feeds_with_entries|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.feeds_with_entries / total_parsed * 100 if total_parsed else 0) }}%)</span></strong></div>
                     <div class="row"><span>Feeds with entry dates</span> <strong>{{ stats.feeds_with_entry_dates|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.feeds_with_entry_dates / stats.feeds_with_entries * 100 if stats.feeds_with_entries else 0) }}%)</span></strong></div>
                     <div class="row"><span>Feeds with update dates</span> <strong>{{ stats.feeds_with_updated_date|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.feeds_with_updated_date / total_parsed * 100 if total_parsed else 0) }}%)</span></strong></div>
+                    <div class="row divider"><span>Repeated entry titles</span> <strong>{{ stats.feeds_with_repeated_entry_titles|comma }}</strong></div>
+                    <div class="row"><span>Default-looking titles</span> <strong>{{ stats.feeds_with_default_entry_titles|comma }}</strong></div>
                 </div>
             </div>
             <div class="card">
@@ -449,6 +451,8 @@
                 <div class="chart-sub">
                     Mean component scores across successfully parsed feeds. Bar
                     labels show each component's weight in the composite score.
+                    Repeated or default-looking entry titles reduce the entry
+                    metadata component.
                 </div>
                 <div class="chart-container">
                     <canvas id="qualityComponents"></canvas>

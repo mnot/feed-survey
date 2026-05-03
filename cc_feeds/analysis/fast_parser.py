@@ -8,9 +8,11 @@ from cc_feeds.analysis.feed_helpers import (
     ATOM_NS,
     CONTENT_NS,
     DC_NS,
+    DEFAULT_ENTRY_TITLES,
     XML_LANG,
     atom_content_type,
     classify_content,
+    normalize_entry_title,
     parse_date,
     split_tag,
     text_content_type,
@@ -57,11 +59,16 @@ class FastFeedParser:
             "has_summary": False,
             "content_type_profile": "unknown",  # plain / html / xhtml / mixed / unknown
             "content_lengths": [],
+            "entry_title_count": 0,
+            "repeated_entry_title_count": 0,
+            "repeated_entry_title_ratio": 0.0,
+            "default_entry_title_count": 0,
             "all_languages": set(),  # every xml:lang value seen anywhere in the doc
             "entry_languages": set(),  # xml:lang values seen inside entries/items
             "error": None,
             # Internal accumulator – removed before returning
             "_content_types_seen": set(),
+            "_entry_title_counts": {},
         }
 
         # Quick sanity check: real XML/feed content starts with '<' (possibly
@@ -111,6 +118,7 @@ class FastFeedParser:
             result["content_type_profile"] = classify_content(
                 result["_content_types_seen"]
             )
+            FastFeedParser._finalize_entry_title_stats(result)
             feed = result["feed"]
             if not feed["link"] and feed["link_fallback"]:
                 feed["link"] = feed["link_fallback"]
@@ -126,6 +134,7 @@ class FastFeedParser:
         result["feed"].pop("link_fallback", None)
         result["feed"].pop("date_source", None)
         result.pop("_content_types_seen", None)
+        result.pop("_entry_title_counts", None)
         return result
 
     @staticmethod
@@ -252,6 +261,8 @@ class FastFeedParser:
             return
         if local in ("updated", "published"):
             FastFeedParser._set_preferred_date(current_entry, "date", local, elem.text)
+        elif local == "title":
+            FastFeedParser._remember_entry_title(elem.text, result)
         elif local == "content":
             result["has_content"] = True
             result["_content_types_seen"].add(atom_content_type(elem.get("type")))
@@ -303,6 +314,8 @@ class FastFeedParser:
     ) -> None:
         if ns == "" and local == "pubDate":
             FastFeedParser._set_entry_date(current_item, elem.text)
+        elif ns == "" and local == "title":
+            FastFeedParser._remember_entry_title(elem.text, result)
         elif ns == "" and local == "description":
             result["has_summary"] = True
             result["_content_types_seen"].add(text_content_type(elem.text))
@@ -339,6 +352,8 @@ class FastFeedParser:
     ) -> None:
         if ns == DC_NS and local == "date":
             FastFeedParser._set_entry_date(current_item, elem.text)
+        elif local == "title":
+            FastFeedParser._remember_entry_title(elem.text, result)
         elif local == "description":
             result["has_summary"] = True
             result["_content_types_seen"].add(text_content_type(elem.text))
@@ -387,6 +402,32 @@ class FastFeedParser:
         )
         if text:
             result["content_lengths"].append(len(text))
+
+    @staticmethod
+    def _remember_entry_title(text: Optional[str], result: Dict[str, Any]) -> None:
+        title = normalize_entry_title(text)
+        if not title:
+            return
+        title_counts = result["_entry_title_counts"]
+        title_counts[title] = title_counts.get(title, 0) + 1
+
+    @staticmethod
+    def _finalize_entry_title_stats(result: Dict[str, Any]) -> None:
+        title_counts = result["_entry_title_counts"]
+        title_count = sum(title_counts.values())
+        result["entry_title_count"] = title_count
+        if not title_count:
+            return
+
+        repeated_count = sum(count for count in title_counts.values() if count > 1)
+        default_count = sum(
+            count
+            for title, count in title_counts.items()
+            if title in DEFAULT_ENTRY_TITLES
+        )
+        result["repeated_entry_title_count"] = repeated_count
+        result["repeated_entry_title_ratio"] = round(repeated_count / title_count, 4)
+        result["default_entry_title_count"] = default_count
 
     @staticmethod
     def _record_atom_feed_link(elem: Any, result: Dict[str, Any]) -> None:

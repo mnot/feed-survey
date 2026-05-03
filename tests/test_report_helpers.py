@@ -230,6 +230,8 @@ def test_report_runtime_lang_counts() -> None:
         "feeds_with_entries": 0,
         "feeds_with_entry_dates": 0,
         "feeds_with_updated_date": 0,
+        "feeds_with_repeated_entry_titles": 0,
+        "feeds_with_default_entry_titles": 0,
         "total_entries": 0,
         "lang_src_http": 1,
         "lang_src_feed": 1,

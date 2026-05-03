@@ -102,6 +102,16 @@ class FeedAnalyzer:
             "content_type_profile", "unknown"
         )
         feed_info["all_languages"] = parsed_data.get("all_languages", set())
+        feed_info["entry_title_count"] = parsed_data.get("entry_title_count", 0)
+        feed_info["repeated_entry_title_count"] = parsed_data.get(
+            "repeated_entry_title_count", 0
+        )
+        feed_info["repeated_entry_title_ratio"] = parsed_data.get(
+            "repeated_entry_title_ratio", 0.0
+        )
+        feed_info["default_entry_title_count"] = parsed_data.get(
+            "default_entry_title_count", 0
+        )
 
         feed_info["entries_count"] = entries_count
         self.stats.total_entries += entries_count
@@ -257,6 +267,10 @@ def _init_feed_info(
         "newest_entry_date": None,
         "oldest_entry_date": None,
         "all_languages": set(),
+        "entry_title_count": 0,
+        "repeated_entry_title_count": 0,
+        "repeated_entry_title_ratio": 0.0,
+        "default_entry_title_count": 0,
         "content_type_profile": "unknown",
         "title": None,
         "link": None,

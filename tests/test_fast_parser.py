@@ -87,6 +87,28 @@ def test_atom_summary_profile() -> None:
     assert result["content_type_profile"] == "html"
 
 
+def test_repeated_default_titles() -> None:
+    result = FastFeedParser.parse(b"""<?xml version="1.0"?>
+        <feed xmlns="http://www.w3.org/2005/Atom">
+          <title>Example Atom</title>
+          <updated>2026-01-02T03:04:05Z</updated>
+          <entry>
+            <title>Default Title</title>
+            <updated>2026-01-03T00:00:00Z</updated>
+          </entry>
+          <entry>
+            <title>Default   Title</title>
+            <updated>2026-01-04T00:00:00Z</updated>
+          </entry>
+        </feed>""")
+
+    assert result["valid"] is True
+    assert result["entry_title_count"] == 2
+    assert result["repeated_entry_title_count"] == 2
+    assert result["repeated_entry_title_ratio"] == 1.0
+    assert result["default_entry_title_count"] == 2
+
+
 def test_atom_updated_preferred() -> None:
     result = FastFeedParser.parse(b"""<?xml version="1.0"?>
         <feed xmlns="http://www.w3.org/2005/Atom">

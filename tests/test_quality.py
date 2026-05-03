@@ -55,3 +55,19 @@ def test_quality_stale_entry_wins() -> None:
     feed["updated_date"] = _date(1)
 
     assert score_feed(feed, NOW) == 0.0
+
+
+def test_repeated_titles_penalty() -> None:
+    feed = _feed()
+    feed["updated_date"] = _date(1)
+    feed["newest_entry_date"] = _date(1)
+    feed["oldest_entry_date"] = _date(1)
+    feed["lang_entries"] = {"en"}
+    feed["content_lengths"] = [200, 220]
+
+    clean_score = score_components(feed, NOW)["entry_metadata"]
+
+    feed["repeated_entry_title_ratio"] = 1.0
+    feed["default_entry_title_count"] = 2
+
+    assert score_components(feed, NOW)["entry_metadata"] < clean_score

@@ -13,6 +13,8 @@ def aggregate_feed_data(results: Dict[str, Any]) -> Dict[str, Any]:
     feeds_with_entries = 0
     feeds_with_entry_dates = 0
     feeds_with_updated_date = 0
+    feeds_with_repeated_titles = 0
+    feeds_with_default_titles = 0
     charsets_per_format: Dict[str, Dict[str, int]] = {}
 
     total_entries = 0
@@ -64,6 +66,11 @@ def aggregate_feed_data(results: Dict[str, Any]) -> Dict[str, Any]:
             feeds_with_updated_date += 1
             last_updated_dates.append(res["updated_date"])
 
+        if res.get("repeated_entry_title_count"):
+            feeds_with_repeated_titles += 1
+        if res.get("default_entry_title_count"):
+            feeds_with_default_titles += 1
+
         http_lang = res.get("lang_http")
         feed_lang = res.get("lang_feed")
         entry_langs = res.get("lang_entries", [])
@@ -97,6 +104,8 @@ def aggregate_feed_data(results: Dict[str, Any]) -> Dict[str, Any]:
         "feeds_with_entries": feeds_with_entries,
         "feeds_with_entry_dates": feeds_with_entry_dates,
         "feeds_with_updated_date": feeds_with_updated_date,
+        "feeds_with_repeated_entry_titles": feeds_with_repeated_titles,
+        "feeds_with_default_entry_titles": feeds_with_default_titles,
         "charsets_per_format": charsets_per_format,
         "total_entries": total_entries,
         "lang_src_http": lang_src_http,

@@ -217,6 +217,14 @@ def render_report_markdown(context: ReportContext) -> str:
                     "Stale parsed feeds",
                     format_number(stats["inactive_quality"]["stale"]),
                 ],
+                [
+                    "Feeds with repeated entry titles",
+                    format_number(stats["feeds_with_repeated_entry_titles"]),
+                ],
+                [
+                    "Feeds with default-looking entry titles",
+                    format_number(stats["feeds_with_default_entry_titles"]),
+                ],
             ],
         ),
         "",
@@ -312,6 +320,10 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         "feeds_with_entries": aggregate["feeds_with_entries"],
         "feeds_with_entry_dates": aggregate["feeds_with_entry_dates"],
         "feeds_with_updated_date": aggregate["feeds_with_updated_date"],
+        "feeds_with_repeated_entry_titles": aggregate[
+            "feeds_with_repeated_entry_titles"
+        ],
+        "feeds_with_default_entry_titles": aggregate["feeds_with_default_entry_titles"],
         "pages_with_autodiscovery": getattr(
             stats, "discovery_pages_count", len(discovery.page_to_feeds)
         ),
