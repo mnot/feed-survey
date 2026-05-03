@@ -197,6 +197,48 @@ def content_profile_prevalence_rows(
     return rows
 
 
+def language_prevalence_rows(
+    results: Dict[str, Any],
+    now: datetime,
+    quality_threshold: float = QUALITY_SPLIT_THRESHOLD,
+    limit: Optional[int] = 20,
+) -> List[Dict[str, Any]]:
+    all_counts: Dict[str, int] = {}
+    quality_counts: Dict[str, int] = {}
+    all_feed_count = 0
+    quality_feed_count = 0
+
+    for result in results.values():
+        result = cast(Dict[str, Any], result)
+        if not result.get("valid"):
+            continue
+        languages = set(result.get("languages") or ["unknown"])
+        all_feed_count += 1
+        high_quality = score_feed(result, now) > quality_threshold
+        if high_quality:
+            quality_feed_count += 1
+
+        for language in languages:
+            all_counts[language] = all_counts.get(language, 0) + 1
+            if high_quality:
+                quality_counts[language] = quality_counts.get(language, 0) + 1
+
+    rows = [
+        {
+            "language": language,
+            "all_count": count,
+            "all_pct": _pct(count, all_feed_count),
+            "quality_count": quality_counts.get(language, 0),
+            "quality_pct": _pct(quality_counts.get(language, 0), quality_feed_count),
+        }
+        for language, count in all_counts.items()
+    ]
+    rows.sort(key=lambda row: cast(int, row["all_count"]), reverse=True)
+    if limit is None:
+        return rows
+    return rows[:limit]
+
+
 def _pct(numerator: int, denominator: int) -> float:
     if not denominator:
         return 0.0

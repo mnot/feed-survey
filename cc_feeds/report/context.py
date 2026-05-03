@@ -32,6 +32,7 @@ class ReportContext:
     discovered_count: int
     formats: List[Tuple[str, int]]
     languages: List[Tuple[str, int]]
+    language_prevalence: List[Dict[str, Any]]
     extension_prevalence: List[Dict[str, Any]]
     errors: List[Tuple[str, int]]
 
@@ -299,8 +300,16 @@ def render_report_markdown(context: ReportContext) -> str:
         ),
         "",
         _markdown_table(
-            ["Language", "Feeds"],
-            [[lang, format_number(count)] for lang, count in context.languages[:20]],
+            ["Language", "All parsed feeds", "Quality > 0.5 feeds"],
+            [
+                [
+                    row["language"],
+                    f"{format_number(row['all_count'])} ({row['all_pct']:.1f}%)",
+                    f"{format_number(row['quality_count'])} "
+                    f"({row['quality_pct']:.1f}%)",
+                ]
+                for row in context.language_prevalence
+            ],
         ),
         "",
         "## Parse Errors",
@@ -358,6 +367,7 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         "feeds_without_autodiscovery": feeds_without_autodiscovery,
         "formats": context.formats,
         "languages": context.languages,
+        "language_prevalence": context.language_prevalence,
         "extension_prevalence": context.extension_prevalence,
         "error_types": context.errors,
         "total_errors": sum(count for _, count in context.errors),

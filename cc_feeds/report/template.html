@@ -554,12 +554,17 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Feed Languages</div>
+                <div class="chart-sub">Top feed language declarations across successfully parsed feeds. Quality split shows share of feeds with operational quality &gt; 0.5.</div>
                 <div class="table-container">
                     <table class="data-table">
-                        <thead><tr><th>Language</th><th>Feeds</th></tr></thead>
+                        <thead><tr><th>Language</th><th>All parsed feeds</th><th>Quality &gt; 0.5 feeds</th></tr></thead>
                         <tbody>
-                            {% for lang, count in languages[:20] %}
-                            <tr><td>{{ lang }}</td><td>{{ count|comma }}</td></tr>
+                            {% for row in stats.language_prevalence %}
+                            <tr>
+                                <td>{{ row.language }}</td>
+                                <td>{{ row.all_count|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.all_pct) }}%)</span></td>
+                                <td>{{ row.quality_count|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.quality_pct) }}%)</span></td>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>

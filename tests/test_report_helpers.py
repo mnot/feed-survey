@@ -6,6 +6,7 @@ from cc_feeds.report.aggregate import (
     aggregate_feed_data,
     content_profile_prevalence_rows,
     extension_prevalence_rows,
+    language_prevalence_rows,
 )
 from cc_feeds.report.context import ReportContext, build_report_stats
 from cc_feeds.report.discovery import DiscoverySummary, build_discovery_summary
@@ -209,6 +210,30 @@ def test_profile_quality_split() -> None:
     assert by_profile["html"]["quality_count"] == 1
     assert by_profile["plain"]["all_count"] == 1
     assert by_profile["plain"]["quality_count"] == 0
+
+
+def test_language_quality_split() -> None:
+    now = datetime(2026, 5, 1, tzinfo=timezone.utc)
+    fresh_en = _feed(fmt="rss20", days_old=0)
+    fresh_en["languages"] = {"en"}
+    stale_fr = _feed(fmt="rss20", days_old=0)
+    stale_fr["languages"] = {"fr"}
+    stale_fr["newest_entry_date"] = [2024, 1, 1, 0, 0, 0, 0, 0, 0]
+    stale_fr["updated_date"] = None
+
+    rows = language_prevalence_rows(
+        {
+            "https://fresh.example/feed.xml": fresh_en,
+            "https://stale.example/feed.xml": stale_fr,
+        },
+        now,
+    )
+    by_language = {row["language"]: row for row in rows}
+
+    assert by_language["en"]["all_count"] == 1
+    assert by_language["en"]["quality_count"] == 1
+    assert by_language["fr"]["all_count"] == 1
+    assert by_language["fr"]["quality_count"] == 0
 
 
 def test_agg_http_feed_mismatch() -> None:
@@ -437,6 +462,7 @@ def test_report_runtime_lang_counts() -> None:
             discovered_count=0,
             formats=[],
             languages=[],
+            language_prevalence=[],
             extension_prevalence=[],
             errors=[],
         )
