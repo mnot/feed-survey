@@ -16,7 +16,7 @@ from cc_feeds.report.discovery import DiscoverySummary, build_discovery_summary
 from cc_feeds.report.distributions import collapse_content_types
 from cc_feeds.report.histograms import build_recency_cdf
 from cc_feeds.report.quality_summary import build_quality_summary
-from cc_feeds.report.render import generate_report
+from cc_feeds.report.render import _feed_error_rows, generate_report
 
 
 def _feed(
@@ -561,3 +561,25 @@ def test_generate_report_writes_md(tmp_path: Path) -> None:
     markdown = markdown_path.read_text(encoding="utf-8")
     assert "# Feed Analysis Report: CC-MAIN-2026-12" in markdown
     assert "## Feed Availability and Freshness" in markdown
+
+
+def test_groups_unknown_roots() -> None:
+    stats = Stats()
+    stats.feed_results = {
+        f"https://example.com/{idx}.xml": {
+            "valid": False,
+            "error": f"Unknown root tag: root{idx}",
+        }
+        for idx in range(17)
+    }
+    stats.feed_results["https://example.com/not-xml"] = {
+        "valid": False,
+        "error": "Not XML",
+    }
+
+    errors = dict(_feed_error_rows(stats))
+
+    assert "Not XML" in errors
+    assert "Other unknown root tags" in errors
+    assert sum(1 for label in errors if label.startswith("Unknown root tag: ")) == 15
+    assert sum(errors.values()) == 18

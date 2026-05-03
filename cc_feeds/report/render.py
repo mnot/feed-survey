@@ -169,4 +169,22 @@ def _feed_error_rows(stats: Stats) -> list[tuple[str, int]]:
         if not error_type:
             error_type = f"HTTP {result.get('status')}" if result.get("status") else "Error"
         error_counts[str(error_type)] += 1
-    return sorted(error_counts.items(), key=lambda item: item[1], reverse=True)
+    return _group_unknown_root_tags(error_counts)
+
+
+def _group_unknown_root_tags(error_counts: Counter[str]) -> list[tuple[str, int]]:
+    sorted_errors = sorted(error_counts.items(), key=lambda item: item[1], reverse=True)
+    unknown_root_items = [
+        item for item in sorted_errors if item[0].startswith("Unknown root tag: ")
+    ]
+    if len(unknown_root_items) <= 15:
+        return sorted_errors
+
+    top_unknown_roots = unknown_root_items[:15]
+    other_unknown_count = sum(count for _label, count in unknown_root_items[15:])
+    other_errors = [
+        item for item in sorted_errors if not item[0].startswith("Unknown root tag: ")
+    ]
+    rows = sorted(top_unknown_roots + other_errors, key=lambda item: item[1], reverse=True)
+    rows.append(("Other unknown root tags", other_unknown_count))
+    return rows

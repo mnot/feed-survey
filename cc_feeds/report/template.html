@@ -428,11 +428,14 @@
                 {% endif %}
             </div>
             <table>
-                {% for err, count in errors %}
+                {% for row in stats.error_column_rows %}
                 <tr>
-                    <td>{{ err }}</td>
-                    <td>{{ count|comma }}</td>
-                    <td style="color:var(--text-muted);padding-left:0.25rem;">{{ "%.1f"|format(count / stats.total_errors * 100 if stats.total_errors else 0) }}%</td>
+                    <td>{{ row[0] }}</td>
+                    <td>{{ row[1]|comma }}</td>
+                    <td style="color:var(--text-muted);padding-left:0.25rem;">{{ "%.1f"|format(row[1] / stats.total_errors * 100 if stats.total_errors else 0) }}%</td>
+                    <td>{{ row[2] }}</td>
+                    <td>{{ row[3]|comma if row[3] else "" }}</td>
+                    <td style="color:var(--text-muted);padding-left:0.25rem;">{% if row[3] %}{{ "%.1f"|format(row[3] / stats.total_errors * 100 if stats.total_errors else 0) }}%{% endif %}</td>
                 </tr>
                 {% endfor %}
             </table>

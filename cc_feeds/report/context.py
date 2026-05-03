@@ -410,12 +410,29 @@ def render_report_markdown(context: ReportContext) -> str:
         "## Parse Errors",
         "",
         _markdown_table(
-            ["Error", "Count"],
-            [[err, format_number(count)] for err, count in context.errors[:20]],
+            ["Error", "Count", "Error", "Count"],
+            _paired_error_rows(context.errors),
         ),
         "",
     ]
     return "\n".join(lines)
+
+
+def _paired_error_rows(errors: List[Tuple[str, int]]) -> List[List[str]]:
+    rows: List[List[str]] = []
+    limited_errors = errors[:20]
+    split_idx = (len(limited_errors) + 1) // 2
+    left_errors = limited_errors[:split_idx]
+    right_errors = limited_errors[split_idx:]
+    for idx, (first_error, first_count) in enumerate(left_errors):
+        row = [first_error, format_number(first_count)]
+        if idx < len(right_errors):
+            second_error, second_count = right_errors[idx]
+            row.extend([second_error, format_number(second_count)])
+        else:
+            row.extend(["", ""])
+        rows.append(row)
+    return rows
 
 
 def build_report_stats(context: ReportContext) -> Dict[str, Any]:
@@ -469,6 +486,7 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         "extension_prevalence": context.extension_prevalence,
         "error_types": context.errors,
         "total_errors": sum(count for _, count in context.errors),
+        "error_column_rows": _paired_error_column_rows(context.errors),
         "feeds_with_content": aggregate["feeds_with_content"],
         "feeds_with_summary": aggregate["feeds_with_summary"],
         "feeds_with_neither": aggregate["feeds_with_neither"],
@@ -506,6 +524,23 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         "active_quality": quality["active"],
         "inactive_quality": quality["inactive"],
     }
+
+
+def _paired_error_column_rows(errors: List[Tuple[str, int]]) -> List[List[Any]]:
+    rows: List[List[Any]] = []
+    limited_errors = errors[:20]
+    split_idx = (len(limited_errors) + 1) // 2
+    left_errors = limited_errors[:split_idx]
+    right_errors = limited_errors[split_idx:]
+    for idx, (first_error, first_count) in enumerate(left_errors):
+        row: List[Any] = [first_error, first_count]
+        if idx < len(right_errors):
+            second_error, second_count = right_errors[idx]
+            row.extend([second_error, second_count])
+        else:
+            row.extend(["", 0])
+        rows.append(row)
+    return rows
 
 
 def _pct(numerator: int, denominator: int, digits: int = 1) -> str:
