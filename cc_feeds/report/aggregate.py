@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Callable, Dict, Iterable, List, Optional, cast
 
 from cc_feeds.report.formatting import format_extension
 from cc_feeds.report.quality import QUALITY_SPLIT_THRESHOLD, score_feed
@@ -125,40 +125,14 @@ def extension_prevalence_rows(
     quality_threshold: float = QUALITY_SPLIT_THRESHOLD,
     limit: Optional[int] = 15,
 ) -> List[Dict[str, Any]]:
-    all_counts: Dict[str, int] = {}
-    quality_counts: Dict[str, int] = {}
-    all_feed_count = 0
-    quality_feed_count = 0
-
-    for result in results.values():
-        result = cast(Dict[str, Any], result)
-        if not result.get("valid"):
-            continue
-        all_feed_count += 1
-        high_quality = score_feed(result, now) > quality_threshold
-        if high_quality:
-            quality_feed_count += 1
-
-        extensions = {format_extension(ext) for ext in result.get("extensions", [])}
-        for extension in extensions:
-            all_counts[extension] = all_counts.get(extension, 0) + 1
-            if high_quality:
-                quality_counts[extension] = quality_counts.get(extension, 0) + 1
-
-    rows = [
-        {
-            "extension": extension,
-            "all_count": count,
-            "all_pct": _pct(count, all_feed_count),
-            "quality_count": quality_counts.get(extension, 0),
-            "quality_pct": _pct(quality_counts.get(extension, 0), quality_feed_count),
-        }
-        for extension, count in all_counts.items()
-    ]
-    rows.sort(key=lambda row: cast(int, row["all_count"]), reverse=True)
-    if limit is None:
-        return rows
-    return rows[:limit]
+    return _quality_prevalence_rows(
+        results,
+        now,
+        "extension",
+        lambda result: {format_extension(ext) for ext in result.get("extensions", [])},
+        quality_threshold=quality_threshold,
+        limit=limit,
+    )
 
 
 def content_profile_prevalence_rows(
@@ -167,34 +141,14 @@ def content_profile_prevalence_rows(
     quality_threshold: float = QUALITY_SPLIT_THRESHOLD,
 ) -> List[Dict[str, Any]]:
     labels = ["html", "xhtml", "mixed", "plain", "unknown"]
-    all_counts: Dict[str, int] = {label: 0 for label in labels}
-    quality_counts: Dict[str, int] = {label: 0 for label in labels}
-    all_feed_count = 0
-    quality_feed_count = 0
-
-    for result in results.values():
-        result = cast(Dict[str, Any], result)
-        if not result.get("valid"):
-            continue
-        profile = str(result.get("content_type_profile") or "unknown").lower()
-        all_counts[profile] = all_counts.get(profile, 0) + 1
-        all_feed_count += 1
-
-        if score_feed(result, now) > quality_threshold:
-            quality_counts[profile] = quality_counts.get(profile, 0) + 1
-            quality_feed_count += 1
-
-    rows = [
-        {
-            "profile": profile,
-            "all_count": all_counts.get(profile, 0),
-            "all_pct": _pct(all_counts.get(profile, 0), all_feed_count),
-            "quality_count": quality_counts.get(profile, 0),
-            "quality_pct": _pct(quality_counts.get(profile, 0), quality_feed_count),
-        }
-        for profile in sorted(all_counts, key=lambda key: all_counts[key], reverse=True)
-    ]
-    return rows
+    return _quality_prevalence_rows(
+        results,
+        now,
+        "profile",
+        lambda result: [str(result.get("content_type_profile") or "unknown").lower()],
+        quality_threshold=quality_threshold,
+        initial_labels=labels,
+    )
 
 
 def language_prevalence_rows(
@@ -203,8 +157,32 @@ def language_prevalence_rows(
     quality_threshold: float = QUALITY_SPLIT_THRESHOLD,
     limit: Optional[int] = 20,
 ) -> List[Dict[str, Any]]:
+    return _quality_prevalence_rows(
+        results,
+        now,
+        "language",
+        lambda result: set(result.get("languages") or ["unknown"]),
+        quality_threshold=quality_threshold,
+        limit=limit,
+    )
+
+
+def _quality_prevalence_rows(
+    results: Dict[str, Any],
+    now: datetime,
+    label_key: str,
+    labels_for_result: Callable[[Dict[str, Any]], Iterable[str]],
+    *,
+    quality_threshold: float = QUALITY_SPLIT_THRESHOLD,
+    initial_labels: Optional[Iterable[str]] = None,
+    limit: Optional[int] = None,
+) -> List[Dict[str, Any]]:
     all_counts: Dict[str, int] = {}
     quality_counts: Dict[str, int] = {}
+    if initial_labels:
+        all_counts.update({label: 0 for label in initial_labels})
+        quality_counts.update({label: 0 for label in initial_labels})
+
     all_feed_count = 0
     quality_feed_count = 0
 
@@ -212,26 +190,26 @@ def language_prevalence_rows(
         result = cast(Dict[str, Any], result)
         if not result.get("valid"):
             continue
-        languages = set(result.get("languages") or ["unknown"])
+        labels = set(labels_for_result(result))
         all_feed_count += 1
         high_quality = score_feed(result, now) > quality_threshold
         if high_quality:
             quality_feed_count += 1
 
-        for language in languages:
-            all_counts[language] = all_counts.get(language, 0) + 1
+        for label in labels:
+            all_counts[label] = all_counts.get(label, 0) + 1
             if high_quality:
-                quality_counts[language] = quality_counts.get(language, 0) + 1
+                quality_counts[label] = quality_counts.get(label, 0) + 1
 
     rows = [
         {
-            "language": language,
+            label_key: label,
             "all_count": count,
             "all_pct": _pct(count, all_feed_count),
-            "quality_count": quality_counts.get(language, 0),
-            "quality_pct": _pct(quality_counts.get(language, 0), quality_feed_count),
+            "quality_count": quality_counts.get(label, 0),
+            "quality_pct": _pct(quality_counts.get(label, 0), quality_feed_count),
         }
-        for language, count in all_counts.items()
+        for label, count in all_counts.items()
     ]
     rows.sort(key=lambda row: cast(int, row["all_count"]), reverse=True)
     if limit is None:

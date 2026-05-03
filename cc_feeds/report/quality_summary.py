@@ -113,7 +113,9 @@ def _format_quality_rows(
     rows: List[Dict[str, Any]] = []
     for feed_format, scores in format_scores.items():
         count = len(scores)
-        format_mid_quality_count = sum(1 for score in scores if score > 0.5)
+        format_mid_quality_count = sum(
+            1 for score in scores if score > QUALITY_SPLIT_THRESHOLD
+        )
         rows.append(
             {
                 "fmt": feed_format,

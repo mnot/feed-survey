@@ -46,6 +46,9 @@ Use `make test-emr` for an end-to-end cloud smoke test after changes that affect
 EMR packaging, WARC processing, or report finalization.
 Use `make report RESULTS_DIR=results/...` to re-render the HTML and Markdown
 reports for an existing EMR result without rerunning the distributed job.
+The HTML report is the visual artifact; the Markdown report should stay
+plain, table-oriented, and explicit about denominators so it remains useful for
+comparison and AI-assisted analysis.
 
 ## Scaling to Distributed EMR
 

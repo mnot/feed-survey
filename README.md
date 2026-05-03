@@ -6,6 +6,10 @@ A high-performance, distributed tool to analyze the prevalence and quality of RS
 
 `cc-feeds` uses MapReduce to process Common Crawl WARC files in parallel. It measures feed autodiscovery, fetches and parses discovered RSS/Atom feeds, and renders HTML and Markdown reports from the aggregated results.
 
+The HTML report is intended for visual exploration. The Markdown sibling uses
+plain sections and tables so the same run can be re-read, compared, or ingested
+by analysis tools without scraping the visual report.
+
 ## Key Features
 
 - **Distributed MapReduce**: Built on `mrjob` for seamless scaling from a few instances to hundreds of nodes on AWS EMR.

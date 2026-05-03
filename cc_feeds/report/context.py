@@ -10,6 +10,7 @@ from cc_feeds.analysis import Stats
 from cc_feeds.report.discovery import DiscoverySummary
 from cc_feeds.report.formatting import format_number
 from cc_feeds.report.histograms import make_histogram
+from cc_feeds.report.quality import QUALITY_SPLIT_THRESHOLD
 
 
 @dataclass(frozen=True)
@@ -95,12 +96,43 @@ def render_report_html(context: ReportContext) -> str:
 def render_report_markdown(context: ReportContext) -> str:
     stats = build_report_stats(context)
     total_parsed = stats["parsed_feeds"]
+    quality_split_label = f"Quality > {QUALITY_SPLIT_THRESHOLD:.1f} feeds"
     lines = [
         f"# Feed Analysis Report: {context.crawl_id}",
         "",
         "Percentages describe this Common Crawl result set, not the entire Web. "
         "Common Crawl reflects what its crawler fetched, what sites allowed, and "
         "the response-type prefilter and domain/sample limits for this run.",
+        "",
+        "## Method Notes",
+        "",
+        _markdown_table(
+            ["Term", "Meaning"],
+            [
+                [
+                    "Feed URL checks",
+                    "Every URL that the pipeline treated as a feed candidate and "
+                    "attempted to fetch or parse.",
+                ],
+                [
+                    "Successfully parsed feeds",
+                    "RSS/Atom responses that parsed without error. JSON Feed is "
+                    "not counted as a feed format in this report.",
+                ],
+                [
+                    "Active / recent-datable feeds",
+                    "Parsed feeds with a usable newest-entry date or feed-level "
+                    f"updated date within {stats['inactive_quality']['cutoff_days']} days.",
+                ],
+                [
+                    quality_split_label,
+                    "Parsed feeds with operational quality above the reporting "
+                    "threshold. This is not an editorial score; it separates feeds "
+                    "that look recent and usable from abandoned, sparse, or "
+                    "low-metadata feeds while keeping both groups visible.",
+                ],
+            ],
+        ),
         "",
         "## Run Summary",
         "",
@@ -199,7 +231,11 @@ def render_report_markdown(context: ReportContext) -> str:
         "",
         f"RSS-family feeds: {format_number(stats['rss_count'])}. "
         f"Atom feeds: {format_number(stats['atom_count'])}. "
-        "Denominator: successfully parsed feeds.",
+        "Denominator: successfully parsed feeds. The quality split is an "
+        f"operational filter: feeds with score > {QUALITY_SPLIT_THRESHOLD:.1f} "
+        "are recent/datable and have enough basic entry/feed metadata to look "
+        "usable, while lower-scoring feeds remain included in the all-feeds "
+        "columns so abandoned or sparse feeds still affect the totals.",
         "",
         _markdown_table(
             ["Metric", "Value"],
@@ -236,7 +272,7 @@ def render_report_markdown(context: ReportContext) -> str:
         ),
         "",
         _markdown_table(
-            ["Format", "Count", "Quality > 0.5 feeds", "Mean quality"],
+            ["Format", "Count", quality_split_label, "Mean quality"],
             [
                 [
                     row["fmt"],
@@ -255,7 +291,7 @@ def render_report_markdown(context: ReportContext) -> str:
             [
                 "Extension",
                 "All parsed feeds",
-                "Quality > 0.5 feeds",
+                quality_split_label,
             ],
             [
                 [
@@ -271,7 +307,7 @@ def render_report_markdown(context: ReportContext) -> str:
         "## Entry Content Profiles",
         "",
         _markdown_table(
-            ["Profile", "All parsed feeds", "Quality > 0.5 feeds"],
+            ["Profile", "All parsed feeds", quality_split_label],
             [
                 [
                     row["profile"],
@@ -300,7 +336,7 @@ def render_report_markdown(context: ReportContext) -> str:
         ),
         "",
         _markdown_table(
-            ["Language", "All parsed feeds", "Quality > 0.5 feeds"],
+            ["Language", "All parsed feeds", quality_split_label],
             [
                 [
                     row["language"],
@@ -403,6 +439,7 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         "content_profile_prevalence": context.content_profile_prevalence,
         "lang_count_hist": context.lang_count_hist,
         "quality_hist": quality["hist"],
+        "quality_split_threshold": QUALITY_SPLIT_THRESHOLD,
         "mean_quality": round(quality["mean"], 3),
         "active_quality": quality["active"],
         "inactive_quality": quality["inactive"],

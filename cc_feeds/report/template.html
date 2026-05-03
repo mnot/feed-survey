@@ -437,6 +437,10 @@
                 <div class="chart-title">Feed Quality Distribution</div>
                 <div class="chart-sub">
                     Operational, non-editorial score 0–1 among successfully parsed feeds.
+                    In split tables, “quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}”
+                    means a feed is recent/datable and has enough basic entry/feed
+                    metadata to look usable; lower-scoring feeds remain in the
+                    all-feeds columns so abandoned or sparse feeds still count.
                     Feeds with no usable date, or no freshness signal within
                     {{ stats.inactive_quality.cutoff_days|comma }} days, score 0 here;
                     the card above also shows the mean after
@@ -477,9 +481,9 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Feed Formats</div>
-                <div class="chart-sub">Successfully parsed feeds only. RSS-family feeds: {{ stats.rss_count|comma }}; Atom feeds: {{ stats.atom_count|comma }}. Quality split shows share of feeds with operational quality &gt; 0.5.</div>
+                <div class="chart-sub">Successfully parsed feeds only. RSS-family feeds: {{ stats.rss_count|comma }}; Atom feeds: {{ stats.atom_count|comma }}. Quality split shows share of feeds with operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
                 <table class="data-table">
-                    <thead><tr><th>Format</th><th>Count</th><th>Quality &gt; 0.5 feeds</th><th>Mean quality</th></tr></thead>
+                    <thead><tr><th>Format</th><th>Count</th><th>Quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }} feeds</th><th>Mean quality</th></tr></thead>
                     <tbody>
                         {% for row in format_quality_rows %}
                         <tr>
@@ -525,11 +529,11 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Entry Content Profile</div>
-                <div class="chart-sub">Content type classification based on Atom <code>type</code> attribute and RSS element semantics. The table splits prevalence across all parsed feeds and feeds with operational quality &gt; 0.5.</div>
+                <div class="chart-sub">Content type classification based on Atom <code>type</code> attribute and RSS element semantics. The table splits prevalence across all parsed feeds and feeds with operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
                 <canvas id="contentProfileChart"></canvas>
                 <div class="table-container">
                     <table class="data-table">
-                        <thead><tr><th>Profile</th><th>All parsed feeds</th><th>Quality &gt; 0.5 feeds</th></tr></thead>
+                        <thead><tr><th>Profile</th><th>All parsed feeds</th><th>Quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }} feeds</th></tr></thead>
                         <tbody>
                             {% for row in stats.content_profile_prevalence %}
                             <tr>
@@ -554,10 +558,10 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Feed Languages</div>
-                <div class="chart-sub">Top feed language declarations across successfully parsed feeds. Quality split shows share of feeds with operational quality &gt; 0.5.</div>
+                <div class="chart-sub">Top feed language declarations across successfully parsed feeds. Quality split shows share of feeds with operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
                 <div class="table-container">
                     <table class="data-table">
-                        <thead><tr><th>Language</th><th>All parsed feeds</th><th>Quality &gt; 0.5 feeds</th></tr></thead>
+                        <thead><tr><th>Language</th><th>All parsed feeds</th><th>Quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }} feeds</th></tr></thead>
                         <tbody>
                             {% for row in stats.language_prevalence %}
                             <tr>
@@ -627,10 +631,10 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Top Feed Extensions</div>
-                <div class="chart-sub">Non-core namespace elements encountered across successfully parsed feeds. Quality split uses feeds with operational quality &gt; 0.5.</div>
+                <div class="chart-sub">Non-core namespace elements encountered across successfully parsed feeds. Quality split uses feeds with operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
                 <div class="table-container">
                     <table class="data-table">
-                        <thead><tr><th>Element</th><th>All parsed feeds</th><th>Quality &gt; 0.5 feeds</th></tr></thead>
+                        <thead><tr><th>Element</th><th>All parsed feeds</th><th>Quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }} feeds</th></tr></thead>
                         <tbody>
                             {% for row in extension_prevalence %}
                             <tr>
