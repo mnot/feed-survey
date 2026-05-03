@@ -22,10 +22,8 @@ HEADER_FIELDS = (
     "X-Drupal-Dynamic-Cache",
 )
 
-_META_GENERATOR_RE = re.compile(
-    rb"<meta\s+[^>]*name\s*=\s*['\"]generator['\"][^>]*content\s*=\s*['\"]([^'\"]+)",
-    re.IGNORECASE,
-)
+_META_TAG_RE = re.compile(rb"<meta\s+[^>]*>", re.IGNORECASE)
+_ATTR_RE = re.compile(rb"([a-zA-Z_:][-a-zA-Z0-9_:.]*)\s*=\s*['\"]([^'\"]*)")
 
 HTML_MARKERS = {
     "drupal": (b"/sites/default/files/", b"drupal-settings-json"),
@@ -51,11 +49,14 @@ def fingerprint_feed_generator(generator: Any) -> Set[str]:
 
 def fingerprint_html(content: bytes) -> Set[str]:
     fingerprints: Set[str] = set()
-    match = _META_GENERATOR_RE.search(content[:32768])
-    if match:
-        fingerprints.update(
-            _fingerprints_from_values([match.group(1).decode("utf-8", "ignore")])
-        )
+    for match in _META_TAG_RE.finditer(content[:32768]):
+        attrs = {
+            name.decode("ascii", "ignore").lower(): value.decode("utf-8", "ignore")
+            for name, value in _ATTR_RE.findall(match.group(0))
+        }
+        if attrs.get("name", "").lower() != "generator":
+            continue
+        fingerprints.update(_fingerprints_from_values([attrs.get("content", "")]))
 
     normalized = content[:32768].lower()
     for label, markers in HTML_MARKERS.items():
@@ -69,9 +70,15 @@ def _fingerprints_from_values(values: Iterable[str]) -> Set[str]:
     for value in values:
         normalized = value.lower()
         for label, patterns in KNOWN_PLATFORM_PATTERNS.items():
-            if any(pattern in normalized for pattern in patterns):
+            if any(_matches_pattern(normalized, pattern) for pattern in patterns):
                 fingerprints.add(label)
     return fingerprints
+
+
+def _matches_pattern(value: str, pattern: str) -> bool:
+    if "." in pattern:
+        return pattern in value
+    return bool(re.search(rf"(^|[^a-z0-9]){re.escape(pattern)}([^a-z0-9]|$)", value))
 
 
 def _header_value(headers: Mapping[str, Any], name: str) -> str:

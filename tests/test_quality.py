@@ -111,3 +111,27 @@ def test_recent_entries_clear_mid() -> None:
     feed["default_entry_title_count"] = 0
 
     assert score_feed(feed, NOW) >= 0.5
+
+
+def test_metadata_caps_quality() -> None:
+    feed = _feed()
+    feed.update(
+        {
+            "entries_count": 20,
+            "updated_date": _date(1),
+            "newest_entry_date": _date(1),
+            "oldest_entry_date": _date(1),
+            "has_content": True,
+            "has_summary": False,
+            "content_lengths": [1200, 1100, 1000],
+            "content_type_profile": "html",
+            "lang_entries": {"en"},
+            "all_languages": {"en"},
+            "entry_title_count": 20,
+            "default_entry_title_count": 20,
+            "repeated_entry_title_ratio": 1.0,
+            "repeated_entry_link_ratio": 1.0,
+        }
+    )
+
+    assert score_feed(feed, NOW) <= 0.45

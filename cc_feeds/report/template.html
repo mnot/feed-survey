@@ -327,7 +327,7 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">HTML Platform Fingerprints</div>
-                <div class="chart-sub">Known page-side platform hints and how often those HTML pages expose RSS/Atom autodiscovery links. Detection is conservative and based on generator metadata plus common asset markers.</div>
+                <div class="chart-sub">Known page-side platform hints among analyzed HTML responses, and how often those pages expose RSS/Atom autodiscovery links. Detection is conservative and based on generator metadata plus common asset markers; missing rows mean “not identified,” not “custom.”</div>
                 <div class="table-container">
                     <table class="data-table">
                         <thead><tr><th>Fingerprint</th><th>HTML pages</th><th>With autodiscovery</th></tr></thead>
@@ -345,7 +345,7 @@
             </div>
             <div class="chart-card">
                 <div class="chart-title">Feed Quality by Source Fingerprint</div>
-                <div class="chart-sub">Quality of parsed feeds discovered from pages with known platform fingerprints. A feed may count under more than one source fingerprint if it was discovered from multiple page types.</div>
+                <div class="chart-sub">Quality of parsed feeds that were discovered from fingerprinted HTML pages. Denominator is parsed RSS/Atom feeds with at least one matching source-page fingerprint, not all feeds on that platform. A feed may count under more than one source fingerprint if it was discovered from multiple page types.</div>
                 <div class="table-container">
                     <table class="data-table">
                         <thead><tr><th>Source fingerprint</th><th>Parsed feeds</th><th>Quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }} feeds</th><th>Mean quality</th></tr></thead>
@@ -498,7 +498,8 @@
                     Mean component scores across successfully parsed feeds. Bar
                     labels show each component's weight in the composite score.
                     Repeated/default-looking entry titles and repeated entry
-                    links reduce the entry metadata component.
+                    links reduce the entry metadata component and can cap the
+                    final score when severe.
                 </div>
                 <div class="chart-container">
                     <canvas id="qualityComponents"></canvas>
@@ -689,7 +690,7 @@
             </div>
             <div class="chart-card">
                 <div class="chart-title">Platform Fingerprints</div>
-                <div class="chart-sub">Known feed generators or platform headers observed on parsed feeds. This is intentionally conservative; absent fingerprints mean “not identified,” not custom-built.</div>
+                <div class="chart-sub">Known feed generators or platform headers observed on parsed feeds. This is intentionally conservative; absent fingerprints mean “not identified,” not “custom-built.”</div>
                 <div class="table-container">
                     <table class="data-table">
                         <thead><tr><th>Fingerprint</th><th>All parsed feeds</th><th>Quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }} feeds</th></tr></thead>

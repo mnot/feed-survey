@@ -132,7 +132,8 @@ def render_report_markdown(context: ReportContext) -> str:
                     "Parsed feeds with operational quality above the reporting "
                     "threshold. This is not an editorial score; it separates feeds "
                     "that look recent and usable from abandoned, sparse, or "
-                    "low-metadata feeds while keeping both groups visible.",
+                    "low-metadata feeds while keeping both groups visible. Severe "
+                    "repeated/default-looking entry metadata can cap the score.",
                 ],
             ],
         ),
@@ -193,6 +194,9 @@ def render_report_markdown(context: ReportContext) -> str:
         "",
         "### HTML Platform Fingerprints",
         "",
+        "Rows count only known, conservatively detected platform hints in analyzed "
+        "HTML responses. Missing fingerprints mean the platform was not identified.",
+        "",
         _markdown_table(
             ["Fingerprint", "HTML pages", "Pages with autodiscovery"],
             [
@@ -207,6 +211,9 @@ def render_report_markdown(context: ReportContext) -> str:
         ),
         "",
         "### Feed Quality by Source Fingerprint",
+        "",
+        "Denominator: parsed RSS/Atom feeds discovered from fingerprinted HTML "
+        "pages. This is not all feeds on a platform.",
         "",
         _markdown_table(
             ["Source fingerprint", "Parsed feeds", quality_split_label, "Mean quality"],
@@ -339,6 +346,9 @@ def render_report_markdown(context: ReportContext) -> str:
         ),
         "",
         "## Platform Fingerprints",
+        "",
+        "Rows count known feed generators or platform headers on parsed feeds. "
+        "Missing fingerprints mean not identified.",
         "",
         _markdown_table(
             ["Fingerprint", "All parsed feeds", quality_split_label],

@@ -25,7 +25,7 @@ Overall score is a weighted sum of five sub-scores, each in [0, 1]:
                          (good coverage), has entry-level language tags, has
                          multiple content-length samples. Repeated/default
                          entry titles or repeated entry links reduce this
-                         component.
+                         component and may cap the final score when severe.
 
   feed_metadata    0.10  Is the feed itself well-described?
                          Weighted flags: title, link, language, updated date.
@@ -100,6 +100,7 @@ def score_feed(
         + WEIGHTS["entry_metadata"] * entry_metadata
         + WEIGHTS["feed_metadata"] * feed_metadata
     )
+    raw = min(raw, _metadata_quality_cap(feed_info))
     return round(min(max(raw, 0.0), 1.0), 4)
 
 
@@ -290,3 +291,28 @@ def _feed_metadata_score(feed_info: Dict[str, Any]) -> float:
     if feed_info.get("updated_date"):
         score += 0.20
     return score
+
+
+def _metadata_quality_cap(feed_info: Dict[str, Any]) -> float:
+    title_count = int(feed_info.get("entry_title_count") or 0)
+    default_titles = int(feed_info.get("default_entry_title_count") or 0)
+    default_ratio = default_titles / title_count if title_count else 0.0
+    repeated_title_ratio = float(feed_info.get("repeated_entry_title_ratio") or 0.0)
+    repeated_link_ratio = float(feed_info.get("repeated_entry_link_ratio") or 0.0)
+
+    cap = 1.0
+    if repeated_title_ratio >= 0.8 or default_ratio >= 0.5:
+        cap = min(cap, 0.55)
+    elif repeated_title_ratio >= 0.5 or default_ratio > 0.0:
+        cap = min(cap, 0.70)
+
+    if repeated_link_ratio >= 0.8:
+        cap = min(cap, 0.65)
+    elif repeated_link_ratio >= 0.5:
+        cap = min(cap, 0.80)
+
+    if (repeated_title_ratio >= 0.8 or default_ratio >= 0.5) and (
+        repeated_link_ratio >= 0.8
+    ):
+        cap = min(cap, 0.45)
+    return cap
