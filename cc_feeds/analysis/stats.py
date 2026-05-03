@@ -37,6 +37,7 @@ class Stats:
         self.multi_feed_pages: Dict[str, List[str]] = {}
         self.html_fingerprint_counts: Dict[str, int] = {}
         self.html_fingerprint_auto_counts: Dict[str, int] = {}
+        self.feed_source_fingerprints: Dict[str, Dict[str, int]] = {}
 
         self.hll_p = 12
         self.hll_m = 1 << self.hll_p
@@ -90,12 +91,17 @@ class Stats:
             self.html_fingerprint_counts[label] = (
                 self.html_fingerprint_counts.get(label, 0) + count
             )
-        for label, count in getattr(
-            other, "html_fingerprint_auto_counts", {}
-        ).items():
+        for label, count in getattr(other, "html_fingerprint_auto_counts", {}).items():
             self.html_fingerprint_auto_counts[label] = (
                 self.html_fingerprint_auto_counts.get(label, 0) + count
             )
+        for feed_url, counts in getattr(other, "feed_source_fingerprints", {}).items():
+            if feed_url not in self.feed_source_fingerprints:
+                self.feed_source_fingerprints[feed_url] = {}
+            for label, count in counts.items():
+                self.feed_source_fingerprints[feed_url][label] = (
+                    self.feed_source_fingerprints[feed_url].get(label, 0) + count
+                )
 
         self.lang_src_http += other.lang_src_http
         self.lang_src_feed += other.lang_src_feed

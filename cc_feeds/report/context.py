@@ -36,6 +36,7 @@ class ReportContext:
     language_prevalence: List[Dict[str, Any]]
     fingerprint_prevalence: List[Dict[str, Any]]
     html_fingerprints: List[Dict[str, Any]]
+    source_fingerprint_quality: List[Dict[str, Any]]
     extension_prevalence: List[Dict[str, Any]]
     errors: List[Tuple[str, int]]
 
@@ -202,6 +203,22 @@ def render_report_markdown(context: ReportContext) -> str:
                     f"({row['autodiscovery_pct']:.1f}%)",
                 ]
                 for row in context.html_fingerprints
+            ],
+        ),
+        "",
+        "### Feed Quality by Source Fingerprint",
+        "",
+        _markdown_table(
+            ["Source fingerprint", "Parsed feeds", quality_split_label, "Mean quality"],
+            [
+                [
+                    row["fingerprint"],
+                    format_number(row["parsed_feeds"]),
+                    f"{format_number(row['quality_count'])} "
+                    f"({row['quality_pct']:.1f}%)",
+                    f"{row['mean_quality']:.3f}",
+                ]
+                for row in context.source_fingerprint_quality
             ],
         ),
         "",
@@ -438,6 +455,7 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         "language_prevalence": context.language_prevalence,
         "fingerprint_prevalence": context.fingerprint_prevalence,
         "html_fingerprints": context.html_fingerprints,
+        "source_fingerprint_quality": context.source_fingerprint_quality,
         "extension_prevalence": context.extension_prevalence,
         "error_types": context.errors,
         "total_errors": sum(count for _, count in context.errors),

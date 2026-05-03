@@ -343,6 +343,25 @@
                     </table>
                 </div>
             </div>
+            <div class="chart-card">
+                <div class="chart-title">Feed Quality by Source Fingerprint</div>
+                <div class="chart-sub">Quality of parsed feeds discovered from pages with known platform fingerprints. A feed may count under more than one source fingerprint if it was discovered from multiple page types.</div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead><tr><th>Source fingerprint</th><th>Parsed feeds</th><th>Quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }} feeds</th><th>Mean quality</th></tr></thead>
+                        <tbody>
+                            {% for row in stats.source_fingerprint_quality %}
+                            <tr>
+                                <td>{{ row.fingerprint }}</td>
+                                <td>{{ row.parsed_feeds|comma }}</td>
+                                <td>{{ row.quality_count|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.quality_pct) }}%)</span></td>
+                                <td>{{ "%.3f"|format(row.mean_quality) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </section>
 

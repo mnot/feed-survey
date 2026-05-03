@@ -55,11 +55,9 @@ class HtmlDiscovery:
             if has_discovery:
                 for fingerprint in fingerprints:
                     self.stats.html_fingerprint_auto_counts[fingerprint] = (
-                        self.stats.html_fingerprint_auto_counts.get(
-                            fingerprint, 0
-                        )
-                        + 1
+                        self.stats.html_fingerprint_auto_counts.get(fingerprint, 0) + 1
                     )
+                self._record_source_fingerprints(page_discoveries, fingerprints)
         except (LookupError, RuntimeError, SyntaxError, TypeError, ValueError):
             pass
 
@@ -130,3 +128,17 @@ class HtmlDiscovery:
         if len(page_discoveries) > 1 and len(self.stats.multi_feed_pages) < 10000:
             self.stats.multi_feed_pages[page_url] = list(page_discoveries.keys())
         return bool(found_rels)
+
+    def _record_source_fingerprints(
+        self, page_discoveries: Dict[str, Set[str]], fingerprints: Set[str]
+    ) -> None:
+        if not fingerprints:
+            return
+        for feed_url in page_discoveries:
+            if feed_url not in self.stats.feed_source_fingerprints:
+                self.stats.feed_source_fingerprints[feed_url] = {}
+            for fingerprint in fingerprints:
+                self.stats.feed_source_fingerprints[feed_url][fingerprint] = (
+                    self.stats.feed_source_fingerprints[feed_url].get(fingerprint, 0)
+                    + 1
+                )

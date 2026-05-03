@@ -17,6 +17,7 @@ def test_summary_record_counts() -> None:
     stats.discovery_links_per_page_counts = {1: 12, 2: 3}
     stats.html_fingerprint_counts = {"wordpress": 11}
     stats.html_fingerprint_auto_counts = {"wordpress": 8}
+    stats.feed_source_fingerprints = {"https://example.com/feed.xml": {"wordpress": 7}}
     stats.top_n = 500000
 
     record = summary_record(stats)
@@ -33,6 +34,9 @@ def test_summary_record_counts() -> None:
     assert record["discovery_links_per_page_counts"] == {1: 12, 2: 3}
     assert record["html_fingerprint_counts"] == {"wordpress": 11}
     assert record["html_fingerprint_auto_counts"] == {"wordpress": 8}
+    assert record["feed_source_fingerprints"] == {
+        "https://example.com/feed.xml": {"wordpress": 7}
+    }
     assert record["top_n"] == 500000
 
 
@@ -54,6 +58,9 @@ def test_merge_summary_counts_once() -> None:
             "discovery_links_per_page_counts": {"1": 12, "2": 3},
             "html_fingerprint_counts": {"wordpress": 11},
             "html_fingerprint_auto_counts": {"wordpress": 8},
+            "feed_source_fingerprints": {
+                "https://example.com/feed.xml": {"wordpress": 7}
+            },
             "top_n": 500000,
         },
     )
@@ -70,6 +77,9 @@ def test_merge_summary_counts_once() -> None:
     assert stats.discovery_links_per_page_counts == {1: 12, 2: 3}
     assert stats.html_fingerprint_counts == {"wordpress": 11}
     assert stats.html_fingerprint_auto_counts == {"wordpress": 8}
+    assert stats.feed_source_fingerprints == {
+        "https://example.com/feed.xml": {"wordpress": 7}
+    }
     assert stats.top_n == 500000
 
 
@@ -93,6 +103,7 @@ def test_combiner_merges_summary() -> None:
     first.multi_feed_pages = {"https://example.com/": ["https://example.com/a.xml"]}
     first.html_fingerprint_counts = {"wordpress": 17}
     first.html_fingerprint_auto_counts = {"wordpress": 18}
+    first.feed_source_fingerprints = {"https://example.com/feed.xml": {"wordpress": 19}}
     first.top_n = 100000
 
     second = Stats()
@@ -114,6 +125,9 @@ def test_combiner_merges_summary() -> None:
     second.multi_feed_pages = {"https://example.org/": ["https://example.org/a.xml"]}
     second.html_fingerprint_counts = {"wordpress": 33, "drupal": 34}
     second.html_fingerprint_auto_counts = {"wordpress": 35, "drupal": 36}
+    second.feed_source_fingerprints = {
+        "https://example.com/feed.xml": {"wordpress": 37, "drupal": 38}
+    }
     second.top_n = 500000
 
     merged = merge_stats_values(
@@ -143,5 +157,8 @@ def test_combiner_merges_summary() -> None:
     assert merged["html_fingerprint_auto_counts"] == {
         "wordpress": 53,
         "drupal": 36,
+    }
+    assert merged["feed_source_fingerprints"] == {
+        "https://example.com/feed.xml": {"wordpress": 56, "drupal": 38}
     }
     assert merged["top_n"] == 500000

@@ -9,6 +9,7 @@ from cc_feeds.report.aggregate import (
     fingerprint_prevalence_rows,
     html_fingerprint_rows,
     language_prevalence_rows,
+    source_fingerprint_quality_rows,
 )
 from cc_feeds.report.context import ReportContext, build_report_stats
 from cc_feeds.report.discovery import DiscoverySummary, build_discovery_summary
@@ -274,6 +275,29 @@ def test_html_fingerprint_rows() -> None:
     }
 
 
+def test_source_quality_rows() -> None:
+    now = datetime(2026, 5, 1, tzinfo=timezone.utc)
+    rows = source_fingerprint_quality_rows(
+        {
+            "https://fresh.example/feed.xml": _feed(fmt="rss20", days_old=0),
+            "https://stale.example/feed.xml": {
+                **_feed(fmt="rss20", days_old=0),
+                "newest_entry_date": [2024, 1, 1, 0, 0, 0, 0, 0, 0],
+                "updated_date": None,
+            },
+        },
+        {
+            "https://fresh.example/feed.xml": {"wordpress": 1},
+            "https://stale.example/feed.xml": {"wordpress": 1},
+        },
+        now,
+    )
+
+    assert rows[0]["fingerprint"] == "wordpress"
+    assert rows[0]["parsed_feeds"] == 2
+    assert rows[0]["quality_count"] == 1
+
+
 def test_agg_http_feed_mismatch() -> None:
     all_valid = {
         "https://entry.example/feed.xml": {
@@ -503,6 +527,7 @@ def test_report_runtime_lang_counts() -> None:
             language_prevalence=[],
             fingerprint_prevalence=[],
             html_fingerprints=[],
+            source_fingerprint_quality=[],
             extension_prevalence=[],
             errors=[],
         )

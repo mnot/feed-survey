@@ -107,6 +107,10 @@ def _merge_summary(stats: Stats, data: Dict[str, Any]) -> None:
         stats.html_fingerprint_auto_counts,
         data.get("html_fingerprint_auto_counts", {}),
     )
+    for feed_url, counts in data.get("feed_source_fingerprints", {}).items():
+        if feed_url not in stats.feed_source_fingerprints:
+            stats.feed_source_fingerprints[feed_url] = {}
+        _merge_counts(stats.feed_source_fingerprints[feed_url], counts)
     _merge_counts(
         stats.discovery_domain_counts, data.get("discovery_domain_counts", {})
     )

@@ -44,9 +44,8 @@ def serialize_stats(stats: Stats) -> Dict[str, Any]:
                 "discovery_links_per_page_counts": stats.discovery_links_per_page_counts,
                 "multi_feed_pages": stats.multi_feed_pages,
                 "html_fingerprint_counts": stats.html_fingerprint_counts,
-                "html_fingerprint_auto_counts": (
-                    stats.html_fingerprint_auto_counts
-                ),
+                "html_fingerprint_auto_counts": (stats.html_fingerprint_auto_counts),
+                "feed_source_fingerprints": stats.feed_source_fingerprints,
                 "content_length_counts": stats.content_length_counts,
                 "discovery_domain_counts": stats.discovery_domain_counts,
                 "top_n": stats.top_n,
@@ -136,6 +135,16 @@ def merge_serialized_stats(merged: Dict[str, Any], incoming: Dict[str, Any]) -> 
         for label, count in incoming.get(field, {}).items():
             merged[field][label] = merged[field].get(label, 0) + count
 
+    if "feed_source_fingerprints" not in merged:
+        merged["feed_source_fingerprints"] = {}
+    for feed_url, counts in incoming.get("feed_source_fingerprints", {}).items():
+        if feed_url not in merged["feed_source_fingerprints"]:
+            merged["feed_source_fingerprints"][feed_url] = {}
+        for label, count in counts.items():
+            merged["feed_source_fingerprints"][feed_url][label] = (
+                merged["feed_source_fingerprints"][feed_url].get(label, 0) + count
+            )
+
 
 def merge_stats_values(values: Generator[Any, None, None]) -> Dict[str, Any]:
     merged = None
@@ -223,12 +232,17 @@ def reduce_stats(values: Generator[Any, None, None]) -> Stats:
             final_stats.html_fingerprint_counts[label] = (
                 final_stats.html_fingerprint_counts.get(label, 0) + count
             )
-        for label, count in value.get(
-            "html_fingerprint_auto_counts", {}
-        ).items():
+        for label, count in value.get("html_fingerprint_auto_counts", {}).items():
             final_stats.html_fingerprint_auto_counts[label] = (
                 final_stats.html_fingerprint_auto_counts.get(label, 0) + count
             )
+        for feed_url, counts in value.get("feed_source_fingerprints", {}).items():
+            if feed_url not in final_stats.feed_source_fingerprints:
+                final_stats.feed_source_fingerprints[feed_url] = {}
+            for label, count in counts.items():
+                final_stats.feed_source_fingerprints[feed_url][label] = (
+                    final_stats.feed_source_fingerprints[feed_url].get(label, 0) + count
+                )
 
     return final_stats
 
@@ -257,9 +271,8 @@ def summary_record(stats: Stats) -> Dict[str, Any]:
         "discovery_links_per_page_counts": stats.discovery_links_per_page_counts,
         "multi_feed_pages": stats.multi_feed_pages,
         "html_fingerprint_counts": stats.html_fingerprint_counts,
-        "html_fingerprint_auto_counts": (
-            stats.html_fingerprint_auto_counts
-        ),
+        "html_fingerprint_auto_counts": (stats.html_fingerprint_auto_counts),
+        "feed_source_fingerprints": stats.feed_source_fingerprints,
         "top_n": stats.top_n,
     }
 

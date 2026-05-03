@@ -12,6 +12,7 @@ from cc_feeds.report.aggregate import (
     fingerprint_prevalence_rows,
     html_fingerprint_rows,
     language_prevalence_rows,
+    source_fingerprint_quality_rows,
 )
 from cc_feeds.report.context import (
     ReportContext,
@@ -104,7 +105,6 @@ def generate_report(
         stats.html_fingerprint_counts,
         stats.html_fingerprint_auto_counts,
     )
-
     context = ReportContext(
         stats=stats,
         crawl_id=crawl_id,
@@ -127,6 +127,11 @@ def generate_report(
         language_prevalence=language_prevalence,
         fingerprint_prevalence=fingerprint_prevalence,
         html_fingerprints=html_fingerprints,
+        source_fingerprint_quality=source_fingerprint_quality_rows(
+            all_valid_results,
+            stats.feed_source_fingerprints,
+            now,
+        ),
         extension_prevalence=extension_prevalence,
         errors=errors,
     )

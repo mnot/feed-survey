@@ -49,6 +49,9 @@ def test_html_fingerprint_auto() -> None:
 
     assert stats.html_fingerprint_counts == {"wordpress": 1}
     assert stats.html_fingerprint_auto_counts == {"wordpress": 1}
+    assert stats.feed_source_fingerprints == {
+        "https://example.com/feed.xml": {"wordpress": 1}
+    }
 
 
 def test_html_fingerprint_no_auto() -> None:

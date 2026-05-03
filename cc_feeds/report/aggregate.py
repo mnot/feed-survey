@@ -203,6 +203,44 @@ def html_fingerprint_rows(
     return rows[:limit]
 
 
+def source_fingerprint_quality_rows(
+    results: Dict[str, Any],
+    source_fingerprints: Dict[str, Dict[str, int]],
+    now: datetime,
+    quality_threshold: float = QUALITY_SPLIT_THRESHOLD,
+    limit: Optional[int] = 15,
+) -> List[Dict[str, Any]]:
+    scores: Dict[str, List[float]] = {}
+    for feed_url, result in results.items():
+        result = cast(Dict[str, Any], result)
+        if not result.get("valid"):
+            continue
+        score = score_feed(result, now)
+        for fingerprint in source_fingerprints.get(feed_url, {}):
+            scores.setdefault(fingerprint, []).append(score)
+
+    rows = [
+        {
+            "fingerprint": fingerprint,
+            "parsed_feeds": len(fingerprint_scores),
+            "quality_count": sum(
+                1 for score in fingerprint_scores if score > quality_threshold
+            ),
+            "quality_pct": _pct(
+                sum(1 for score in fingerprint_scores if score > quality_threshold),
+                len(fingerprint_scores),
+            ),
+            "mean_quality": round(sum(fingerprint_scores) / len(fingerprint_scores), 3),
+        }
+        for fingerprint, fingerprint_scores in scores.items()
+        if fingerprint_scores
+    ]
+    rows.sort(key=lambda row: cast(int, row["parsed_feeds"]), reverse=True)
+    if limit is None:
+        return rows
+    return rows[:limit]
+
+
 def _quality_prevalence_rows(
     results: Dict[str, Any],
     now: datetime,
