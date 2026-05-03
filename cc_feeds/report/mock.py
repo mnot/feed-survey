@@ -83,6 +83,17 @@ CONTENT_LENGTH_BINS = [
     (100000, 1_500),
     (500000, 200),
 ]
+PLATFORM_WEIGHTS = [
+    ("wordpress", 0.42),
+    ("blogger", 0.12),
+    ("drupal", 0.08),
+    ("ghost", 0.06),
+    ("squarespace", 0.06),
+    ("shopify", 0.05),
+    ("substack", 0.05),
+    ("wix", 0.05),
+    (None, 0.11),
+]
 
 
 def _date_list(dt: datetime) -> List[int]:
@@ -154,6 +165,16 @@ def _choose_languages(rng: random.Random) -> tuple[str | None, str | None, set[s
     return lang_feed, lang_http, all_langs
 
 
+def _choose_platform(rng: random.Random) -> str | None:
+    roll = rng.random()
+    cumulative = 0.0
+    for platform, weight in PLATFORM_WEIGHTS:
+        cumulative += weight
+        if roll < cumulative:
+            return platform
+    return None
+
+
 def _populate_crawl_totals(stats: Stats) -> None:
     stats.max_crawl_time_str = CRAWL_DATE.strftime("%Y-%m-%dT%H:%M:%SZ")
     stats.pages_seen = 4_800_000_000
@@ -185,6 +206,26 @@ def _populate_crawl_totals(stats: Stats) -> None:
         12: 100,
         20: 40,
         60: 10,
+    }
+    stats.html_fingerprint_counts = {
+        "wordpress": 620_000,
+        "blogger": 180_000,
+        "drupal": 95_000,
+        "ghost": 42_000,
+        "squarespace": 76_000,
+        "shopify": 64_000,
+        "substack": 38_000,
+        "wix": 70_000,
+    }
+    stats.html_fingerprint_auto_counts = {
+        "wordpress": 210_000,
+        "blogger": 62_000,
+        "drupal": 21_000,
+        "ghost": 29_000,
+        "squarespace": 18_000,
+        "shopify": 7_500,
+        "substack": 31_000,
+        "wix": 8_000,
     }
     stats.lang_src_http = 420_000
     stats.lang_src_feed = 980_000
@@ -224,6 +265,7 @@ def _build_feed_info(rng: random.Random, idx: int) -> tuple[str, dict[str, Any]]
     entry_count = max(0, int(rng.gauss(12, 8)))
     has_content = rng.random() < 0.4
     has_summary = not has_content and rng.random() < 0.8
+    feed_platform = _choose_platform(rng)
 
     return feed_url, {
         "url": feed_url,
@@ -244,6 +286,8 @@ def _build_feed_info(rng: random.Random, idx: int) -> tuple[str, dict[str, Any]]
         "content_type_profile": "html" if has_content or has_summary else "unknown",
         "all_languages": all_langs,
         "extensions": extensions,
+        "fingerprints": {feed_platform} if feed_platform else set(),
+        "feed_generator": feed_platform.title() if feed_platform else None,
         "request_time": CRAWL_DATE,
         "updated_recently": _recently_updated(updated),
         "updated_date": updated,
@@ -261,6 +305,7 @@ def _populate_feed_results(stats: Stats, rng: random.Random) -> None:
         stats.feed_results[feed_url] = feed_info
 
         if rng.random() < 0.60:
+            source_platform = _choose_platform(rng)
             n_domains = rng.randint(1, 8)
             domains = [
                 f"example{rng.randint(0, 100000)}.{rng.choice(FEED_TLDS)}"
@@ -268,6 +313,10 @@ def _populate_feed_results(stats: Stats, rng: random.Random) -> None:
             ]
             stats.autodiscovery_links[feed_url] = domains
             stats.discovery_domain_counts[feed_url] = n_domains * rng.randint(1, 20)
+            if source_platform:
+                stats.feed_source_fingerprints[feed_url] = {
+                    source_platform: rng.randint(1, n_domains)
+                }
 
 
 def _add_default_feed(
