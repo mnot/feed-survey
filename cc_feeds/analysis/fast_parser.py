@@ -51,6 +51,7 @@ class FastFeedParser:
                 "link_fallback": "",
                 "updated_parsed": None,
                 "language": None,
+                "generator": "",
             },
             "entries_count": 0,
             "newest_entry_date": None,
@@ -257,6 +258,8 @@ class FastFeedParser:
                 FastFeedParser._set_preferred_date(
                     result["feed"], "updated_parsed", local, elem.text
                 )
+            elif local == "generator" and not result["feed"]["generator"]:
+                result["feed"]["generator"] = (elem.text or "").strip()
         elif ns == DC_NS and local == "language" and not result["feed"]["language"]:
             result["feed"]["language"] = (elem.text or "").strip().lower()
 
@@ -304,6 +307,8 @@ class FastFeedParser:
                 )
             elif local == "language" and not result["feed"]["language"]:
                 result["feed"]["language"] = (elem.text or "").strip().lower()
+            elif local == "generator" and not result["feed"]["generator"]:
+                result["feed"]["generator"] = (elem.text or "").strip()
             elif local == "channel" and not result["feed"]["language"]:
                 FastFeedParser._set_feed_lang_from_xml_lang(elem, result)
         elif ns == DC_NS and local == "language" and not result["feed"]["language"]:

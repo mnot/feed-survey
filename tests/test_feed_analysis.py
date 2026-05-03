@@ -90,6 +90,25 @@ def test_feed_analyzer_valid_feed() -> None:
     assert stats.total_entries == 1
 
 
+def test_feed_generator_fingerprint() -> None:
+    stats = Stats()
+    analyzer = FeedAnalyzer(stats)
+    content = b"""<?xml version="1.0"?>
+    <rss version="2.0"><channel>
+      <title>Example</title>
+      <link>https://example.com/</link>
+      <generator>WordPress</generator>
+    </channel></rss>"""
+
+    analyzer.process(
+        _Record(content, "application/rss+xml"), "https://example.com/feed", 200
+    )
+
+    result: dict[str, Any] = stats.feed_results["https://example.com/feed"]
+    assert result["feed_generator"] == "WordPress"
+    assert result["fingerprints"] == {"wordpress"}
+
+
 def test_entry_lang_not_feed_lang() -> None:
     stats = Stats()
     analyzer = FeedAnalyzer(stats)

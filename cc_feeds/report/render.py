@@ -9,6 +9,7 @@ from cc_feeds.report.aggregate import (
     aggregate_feed_data,
     content_profile_prevalence_rows,
     extension_prevalence_rows,
+    fingerprint_prevalence_rows,
     language_prevalence_rows,
 )
 from cc_feeds.report.context import (
@@ -97,6 +98,7 @@ def generate_report(
     extension_prevalence = extension_prevalence_rows(all_valid_results, now)
     content_profile_prevalence = content_profile_prevalence_rows(all_valid_results, now)
     language_prevalence = language_prevalence_rows(all_valid_results, now)
+    fingerprint_prevalence = fingerprint_prevalence_rows(all_valid_results, now)
 
     context = ReportContext(
         stats=stats,
@@ -118,6 +120,7 @@ def generate_report(
         formats=formats,
         languages=languages,
         language_prevalence=language_prevalence,
+        fingerprint_prevalence=fingerprint_prevalence,
         extension_prevalence=extension_prevalence,
         errors=errors,
     )

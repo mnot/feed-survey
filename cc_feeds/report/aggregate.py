@@ -167,6 +167,22 @@ def language_prevalence_rows(
     )
 
 
+def fingerprint_prevalence_rows(
+    results: Dict[str, Any],
+    now: datetime,
+    quality_threshold: float = QUALITY_SPLIT_THRESHOLD,
+    limit: Optional[int] = 15,
+) -> List[Dict[str, Any]]:
+    return _quality_prevalence_rows(
+        results,
+        now,
+        "fingerprint",
+        lambda result: set(result.get("fingerprints") or []),
+        quality_threshold=quality_threshold,
+        limit=limit,
+    )
+
+
 def _quality_prevalence_rows(
     results: Dict[str, Any],
     now: datetime,

@@ -34,6 +34,7 @@ class ReportContext:
     formats: List[Tuple[str, int]]
     languages: List[Tuple[str, int]]
     language_prevalence: List[Dict[str, Any]]
+    fingerprint_prevalence: List[Dict[str, Any]]
     extension_prevalence: List[Dict[str, Any]]
     errors: List[Tuple[str, int]]
 
@@ -304,6 +305,21 @@ def render_report_markdown(context: ReportContext) -> str:
             ],
         ),
         "",
+        "## Platform Fingerprints",
+        "",
+        _markdown_table(
+            ["Fingerprint", "All parsed feeds", quality_split_label],
+            [
+                [
+                    row["fingerprint"],
+                    f"{format_number(row['all_count'])} ({row['all_pct']:.1f}%)",
+                    f"{format_number(row['quality_count'])} "
+                    f"({row['quality_pct']:.1f}%)",
+                ]
+                for row in context.fingerprint_prevalence
+            ],
+        ),
+        "",
         "## Entry Content Profiles",
         "",
         _markdown_table(
@@ -404,6 +420,7 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         "formats": context.formats,
         "languages": context.languages,
         "language_prevalence": context.language_prevalence,
+        "fingerprint_prevalence": context.fingerprint_prevalence,
         "extension_prevalence": context.extension_prevalence,
         "error_types": context.errors,
         "total_errors": sum(count for _, count in context.errors),

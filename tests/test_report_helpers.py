@@ -6,6 +6,7 @@ from cc_feeds.report.aggregate import (
     aggregate_feed_data,
     content_profile_prevalence_rows,
     extension_prevalence_rows,
+    fingerprint_prevalence_rows,
     language_prevalence_rows,
 )
 from cc_feeds.report.context import ReportContext, build_report_stats
@@ -236,6 +237,28 @@ def test_language_quality_split() -> None:
     assert by_language["fr"]["quality_count"] == 0
 
 
+def test_fingerprint_quality_split() -> None:
+    now = datetime(2026, 5, 1, tzinfo=timezone.utc)
+    fresh_wp = _feed(fmt="rss20", days_old=0)
+    fresh_wp["fingerprints"] = {"wordpress"}
+    stale_wp = _feed(fmt="rss20", days_old=0)
+    stale_wp["fingerprints"] = {"wordpress"}
+    stale_wp["newest_entry_date"] = [2024, 1, 1, 0, 0, 0, 0, 0, 0]
+    stale_wp["updated_date"] = None
+
+    rows = fingerprint_prevalence_rows(
+        {
+            "https://fresh.example/feed.xml": fresh_wp,
+            "https://stale.example/feed.xml": stale_wp,
+        },
+        now,
+    )
+
+    assert rows[0]["fingerprint"] == "wordpress"
+    assert rows[0]["all_count"] == 2
+    assert rows[0]["quality_count"] == 1
+
+
 def test_agg_http_feed_mismatch() -> None:
     all_valid = {
         "https://entry.example/feed.xml": {
@@ -463,6 +486,7 @@ def test_report_runtime_lang_counts() -> None:
             formats=[],
             languages=[],
             language_prevalence=[],
+            fingerprint_prevalence=[],
             extension_prevalence=[],
             errors=[],
         )

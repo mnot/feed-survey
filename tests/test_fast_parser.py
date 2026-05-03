@@ -240,6 +240,17 @@ def test_rss_desc_html_profile() -> None:
     assert result["content_type_profile"] == "html"
 
 
+def test_feed_generator_captured() -> None:
+    result = FastFeedParser.parse(b"""<?xml version="1.0"?>
+        <rss version="2.0"><channel>
+          <title>Example</title>
+          <link>https://example.com/</link>
+          <generator>WordPress</generator>
+        </channel></rss>""")
+
+    assert result["feed"]["generator"] == "WordPress"
+
+
 def test_rss_entry_dc_language() -> None:
     result = FastFeedParser.parse(b"""<?xml version="1.0"?>
         <rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">

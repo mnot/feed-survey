@@ -647,6 +647,24 @@
                     </table>
                 </div>
             </div>
+            <div class="chart-card">
+                <div class="chart-title">Platform Fingerprints</div>
+                <div class="chart-sub">Known feed generators or platform headers observed on parsed feeds. This is intentionally conservative; absent fingerprints mean “not identified,” not custom-built.</div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead><tr><th>Fingerprint</th><th>All parsed feeds</th><th>Quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }} feeds</th></tr></thead>
+                        <tbody>
+                            {% for row in stats.fingerprint_prevalence %}
+                            <tr>
+                                <td>{{ row.fingerprint }}</td>
+                                <td>{{ row.all_count|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.all_pct) }}%)</span></td>
+                                <td>{{ row.quality_count|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.quality_pct) }}%)</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </section>
 </div>

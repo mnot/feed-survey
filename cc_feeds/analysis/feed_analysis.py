@@ -6,6 +6,10 @@ from typing import Any, Dict, Optional
 import dateutil.parser
 
 from cc_feeds.analysis.fast_parser import FastFeedParser
+from cc_feeds.analysis.fingerprints import (
+    fingerprint_feed_generator,
+    fingerprint_http_headers,
+)
 from cc_feeds.analysis.formats import guess_feed_format
 from cc_feeds.analysis.stats import Stats
 from cc_feeds.url import normalize_url
@@ -35,6 +39,7 @@ class FeedAnalyzer:
         feed_info = _init_feed_info(
             status_code, request_time, url, content_type, charset
         )
+        feed_info["fingerprints"].update(fingerprint_http_headers(record.http_headers))
         if not 200 <= status_code < 400:
             self.stats.feed_results[url] = feed_info
             return
@@ -129,6 +134,10 @@ class FeedAnalyzer:
         link = feed_data.get("link")
         if link:
             feed_info["link"] = normalize_url(link)
+        generator = feed_data.get("generator")
+        if generator:
+            feed_info["feed_generator"] = generator.strip()
+            feed_info["fingerprints"].update(fingerprint_feed_generator(generator))
 
         self._record_feed_language(feed_info, feed_data)
         self._record_feed_recency(feed_info, feed_data, request_time)
@@ -281,4 +290,6 @@ def _init_feed_info(
         "content_type_profile": "unknown",
         "title": None,
         "link": None,
+        "feed_generator": None,
+        "fingerprints": set(),
     }
