@@ -126,6 +126,27 @@ def test_aggregate_date_coverage() -> None:
     assert aggregate["feeds_with_updated_date"] == 2
 
 
+def test_agg_http_feed_mismatch() -> None:
+    all_valid = {
+        "https://entry.example/feed.xml": {
+            **_feed(fmt="atom10", days_old=0),
+            "lang_http": "en",
+            "lang_feed": "en",
+            "lang_entries": {"fr"},
+        },
+        "https://http.example/feed.xml": {
+            **_feed(fmt="rss20", days_old=0),
+            "lang_http": "de",
+            "lang_feed": "en",
+            "lang_entries": {"en"},
+        },
+    }
+
+    aggregate = aggregate_feed_data(all_valid)
+
+    assert aggregate["lang_mismatches"] == 1
+
+
 def test_discovery_summary_counts() -> None:
     stats = Stats()
     stats.pages_seen = 4

@@ -115,3 +115,31 @@ def test_entry_lang_not_feed_lang() -> None:
     assert result["languages"] == {"fr"}
     assert stats.lang_src_feed == 0
     assert stats.lang_src_entry == 1
+    assert stats.lang_mismatches == 0
+
+
+def test_entry_lang_no_mismatch() -> None:
+    stats = Stats()
+    analyzer = FeedAnalyzer(stats)
+    content = b"""<?xml version="1.0"?>
+    <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+      <title>Example</title>
+      <updated>2026-05-01T11:00:00Z</updated>
+      <entry xml:lang="fr">
+        <title>Entry</title>
+        <updated>2026-05-01T11:30:00Z</updated>
+        <summary>Hello</summary>
+      </entry>
+    </feed>"""
+
+    analyzer.process(
+        _Record(content, "application/atom+xml"), "https://example.com/feed", 200
+    )
+
+    result: dict[str, Any] = stats.feed_results["https://example.com/feed"]
+    assert result["valid"] is True
+    assert result["lang_feed"] == "en"
+    assert result["lang_entries"] == {"fr"}
+    assert stats.lang_src_feed == 1
+    assert stats.lang_src_entry == 1
+    assert stats.lang_mismatches == 0

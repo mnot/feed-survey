@@ -179,12 +179,6 @@ class FeedAnalyzer:
         if len(all_langs) > 1:
             self.stats.lang_multiple_in_feed += 1
 
-        if entry_langs:
-            base_lang = feed_info["lang_feed"] or feed_info["lang_http"]
-            if base_lang and any(lang != base_lang for lang in entry_langs):
-                if len(entry_langs) == 1:
-                    self.stats.lang_mismatches += 1
-
         if newest_date:
             try:
                 entry_dt = datetime(

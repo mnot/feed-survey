@@ -87,11 +87,6 @@ def aggregate_feed_data(results: Dict[str, Any]) -> Dict[str, Any]:
             if len(entry_langs) > 1:
                 lang_multiple_in_feed += 1
 
-            base_lang = feed_lang or http_lang
-            if base_lang and any(lang != base_lang for lang in entry_langs):
-                if len(entry_langs) > 1 or not feed_lang:
-                    lang_mismatches += 1
-
     return {
         "formats": formats,
         "languages": languages,
