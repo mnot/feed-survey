@@ -20,6 +20,7 @@ from cc_feeds.analysis.feed_helpers import (
     track_lang,
     update_entry_dates,
 )
+from cc_feeds.url import normalize_url_for_grouping
 
 logger = logging.getLogger(__name__)
 
@@ -63,12 +64,16 @@ class FastFeedParser:
             "repeated_entry_title_count": 0,
             "repeated_entry_title_ratio": 0.0,
             "default_entry_title_count": 0,
-            "all_languages": set(),  # every xml:lang value seen anywhere in the doc
-            "entry_languages": set(),  # xml:lang values seen inside entries/items
+            "entry_link_count": 0,
+            "repeated_entry_link_count": 0,
+            "repeated_entry_link_ratio": 0.0,
+            "all_languages": set(),  # language values seen inside the feed document
+            "entry_languages": set(),  # language values seen inside entries/items
             "error": None,
             # Internal accumulator – removed before returning
             "_content_types_seen": set(),
             "_entry_title_counts": {},
+            "_entry_link_counts": {},
         }
 
         # Quick sanity check: real XML/feed content starts with '<' (possibly
@@ -79,6 +84,8 @@ class FastFeedParser:
         if not stripped or stripped[0:1] not in (b"<", b"\xef"):  # '<' or UTF-8 BOM
             result["error"] = "Not XML"
             result.pop("_content_types_seen", None)
+            result.pop("_entry_title_counts", None)
+            result.pop("_entry_link_counts", None)
             return result
 
         try:
@@ -113,12 +120,15 @@ class FastFeedParser:
             else:
                 result["error"] = f"Unknown root tag: {local}"
                 result.pop("_content_types_seen", None)
+                result.pop("_entry_title_counts", None)
+                result.pop("_entry_link_counts", None)
                 return result
 
             result["content_type_profile"] = classify_content(
                 result["_content_types_seen"]
             )
             FastFeedParser._finalize_entry_title_stats(result)
+            FastFeedParser._finalize_entry_link_stats(result)
             feed = result["feed"]
             if not feed["link"] and feed["link_fallback"]:
                 feed["link"] = feed["link_fallback"]
@@ -135,6 +145,7 @@ class FastFeedParser:
         result["feed"].pop("date_source", None)
         result.pop("_content_types_seen", None)
         result.pop("_entry_title_counts", None)
+        result.pop("_entry_link_counts", None)
         return result
 
     @staticmethod
@@ -263,6 +274,8 @@ class FastFeedParser:
             FastFeedParser._set_preferred_date(current_entry, "date", local, elem.text)
         elif local == "title":
             FastFeedParser._remember_entry_title(elem.text, result)
+        elif local == "link":
+            FastFeedParser._remember_entry_link(elem.get("href"), result)
         elif local == "content":
             result["has_content"] = True
             result["_content_types_seen"].add(atom_content_type(elem.get("type")))
@@ -316,12 +329,16 @@ class FastFeedParser:
             FastFeedParser._set_entry_date(current_item, elem.text)
         elif ns == "" and local == "title":
             FastFeedParser._remember_entry_title(elem.text, result)
+        elif ns == "" and local == "link":
+            FastFeedParser._remember_entry_link(elem.text, result)
         elif ns == "" and local == "description":
             result["has_summary"] = True
             result["_content_types_seen"].add(text_content_type(elem.text))
             FastFeedParser._remember_text_length(elem, result)
         elif ns == DC_NS and local == "date":
             FastFeedParser._set_entry_date(current_item, elem.text)
+        elif ns == DC_NS and local == "language":
+            FastFeedParser._remember_entry_language(elem.text, result)
         elif ns == CONTENT_NS and local == "encoded":
             result["has_content"] = True
             result["_content_types_seen"].add("html")
@@ -352,8 +369,12 @@ class FastFeedParser:
     ) -> None:
         if ns == DC_NS and local == "date":
             FastFeedParser._set_entry_date(current_item, elem.text)
+        elif ns == DC_NS and local == "language":
+            FastFeedParser._remember_entry_language(elem.text, result)
         elif local == "title":
             FastFeedParser._remember_entry_title(elem.text, result)
+        elif local == "link":
+            FastFeedParser._remember_entry_link(elem.text, result)
         elif local == "description":
             result["has_summary"] = True
             result["_content_types_seen"].add(text_content_type(elem.text))
@@ -412,6 +433,22 @@ class FastFeedParser:
         title_counts[title] = title_counts.get(title, 0) + 1
 
     @staticmethod
+    def _remember_entry_language(text: Optional[str], result: Dict[str, Any]) -> None:
+        lang = (text or "").strip().lower()
+        if not lang:
+            return
+        result["all_languages"].add(lang)
+        result["entry_languages"].add(lang)
+
+    @staticmethod
+    def _remember_entry_link(text: Optional[str], result: Dict[str, Any]) -> None:
+        link = normalize_url_for_grouping((text or "").strip())
+        if not link:
+            return
+        link_counts = result["_entry_link_counts"]
+        link_counts[link] = link_counts.get(link, 0) + 1
+
+    @staticmethod
     def _finalize_entry_title_stats(result: Dict[str, Any]) -> None:
         title_counts = result["_entry_title_counts"]
         title_count = sum(title_counts.values())
@@ -428,6 +465,18 @@ class FastFeedParser:
         result["repeated_entry_title_count"] = repeated_count
         result["repeated_entry_title_ratio"] = round(repeated_count / title_count, 4)
         result["default_entry_title_count"] = default_count
+
+    @staticmethod
+    def _finalize_entry_link_stats(result: Dict[str, Any]) -> None:
+        link_counts = result["_entry_link_counts"]
+        link_count = sum(link_counts.values())
+        result["entry_link_count"] = link_count
+        if not link_count:
+            return
+
+        repeated_count = sum(count for count in link_counts.values() if count > 1)
+        result["repeated_entry_link_count"] = repeated_count
+        result["repeated_entry_link_ratio"] = round(repeated_count / link_count, 4)
 
     @staticmethod
     def _record_atom_feed_link(elem: Any, result: Dict[str, Any]) -> None:

@@ -79,3 +79,18 @@ def test_repeated_titles_penalty() -> None:
     feed["default_entry_title_count"] = 2
 
     assert score_components(feed, NOW)["entry_metadata"] < clean_score
+
+
+def test_repeated_links_penalty() -> None:
+    feed = _feed()
+    feed["updated_date"] = _date(1)
+    feed["newest_entry_date"] = _date(1)
+    feed["oldest_entry_date"] = _date(1)
+    feed["lang_entries"] = {"en"}
+    feed["content_lengths"] = [200, 220]
+
+    clean_score = score_components(feed, NOW)["entry_metadata"]
+
+    feed["repeated_entry_link_ratio"] = 1.0
+
+    assert score_components(feed, NOW)["entry_metadata"] < clean_score

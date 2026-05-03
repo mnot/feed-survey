@@ -109,6 +109,29 @@ def test_repeated_default_titles() -> None:
     assert result["default_entry_title_count"] == 2
 
 
+def test_repeated_entry_links() -> None:
+    result = FastFeedParser.parse(b"""<?xml version="1.0"?>
+        <feed xmlns="http://www.w3.org/2005/Atom">
+          <title>Example Atom</title>
+          <updated>2026-01-02T03:04:05Z</updated>
+          <entry>
+            <title>One</title>
+            <link href="https://example.com/post?utm=feed"/>
+            <updated>2026-01-03T00:00:00Z</updated>
+          </entry>
+          <entry>
+            <title>Two</title>
+            <link href="https://example.com/post"/>
+            <updated>2026-01-04T00:00:00Z</updated>
+          </entry>
+        </feed>""")
+
+    assert result["valid"] is True
+    assert result["entry_link_count"] == 2
+    assert result["repeated_entry_link_count"] == 2
+    assert result["repeated_entry_link_ratio"] == 1.0
+
+
 def test_atom_updated_preferred() -> None:
     result = FastFeedParser.parse(b"""<?xml version="1.0"?>
         <feed xmlns="http://www.w3.org/2005/Atom">
@@ -215,6 +238,26 @@ def test_rss_desc_html_profile() -> None:
     assert result["valid"] is True
     assert result["has_summary"] is True
     assert result["content_type_profile"] == "html"
+
+
+def test_rss_entry_dc_language() -> None:
+    result = FastFeedParser.parse(b"""<?xml version="1.0"?>
+        <rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
+          <channel>
+            <title>Example RSS</title>
+            <link>https://example.com/</link>
+            <language>en</language>
+            <item>
+              <title>Entry</title>
+              <dc:language>fr</dc:language>
+            </item>
+          </channel>
+        </rss>""")
+
+    assert result["valid"] is True
+    assert result["feed"]["language"] == "en"
+    assert result["entry_languages"] == {"fr"}
+    assert result["all_languages"] == {"fr"}
 
 
 def test_rss_last_build_preferred() -> None:

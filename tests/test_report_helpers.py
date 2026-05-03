@@ -146,6 +146,19 @@ def test_aggregate_date_coverage() -> None:
     assert aggregate["feeds_with_updated_date"] == 2
 
 
+def test_aggregate_repeated_links() -> None:
+    all_valid = {
+        "https://example.com/feed.xml": {
+            **_feed(fmt="rss20", days_old=0),
+            "repeated_entry_link_count": 2,
+        }
+    }
+
+    aggregate = aggregate_feed_data(all_valid)
+
+    assert aggregate["feeds_with_repeated_entry_links"] == 1
+
+
 def test_agg_http_feed_mismatch() -> None:
     all_valid = {
         "https://entry.example/feed.xml": {
@@ -316,6 +329,7 @@ def test_report_runtime_lang_counts() -> None:
         "feeds_with_updated_date": 0,
         "feeds_with_repeated_entry_titles": 0,
         "feeds_with_default_entry_titles": 0,
+        "feeds_with_repeated_entry_links": 0,
         "total_entries": 0,
         "lang_src_http": 1,
         "lang_src_feed": 1,

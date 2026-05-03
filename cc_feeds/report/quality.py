@@ -24,7 +24,8 @@ Overall score is a weighted sum of five sub-scores, each in [0, 1]:
                          Weighted flags: has entry dates, has oldest date
                          (good coverage), has entry-level language tags, has
                          multiple content-length samples. Repeated/default
-                         entry titles reduce this component.
+                         entry titles or repeated entry links reduce this
+                         component.
 
   feed_metadata    0.10  Is the feed itself well-described?
                          Weighted flags: title, link, language, updated date.
@@ -251,12 +252,17 @@ def _entry_metadata_score(feed_info: Dict[str, Any]) -> float:
 
     repeated_ratio = float(feed_info.get("repeated_entry_title_ratio") or 0.0)
     default_titles = int(feed_info.get("default_entry_title_count") or 0)
+    repeated_link_ratio = float(feed_info.get("repeated_entry_link_ratio") or 0.0)
     if repeated_ratio >= 0.8:
         score -= 0.35
     elif repeated_ratio >= 0.5:
         score -= 0.20
     if default_titles:
         score -= 0.25
+    if repeated_link_ratio >= 0.8:
+        score -= 0.25
+    elif repeated_link_ratio >= 0.5:
+        score -= 0.15
     return min(max(score, 0.0), 1.0)
 
 

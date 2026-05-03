@@ -226,6 +226,10 @@ def render_report_markdown(context: ReportContext) -> str:
                     "Feeds with default-looking entry titles",
                     format_number(stats["feeds_with_default_entry_titles"]),
                 ],
+                [
+                    "Feeds with repeated entry links",
+                    format_number(stats["feeds_with_repeated_entry_links"]),
+                ],
             ],
         ),
         "",
@@ -326,6 +330,7 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
             "feeds_with_repeated_entry_titles"
         ],
         "feeds_with_default_entry_titles": aggregate["feeds_with_default_entry_titles"],
+        "feeds_with_repeated_entry_links": aggregate["feeds_with_repeated_entry_links"],
         "pages_with_autodiscovery": getattr(
             stats, "discovery_pages_count", len(discovery.page_to_feeds)
         ),
