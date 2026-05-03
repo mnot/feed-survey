@@ -607,13 +607,17 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Top Feed Extensions</div>
-                <div class="chart-sub">Non-core namespace elements encountered across all feeds (top 15).</div>
+                <div class="chart-sub">Non-core namespace elements encountered across successfully parsed feeds. Quality split uses feeds with operational quality &gt; 0.5.</div>
                 <div class="table-container">
                     <table class="data-table">
-                        <thead><tr><th>Element</th><th>Feeds</th></tr></thead>
+                        <thead><tr><th>Element</th><th>All parsed feeds</th><th>Quality &gt; 0.5 feeds</th></tr></thead>
                         <tbody>
-                            {% for ext, count in extensions %}
-                            <tr><td><code>{{ ext }}</code></td><td>{{ count|comma }}</td></tr>
+                            {% for row in extension_prevalence %}
+                            <tr>
+                                <td><code>{{ row.extension }}</code></td>
+                                <td>{{ row.all_count|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.all_pct) }}%)</span></td>
+                                <td>{{ row.quality_count|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.quality_pct) }}%)</span></td>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>

@@ -31,7 +31,7 @@ class ReportContext:
     discovered_count: int
     formats: List[Tuple[str, int]]
     languages: List[Tuple[str, int]]
-    extensions: List[Tuple[str, int]]
+    extension_prevalence: List[Dict[str, Any]]
     errors: List[Tuple[str, int]]
 
 
@@ -52,7 +52,7 @@ def render_report_html(context: ReportContext) -> str:
         crawl_id=context.crawl_id,
         formats=context.formats,
         languages=context.languages,
-        extensions=context.extensions,
+        extension_prevalence=context.extension_prevalence,
         errors=context.errors,
         discovery_per_page_hist=discovery.per_page_hist,
         discovery_per_site_hist=discovery.per_site_hist,
@@ -241,6 +241,25 @@ def render_report_markdown(context: ReportContext) -> str:
             ],
         ),
         "",
+        "## Extensions",
+        "",
+        _markdown_table(
+            [
+                "Extension",
+                "All parsed feeds",
+                "Quality > 0.5 feeds",
+            ],
+            [
+                [
+                    row["extension"],
+                    f"{format_number(row['all_count'])} ({row['all_pct']:.1f}%)",
+                    f"{format_number(row['quality_count'])} "
+                    f"({row['quality_pct']:.1f}%)",
+                ]
+                for row in context.extension_prevalence[:20]
+            ],
+        ),
+        "",
         "## Languages",
         "",
         _markdown_table(
@@ -317,7 +336,7 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         "feeds_without_autodiscovery": feeds_without_autodiscovery,
         "formats": context.formats,
         "languages": context.languages,
-        "extensions": context.extensions,
+        "extension_prevalence": context.extension_prevalence,
         "error_types": context.errors,
         "total_errors": sum(count for _, count in context.errors),
         "feeds_with_content": aggregate["feeds_with_content"],

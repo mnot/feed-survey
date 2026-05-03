@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 import dateutil.parser
 
 from cc_feeds.analysis import Stats
-from cc_feeds.report.aggregate import aggregate_feed_data
+from cc_feeds.report.aggregate import aggregate_feed_data, extension_prevalence_rows
 from cc_feeds.report.context import (
     ReportContext,
     render_report_html,
@@ -16,7 +16,6 @@ from cc_feeds.report.distributions import (
     collapse_content_types,
     count_content_profiles,
     count_language_buckets,
-    format_extension_counts,
 )
 from cc_feeds.report.histograms import build_recency_cdf
 from cc_feeds.report.quality_summary import build_quality_summary
@@ -90,9 +89,7 @@ def generate_report(
     languages = sorted(agg["languages"].items(), key=lambda x: x[1], reverse=True)
     errors = sorted(stats.error_types.items(), key=lambda x: x[1], reverse=True)
 
-    # Extensions: format as prefix:local, deduplicate, top 15
-    ext_formatted = format_extension_counts(agg["extensions"])
-    extensions = sorted(ext_formatted.items(), key=lambda x: x[1], reverse=True)[:15]
+    extension_prevalence = extension_prevalence_rows(all_valid_results, now)
 
     context = ReportContext(
         stats=stats,
@@ -112,7 +109,7 @@ def generate_report(
         discovered_count=len(discovered_results),
         formats=formats,
         languages=languages,
-        extensions=extensions,
+        extension_prevalence=extension_prevalence,
         errors=errors,
     )
 

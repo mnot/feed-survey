@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from cc_feeds.analysis.stats import Stats
-from cc_feeds.report.aggregate import aggregate_feed_data
+from cc_feeds.report.aggregate import aggregate_feed_data, extension_prevalence_rows
 from cc_feeds.report.context import ReportContext, build_report_stats
 from cc_feeds.report.discovery import DiscoverySummary, build_discovery_summary
 from cc_feeds.report.distributions import collapse_content_types
@@ -157,6 +157,30 @@ def test_aggregate_repeated_links() -> None:
     aggregate = aggregate_feed_data(all_valid)
 
     assert aggregate["feeds_with_repeated_entry_links"] == 1
+
+
+def test_extension_quality_split() -> None:
+    now = datetime(2026, 5, 1, tzinfo=timezone.utc)
+    fresh = _feed(fmt="rss20", days_old=0)
+    fresh["extensions"] = {("http://purl.org/dc/elements/1.1/", "creator")}
+    stale = _feed(fmt="rss20", days_old=0)
+    stale["newest_entry_date"] = [2024, 1, 1, 0, 0, 0, 0, 0, 0]
+    stale["updated_date"] = None
+    stale["extensions"] = {("http://purl.org/dc/elements/1.1/", "creator")}
+
+    rows = extension_prevalence_rows(
+        {
+            "https://fresh.example/feed.xml": fresh,
+            "https://stale.example/feed.xml": stale,
+        },
+        now,
+    )
+
+    assert rows[0]["extension"] == "dc:creator"
+    assert rows[0]["all_count"] == 2
+    assert rows[0]["all_pct"] == 100.0
+    assert rows[0]["quality_count"] == 1
+    assert rows[0]["quality_pct"] == 100.0
 
 
 def test_agg_http_feed_mismatch() -> None:
@@ -384,7 +408,7 @@ def test_report_runtime_lang_counts() -> None:
             discovered_count=0,
             formats=[],
             languages=[],
-            extensions=[],
+            extension_prevalence=[],
             errors=[],
         )
     )

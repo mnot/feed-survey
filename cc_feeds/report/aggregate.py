@@ -1,4 +1,10 @@
-from typing import Any, Dict, List, cast
+from datetime import datetime
+from typing import Any, Dict, List, Optional, cast
+
+from cc_feeds.report.formatting import format_extension
+from cc_feeds.report.quality import score_feed
+
+QUALITY_SPLIT_THRESHOLD = 0.5
 
 
 def aggregate_feed_data(results: Dict[str, Any]) -> Dict[str, Any]:
@@ -113,3 +119,51 @@ def aggregate_feed_data(results: Dict[str, Any]) -> Dict[str, Any]:
         "lang_mismatches": lang_mismatches,
         "lang_multiple_in_feed": lang_multiple_in_feed,
     }
+
+
+def extension_prevalence_rows(
+    results: Dict[str, Any],
+    now: datetime,
+    quality_threshold: float = QUALITY_SPLIT_THRESHOLD,
+    limit: Optional[int] = 15,
+) -> List[Dict[str, Any]]:
+    all_counts: Dict[str, int] = {}
+    quality_counts: Dict[str, int] = {}
+    all_feed_count = 0
+    quality_feed_count = 0
+
+    for result in results.values():
+        result = cast(Dict[str, Any], result)
+        if not result.get("valid"):
+            continue
+        all_feed_count += 1
+        high_quality = score_feed(result, now) > quality_threshold
+        if high_quality:
+            quality_feed_count += 1
+
+        extensions = {format_extension(ext) for ext in result.get("extensions", [])}
+        for extension in extensions:
+            all_counts[extension] = all_counts.get(extension, 0) + 1
+            if high_quality:
+                quality_counts[extension] = quality_counts.get(extension, 0) + 1
+
+    rows = [
+        {
+            "extension": extension,
+            "all_count": count,
+            "all_pct": _pct(count, all_feed_count),
+            "quality_count": quality_counts.get(extension, 0),
+            "quality_pct": _pct(quality_counts.get(extension, 0), quality_feed_count),
+        }
+        for extension, count in all_counts.items()
+    ]
+    rows.sort(key=lambda row: cast(int, row["all_count"]), reverse=True)
+    if limit is None:
+        return rows
+    return rows[:limit]
+
+
+def _pct(numerator: int, denominator: int) -> float:
+    if not denominator:
+        return 0.0
+    return round(numerator / denominator * 100, 1)
