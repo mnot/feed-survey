@@ -26,7 +26,7 @@ def build_discovery_summary(stats: Stats) -> DiscoverySummary:
     page_to_feeds = build_page_map(stats)
     site_to_feeds = build_site_map(stats)
 
-    total_pages = stats.pages_seen
+    total_pages = _html_response_count(stats) or stats.pages_seen
     pages_with_discovery = getattr(stats, "discovery_pages_count", 0) or len(
         page_to_feeds
     )
@@ -82,6 +82,18 @@ def build_page_map(stats: Stats) -> Dict[str, Set[str]]:
                 page_to_feeds[domain_or_url] = set()
             page_to_feeds[domain_or_url].add(feed_url)
     return page_to_feeds
+
+
+def _html_response_count(stats: Stats) -> int:
+    total = 0
+    for content_type, count in stats.content_type_counts.items():
+        content_type_lower = content_type.lower()
+        if (
+            "text/html" in content_type_lower
+            or "application/xhtml" in content_type_lower
+        ):
+            total += count
+    return total
 
 
 def build_page_chart_data(per_page_hist: Dict[str, int]) -> Dict[str, Any]:

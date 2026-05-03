@@ -135,6 +135,7 @@ class FeedAnalyzer:
             feed_lang = feed_lang.lower()
             feed_info["lang_feed"] = feed_lang
             feed_info["languages"].add(feed_lang)
+            feed_info["all_languages"].add(feed_lang)
             self.stats.lang_src_feed += 1
 
             if feed_info["lang_http"] and feed_info["lang_http"] != feed_lang:
@@ -174,9 +175,11 @@ class FeedAnalyzer:
         if entry_langs:
             self.stats.lang_src_entry += len(entry_langs)
             feed_info["languages"].update(entry_langs)
+            feed_info["all_languages"].update(entry_langs)
             feed_info["lang_entries"].update(entry_langs)
 
-        if len(all_langs) > 1:
+        feed_info["all_languages"].update(all_langs)
+        if len(feed_info["all_languages"]) > 1:
             self.stats.lang_multiple_in_feed += 1
 
         if newest_date:

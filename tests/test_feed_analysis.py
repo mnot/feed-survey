@@ -143,3 +143,30 @@ def test_entry_lang_no_mismatch() -> None:
     assert stats.lang_src_feed == 1
     assert stats.lang_src_entry == 1
     assert stats.lang_mismatches == 0
+
+
+def test_feed_entry_langs_multi() -> None:
+    stats = Stats()
+    analyzer = FeedAnalyzer(stats)
+    content = b"""<?xml version="1.0"?>
+    <rss version="2.0">
+      <channel>
+        <title>Example</title>
+        <link>https://example.com/</link>
+        <language>en</language>
+        <item xml:lang="fr">
+          <title>Entry</title>
+          <pubDate>Fri, 01 May 2026 11:30:00 GMT</pubDate>
+          <description>Hello</description>
+        </item>
+      </channel>
+    </rss>"""
+
+    analyzer.process(
+        _Record(content, "application/rss+xml"), "https://example.com/feed", 200
+    )
+
+    result: dict[str, Any] = stats.feed_results["https://example.com/feed"]
+    assert result["valid"] is True
+    assert result["all_languages"] == {"en", "fr"}
+    assert stats.lang_multiple_in_feed == 1

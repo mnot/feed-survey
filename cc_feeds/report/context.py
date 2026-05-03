@@ -98,14 +98,15 @@ def render_report_markdown(context: ReportContext) -> str:
         "",
         "Percentages describe this Common Crawl result set, not the entire Web. "
         "Common Crawl reflects what its crawler fetched, what sites allowed, and "
-        "the configured domain/sample limits for this run.",
+        "the response-type prefilter and domain/sample limits for this run.",
         "",
         "## Run Summary",
         "",
         _markdown_table(
             ["Metric", "Value"],
             [
-                ["Crawl responses scanned", format_number(stats["pages_seen"])],
+                ["Candidate responses analyzed", format_number(stats["pages_seen"])],
+                ["HTML responses analyzed", format_number(stats["html_responses"])],
                 ["Unique domains", format_number(stats["sites_seen"])],
                 ["Feed URL checks", format_number(stats["feed_results_count"])],
                 ["Successfully parsed feeds", format_number(total_parsed)],
@@ -122,7 +123,7 @@ def render_report_markdown(context: ReportContext) -> str:
                 [
                     "Pages with feed links",
                     f"{format_number(stats['pages_with_autodiscovery'])} "
-                    f"({_pct(stats['pages_with_autodiscovery'], stats['pages_seen'], 2)})",
+                    f"({_pct(stats['pages_with_autodiscovery'], stats['html_responses'], 2)})",
                 ],
                 [
                     "Sites with feed links",
@@ -288,6 +289,7 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
     )
     return {
         "pages_seen": stats.pages_seen,
+        "html_responses": context.content_types_collapsed.get("HTML", 0),
         "max_crawl_time": context.max_crawl_time,
         "sites_seen": discovery.total_sites,
         "feed_results_count": feed_results_count,

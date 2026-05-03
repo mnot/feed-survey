@@ -150,6 +150,7 @@ def test_agg_http_feed_mismatch() -> None:
 def test_discovery_summary_counts() -> None:
     stats = Stats()
     stats.pages_seen = 4
+    stats.content_type_counts = {"text/html": 4}
     stats.sites_seen_count = 3
     stats.discovery_pages_count = 3
     stats.discovery_links_per_page_counts = {1: 2, 2: 1}
@@ -194,6 +195,22 @@ def test_discovery_summary_counts() -> None:
     assert summary.pages_with_duplicates == 1
     assert summary.duplicate_prevalence_pct == 100.0
     assert "0" not in summary.stacked_page["labels"]
+
+
+def test_discovery_zero_pages_html() -> None:
+    stats = Stats()
+    stats.pages_seen = 10
+    stats.content_type_counts = {
+        "text/html": 4,
+        "application/rss+xml": 6,
+    }
+    stats.discovery_pages_count = 1
+    stats.discovery_links_per_page_counts = {1: 1}
+    stats.autodiscovery_links = {"https://example.com/feed.xml": ["example.com"]}
+
+    summary = build_discovery_summary(stats)
+
+    assert summary.zero_pages == 3
 
 
 def test_duplicate_no_query() -> None:
