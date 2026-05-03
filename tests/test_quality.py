@@ -94,3 +94,20 @@ def test_repeated_links_penalty() -> None:
     feed["repeated_entry_link_ratio"] = 1.0
 
     assert score_components(feed, NOW)["entry_metadata"] < clean_score
+
+
+def test_recent_entries_clear_mid() -> None:
+    feed = _feed()
+    feed["entries_count"] = 5
+    feed["updated_date"] = _date(1)
+    feed["newest_entry_date"] = _date(1)
+    feed["oldest_entry_date"] = _date(1)
+    feed["has_summary"] = False
+    feed["content_lengths"] = []
+    feed["content_type_profile"] = "unknown"
+    feed["lang_entries"] = set()
+    feed["repeated_entry_title_ratio"] = 0.0
+    feed["repeated_entry_link_ratio"] = 0.0
+    feed["default_entry_title_count"] = 0
+
+    assert score_feed(feed, NOW) >= 0.5
