@@ -15,6 +15,22 @@ def test_normalize_strips_fragment() -> None:
     )
 
 
+def test_normalize_default_port() -> None:
+    assert normalize_url("https://Example.COM:443/feed.xml") == (
+        "https://example.com/feed.xml"
+    )
+    assert normalize_url("http://Example.COM:80/feed.xml") == (
+        "http://example.com/feed.xml"
+    )
+
+
+def test_normalize_custom_port() -> None:
+    assert (
+        normalize_url("https://Example.COM:8443/feed.xml")
+        == "https://example.com:8443/feed.xml"
+    )
+
+
 def test_grouping_url_strips_query() -> None:
     assert (
         normalize_url_for_grouping("https://Example.COM/Feeds/Main.XML?x=1#entry")

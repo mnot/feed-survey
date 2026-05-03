@@ -1,4 +1,4 @@
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import ParseResult, urlparse, urlunparse
 
 
 def normalize_url(url: str) -> str:
@@ -21,8 +21,34 @@ def _normalize_url(url: str, keep_query: bool) -> str:
         path = "/"
     query = parsed.query if keep_query else ""
     return urlunparse(
-        (parsed.scheme.lower(), parsed.netloc.lower(), path, "", query, "")
+        (parsed.scheme.lower(), _normalize_netloc(parsed), path, "", query, "")
     )
+
+
+def _normalize_netloc(parsed: ParseResult) -> str:
+    scheme = parsed.scheme.lower()
+    hostname = (parsed.hostname or "").lower()
+    if not hostname:
+        return parsed.netloc.lower()
+
+    userinfo = ""
+    if "@" in parsed.netloc:
+        userinfo = parsed.netloc.rsplit("@", 1)[0].lower() + "@"
+
+    if ":" in hostname and not hostname.startswith("["):
+        hostname = f"[{hostname}]"
+
+    try:
+        port = parsed.port
+    except ValueError:
+        return parsed.netloc.lower()
+
+    default_port = (scheme == "http" and port == 80) or (
+        scheme == "https" and port == 443
+    )
+    if port is None or default_port:
+        return f"{userinfo}{hostname}"
+    return f"{userinfo}{hostname}:{port}"
 
 
 def get_domain(url: str) -> str:
