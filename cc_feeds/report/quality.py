@@ -46,7 +46,7 @@ __all__ = [
 ]
 
 RECENCY_HALF_LIFE_DAYS: float = 120.0
-ENTRY_RECENCY_CUTOFF_DAYS: float = 365.0  # no entry in this window → score 0
+ENTRY_RECENCY_CUTOFF_DAYS: float = 365.0  # no usable freshness signal → score 0
 
 WEIGHTS: Dict[str, float] = {
     "recency": 0.35,
