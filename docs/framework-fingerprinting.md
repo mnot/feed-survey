@@ -1,9 +1,20 @@
-# Framework Fingerprinting Plan
+# Framework Fingerprinting
 
-This feature is intended to test whether feed quality is correlated with the
+This feature tests whether feed quality is correlated with the
 software that adds feed support or autodiscovery. A likely hypothesis is that
 many feeds exist because a CMS, static-site generator, or framework emits them
 by default, sometimes without the site administrator actively maintaining them.
+
+The current implementation records conservative platform fingerprints from:
+
+- selected HTTP headers on feed responses
+- feed-level generator elements
+- HTML `<meta name="generator">`
+- common HTML asset/path markers
+
+For HTML pages, the report tracks both how often fingerprinted pages expose
+RSS/Atom autodiscovery and the quality of parsed feeds discovered from those
+fingerprinted source pages.
 
 ## Research Questions
 
@@ -15,13 +26,14 @@ by default, sometimes without the site administrator actively maintaining them.
   with the same internal title and link?
 - Are language signals better or worse for framework-generated feeds?
 
-## Candidate Signals
+## Current Signals
 
 HTTP response headers:
 
 - `Server`
 - `X-Powered-By`
-- `Link`
+- `X-Generator`
+- Drupal cache headers
 - cache/CDN headers when they strongly imply a platform
 
 HTML response content:
@@ -29,18 +41,24 @@ HTML response content:
 - `<meta name="generator">`
 - common asset paths, such as `/wp-content/`, `/sites/default/`, or framework
   build assets
-- feed autodiscovery URL patterns and titles
 
 Feed response content:
 
 - `<generator>` in Atom
-- RSS generator-like extension elements
+- RSS `<generator>`
+
+## Candidate Signals Not Yet Implemented
+
 - feed URL patterns, entry link patterns, and namespace choices
+- `Link` headers
+- WebSub hub/self links
+- RSS generator-like extension elements
+- duplicate feed variant rates by source framework
 
-## Suggested Data Model
+## Data Model Direction
 
-Add a bounded set of framework evidence to the analysis result, not raw headers
-or raw HTML. Each observation should carry:
+The implementation intentionally records bounded fingerprints, not raw headers
+or raw HTML. A richer future model could carry:
 
 - `framework`: normalized label, such as `wordpress`, `ghost`, `drupal`,
   `jekyll`, `hugo`, or `unknown`
@@ -49,11 +67,9 @@ or raw HTML. Each observation should carry:
 - `confidence`: `high`, `medium`, or `low`
 - `evidence`: a short normalized token, not full content
 
-At report time, aggregate by framework and compare:
+At report time, aggregate by fingerprint and compare:
 
 - pages with autodiscovery
-- feed URL checks
-- parse success rate
 - active/recent share
 - zero-entry share
 - mean operational quality

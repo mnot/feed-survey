@@ -16,6 +16,7 @@ by analysis tools without scraping the visual report.
 - **Python 3.12 on EMR**: Uses modern Python syntax and efficient libraries (`fastwarc`, `lxml`) for maximum throughput.
 - **Automatic Result Sync**: The build system automatically syncs results from S3 back to your local machine upon completion.
 - **Tranco Filtering**: Built-in support for filtering analysis to the Tranco Top-1M high-traffic domains.
+- **Platform Fingerprints**: Conservative CMS/framework hints from HTML pages, feed headers, and feed generator elements, with report-time quality comparisons.
 
 ## Quick Start (EMR)
 
