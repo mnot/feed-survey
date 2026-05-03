@@ -28,6 +28,7 @@ def serialize_stats(stats: Stats) -> Dict[str, Any]:
                 "max_crawl_time_str": stats.max_crawl_time_str,
                 "hll_registers": stats.hll_registers,
                 "content_type_counts": stats.content_type_counts,
+                "error_types": stats.error_types,
                 "feeds_sniffed": stats.feeds_sniffed,
                 "pages_processed": stats.pages_processed,
                 "total_entries": stats.total_entries,
@@ -83,10 +84,8 @@ def merge_serialized_stats(merged: Dict[str, Any], incoming: Dict[str, Any]) -> 
                 merged["hll_registers"][i], incoming_hll[i]
             )
 
-    for content_type, count in incoming.get("content_type_counts", {}).items():
-        merged["content_type_counts"][content_type] = (
-            merged["content_type_counts"].get(content_type, 0) + count
-        )
+    _merge_count_map(merged, incoming, "content_type_counts")
+    _merge_count_map(merged, incoming, "error_types")
 
     other_time = incoming.get("max_crawl_time_str")
     if other_time:
@@ -96,28 +95,9 @@ def merge_serialized_stats(merged: Dict[str, Any], incoming: Dict[str, Any]) -> 
         ):
             merged["max_crawl_time_str"] = other_time
 
-    if "content_length_counts" not in merged:
-        merged["content_length_counts"] = {}
-    for length, count in incoming.get("content_length_counts", {}).items():
-        merged["content_length_counts"][length] = (
-            merged["content_length_counts"].get(length, 0) + count
-        )
-
-    if "discovery_domain_counts" not in merged:
-        merged["discovery_domain_counts"] = {}
-    for url, count in incoming.get("discovery_domain_counts", {}).items():
-        merged["discovery_domain_counts"][url] = (
-            merged["discovery_domain_counts"].get(url, 0) + count
-        )
-
-    if "discovery_links_per_page_counts" not in merged:
-        merged["discovery_links_per_page_counts"] = {}
-    for link_count, page_count in incoming.get(
-        "discovery_links_per_page_counts", {}
-    ).items():
-        merged["discovery_links_per_page_counts"][link_count] = (
-            merged["discovery_links_per_page_counts"].get(link_count, 0) + page_count
-        )
+    _merge_count_map(merged, incoming, "content_length_counts")
+    _merge_count_map(merged, incoming, "discovery_domain_counts")
+    _merge_count_map(merged, incoming, "discovery_links_per_page_counts")
 
     if "multi_feed_pages" not in merged:
         merged["multi_feed_pages"] = {}
@@ -130,10 +110,7 @@ def merge_serialized_stats(merged: Dict[str, Any], incoming: Dict[str, Any]) -> 
         "html_fingerprint_counts",
         "html_fingerprint_auto_counts",
     ):
-        if field not in merged:
-            merged[field] = {}
-        for label, count in incoming.get(field, {}).items():
-            merged[field][label] = merged[field].get(label, 0) + count
+        _merge_count_map(merged, incoming, field)
 
     if "feed_source_fingerprints" not in merged:
         merged["feed_source_fingerprints"] = {}
@@ -155,6 +132,14 @@ def merge_stats_values(values: Generator[Any, None, None]) -> Dict[str, Any]:
             merge_serialized_stats(merged, value)
 
     return cast(Dict[str, Any], merged)
+
+
+def _merge_count_map(
+    merged: Dict[str, Any], incoming: Dict[str, Any], field: str
+) -> None:
+    target = merged.setdefault(field, {})
+    for key, count in incoming.get(field, {}).items():
+        target[key] = target.get(key, 0) + count
 
 
 def merge_source_samples(values: Generator[Any, None, None]) -> list[Any]:
@@ -211,6 +196,10 @@ def reduce_stats(values: Generator[Any, None, None]) -> Stats:
             final_stats.content_type_counts[content_type] = (
                 final_stats.content_type_counts.get(content_type, 0) + count
             )
+        for error_type, count in value.get("error_types", {}).items():
+            final_stats.error_types[error_type] = (
+                final_stats.error_types.get(error_type, 0) + count
+            )
 
         for length, count in value.get("content_length_counts", {}).items():
             length_int = int(length)
@@ -253,6 +242,7 @@ def summary_record(stats: Stats) -> Dict[str, Any]:
         "max_crawl_time_str": stats.max_crawl_time_str,
         "hll_registers": stats.hll_registers,
         "content_types": stats.content_type_counts,
+        "error_types": stats.error_types,
         "content_length_counts": stats.content_length_counts,
         "discovery_domain_counts": stats.discovery_domain_counts,
         "feeds_sniffed": stats.feeds_sniffed,

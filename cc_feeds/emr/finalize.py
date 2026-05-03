@@ -120,6 +120,7 @@ def _merge_summary(stats: Stats, data: Dict[str, Any]) -> None:
         stats.add_site(site)
 
     _merge_counts(stats.content_type_counts, data.get("content_types", {}))
+    _merge_counts(stats.error_types, data.get("error_types", {}))
 
     stats.pages_processed += data.get("pages_processed", 0)
 
