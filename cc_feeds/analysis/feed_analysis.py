@@ -262,6 +262,7 @@ def _content_type_parts(content_type_header: str) -> tuple[str, str]:
 
 def parse_error_label(error: str) -> str:
     label = error.strip().splitlines()[0]
+    label = label.split(",", 1)[0].strip()
     if not label:
         return "ParseError"
     if len(label) > 160:

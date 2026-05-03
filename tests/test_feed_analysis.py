@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Any
 
-from cc_feeds.analysis.feed_analysis import FeedAnalyzer
+from cc_feeds.analysis.feed_analysis import FeedAnalyzer, parse_error_label
 from cc_feeds.analysis.stats import Stats
 
 
@@ -59,6 +59,16 @@ def test_feed_empty_counted() -> None:
     assert result["error"] == "Empty response"
     assert result["error_type"] == "Empty response"
     assert stats.error_types == {"Empty response": 1}
+
+
+def test_parse_error_label_is_brief() -> None:
+    assert (
+        parse_error_label(
+            "XML declaration allowed only at the start of the document, "
+            "line 6, column 6 (<string>, line 6)"
+        )
+        == "XML declaration allowed only at the start of the document"
+    )
 
 
 def test_feed_analyzer_valid_feed() -> None:
