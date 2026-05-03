@@ -48,7 +48,7 @@ class FeedAnalyzer:
             content = record.reader.read(10 * 1024 * 1024)
             if not content:
                 feed_info["error"] = "Empty response"
-                self._record_parse_error(feed_info, "ParseError")
+                self._record_parse_error(feed_info, self._error_type(feed_info))
                 self.stats.feed_results[url] = feed_info
                 return
 
@@ -74,7 +74,9 @@ class FeedAnalyzer:
 
     def _error_type(self, parsed_data: Dict[str, Any]) -> str:
         err = parsed_data.get("error", "parse failed")
-        return type(err).__name__ if not isinstance(err, str) else "ParseError"
+        if not isinstance(err, str):
+            return type(err).__name__
+        return parse_error_label(err)
 
     def _record_http_language(self, record: Any, feed_info: Dict[str, Any]) -> None:
         lang_header = record.http_headers.get("Content-Language")
@@ -256,6 +258,15 @@ def _content_type_parts(content_type_header: str) -> tuple[str, str]:
             if "charset=" in part.lower():
                 charset = part.lower().split("charset=")[1].strip().strip('"')
     return content_type, charset
+
+
+def parse_error_label(error: str) -> str:
+    label = error.strip().splitlines()[0]
+    if not label:
+        return "ParseError"
+    if len(label) > 160:
+        return f"{label[:157]}..."
+    return label
 
 
 def _init_feed_info(

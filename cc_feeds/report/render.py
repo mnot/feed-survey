@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional
 import dateutil.parser
 
 from cc_feeds.analysis import Stats
+from cc_feeds.analysis.feed_analysis import parse_error_label
 from cc_feeds.report.aggregate import (
     aggregate_feed_data,
     content_profile_prevalence_rows,
@@ -163,6 +164,9 @@ def _feed_error_rows(stats: Stats) -> list[tuple[str, int]]:
             continue
         error_type = result.get("error_type")
         if not error_type:
-            error_type = "ParseError" if result.get("error") else "HTTPStatus"
+            error = result.get("error")
+            error_type = parse_error_label(error) if isinstance(error, str) else None
+        if not error_type:
+            error_type = f"HTTP {result.get('status')}" if result.get("status") else "Error"
         error_counts[str(error_type)] += 1
     return sorted(error_counts.items(), key=lambda item: item[1], reverse=True)

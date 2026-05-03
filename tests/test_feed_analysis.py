@@ -40,7 +40,8 @@ def test_feed_analyzer_parse_error() -> None:
     result = stats.feed_results["https://example.com/feed.xml"]
     assert result["valid"] is False
     assert result["error"] == "Not XML"
-    assert stats.error_types == {"ParseError": 1}
+    assert result["error_type"] == "Not XML"
+    assert stats.error_types == {"Not XML": 1}
 
 
 def test_feed_empty_counted() -> None:
@@ -56,7 +57,8 @@ def test_feed_empty_counted() -> None:
     result = stats.feed_results["https://example.com/feed.xml"]
     assert result["valid"] is False
     assert result["error"] == "Empty response"
-    assert stats.error_types == {"ParseError": 1}
+    assert result["error_type"] == "Empty response"
+    assert stats.error_types == {"Empty response": 1}
 
 
 def test_feed_analyzer_valid_feed() -> None:
