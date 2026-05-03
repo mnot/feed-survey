@@ -50,12 +50,12 @@ class WarcProcessor:
             return
 
         status_code: int = http_headers.status_code
-        if _sniffable_content_type(content_type):
-            if status_code == 200:
+        if status_code == 200:
+            if _feed_content_type(content_type):
+                normalized_url = normalize_url(url)
+                self._process_feed(record, normalized_url, status_code, request_time_str)
+            elif _sniffable_content_type(content_type):
                 self._process_sniffed_feed(record, url, status_code, request_time_str)
-        elif status_code == 200:
-            normalized_url = normalize_url(url)
-            self._process_feed(record, normalized_url, status_code, request_time_str)
 
     def _process_html(self, url: str, content: bytes) -> None:
         self.html_discovery.process(url, content)
@@ -142,5 +142,24 @@ def _normalized_content_type(content_type_header: str) -> str:
     return content_type_header.lower().split(";")[0].strip()
 
 
+def _feed_content_type(content_type: str) -> bool:
+    return (
+        content_type in {
+            "application/rss+xml",
+            "application/atom+xml",
+            "application/rdf+xml",
+            "application/xml+rss",
+            "text/rss",
+            "text/atom",
+        }
+        or content_type.endswith("+rss")
+        or content_type.endswith("+atom")
+    )
+
+
 def _sniffable_content_type(content_type: str) -> bool:
-    return "text/plain" in content_type or "application/octet-stream" in content_type
+    return (
+        "xml" in content_type
+        or "text/plain" in content_type
+        or "application/octet-stream" in content_type
+    )
