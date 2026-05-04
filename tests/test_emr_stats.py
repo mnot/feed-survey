@@ -27,6 +27,7 @@ def test_summary_record_counts() -> None:
     stats.html_fp_auto_pages = 9
     stats.feed_source_fingerprints = {"https://example.com/feed.xml": {"wordpress": 7}}
     stats.top_n = 500000
+    stats.tranco_include_subdomains = False
 
     record = summary_record(stats)
 
@@ -49,6 +50,7 @@ def test_summary_record_counts() -> None:
         "https://example.com/feed.xml": {"wordpress": 7}
     }
     assert record["top_n"] == 500000
+    assert record["tranco_include_subdomains"] is False
 
 
 def test_merge_summary_counts_once() -> None:
@@ -76,6 +78,7 @@ def test_merge_summary_counts_once() -> None:
                 "https://example.com/feed.xml": {"wordpress": 7}
             },
             "top_n": 500000,
+            "tranco_include_subdomains": False,
         },
     )
 
@@ -98,6 +101,7 @@ def test_merge_summary_counts_once() -> None:
         "https://example.com/feed.xml": {"wordpress": 7}
     }
     assert stats.top_n == 500000
+    assert stats.tranco_include_subdomains is False
 
 
 def test_combiner_merges_summary() -> None:
@@ -156,6 +160,7 @@ def test_combiner_merges_summary() -> None:
         "https://example.com/feed.xml": {"wordpress": 37, "drupal": 38}
     }
     second.top_n = 500000
+    second.tranco_include_subdomains = False
 
     merged = merge_stats_values(
         value for value in [serialize_stats(first), serialize_stats(second)]
@@ -194,6 +199,7 @@ def test_combiner_merges_summary() -> None:
         "https://example.com/feed.xml": {"wordpress": 56, "drupal": 38}
     }
     assert merged["top_n"] == 500000
+    assert merged["tranco_include_subdomains"] is False
 
 
 def test_reducer_preserves_top_n() -> None:
@@ -201,9 +207,11 @@ def test_reducer_preserves_top_n() -> None:
     first.top_n = 100000
     second = Stats()
     second.top_n = 500000
+    second.tranco_include_subdomains = False
 
     reduced = reduce_stats(
         value for value in [serialize_stats(first), serialize_stats(second)]
     )
 
     assert reduced.top_n == 500000
+    assert reduced.tranco_include_subdomains is False

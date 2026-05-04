@@ -37,6 +37,12 @@ class CCFeedsJob(MRJob):  # type: ignore[misc]
     def configure_args(self) -> None:
         super().configure_args()
         self.add_passthru_arg("--topn", type=int, default=1000000)
+        self.add_passthru_arg(
+            "--tranco-list",
+            choices=("subdomains", "standard"),
+            default="subdomains",
+            help="Tranco list flavor used for TOP_N scoping",
+        )
         self.add_passthru_arg("--limit", type=int, default=0)
 
     def mapper_init(self) -> None:
@@ -44,7 +50,10 @@ class CCFeedsJob(MRJob):  # type: ignore[misc]
             sys.stderr.write("*" * 50 + "\n")
             sys.stderr.write("DEBUG: mapper_init starting\n")
 
-            self.processor = WarcProcessor(top_n=self.options.topn)
+            self.processor = WarcProcessor(
+                top_n=self.options.topn,
+                tranco_include_subdomains=self.options.tranco_list == "subdomains",
+            )
             self.processor.stats.run_limit = self.options.limit or 0
             self.count = 0
             self.processed_records = 0

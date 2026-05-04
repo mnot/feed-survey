@@ -22,6 +22,7 @@ class Stats:
         self.content_type_counts: Dict[str, int] = {}
         self.error_types: Dict[str, int] = {}
         self.top_n: Optional[int] = None
+        self.tranco_include_subdomains: bool = True
         self.run_limit: int = 0
         self.max_crawl_time_str: Optional[str] = None
         self.feeds_sniffed: int = 0
@@ -157,6 +158,11 @@ class Stats:
         if other_top_n is not None:
             if self.top_n is None or other_top_n > self.top_n:
                 self.top_n = other_top_n
+                self.tranco_include_subdomains = getattr(
+                    other, "tranco_include_subdomains", True
+                )
+        if getattr(other, "tranco_include_subdomains", True) is False:
+            self.tranco_include_subdomains = False
 
         self.run_limit = max(self.run_limit, getattr(other, "run_limit", 0))
 

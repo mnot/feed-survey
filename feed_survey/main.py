@@ -31,6 +31,12 @@ def main() -> None:
         "--topn", type=int, help="Limit to the given top N of the Tranco list"
     )
     parser.add_argument(
+        "--tranco-list",
+        choices=("subdomains", "standard"),
+        default="subdomains",
+        help="Tranco list flavor used for --topn scoping",
+    )
+    parser.add_argument(
         "--crawl-id",
         help="Common Crawl ID (e.g., CC-MAIN-2024-18). Defaults to latest.",
     )
@@ -97,6 +103,7 @@ def main() -> None:
                             path,
                             args.limit_records,
                             args.topn,
+                            args.tranco_list,
                             args.use_s3,
                         )
                     )
@@ -119,11 +126,18 @@ def main() -> None:
             finally:
                 executor.shutdown(wait=True)
         else:
-            warc_processor = WarcProcessor(top_n=args.topn)
+            warc_processor = WarcProcessor(
+                top_n=args.topn,
+                tranco_include_subdomains=args.tranco_list == "subdomains",
+            )
             for idx, warc_path in enumerate(active_paths):
                 print(f"[{idx+1}/{max_warcs}] Processing {warc_path}...")
                 warc_stats = process_warc(
-                    warc_path, args.limit_records, args.topn, args.use_s3
+                    warc_path,
+                    args.limit_records,
+                    args.topn,
+                    args.tranco_list,
+                    args.use_s3,
                 )
                 warc_processor.stats.merge(warc_stats)
             stats = warc_processor.stats
@@ -138,10 +152,17 @@ def main() -> None:
 
 
 def process_warc(
-    warc_path: str, limit_records: Optional[int], topn: Optional[int], use_s3: bool
+    warc_path: str,
+    limit_records: Optional[int],
+    topn: Optional[int],
+    tranco_list: str,
+    use_s3: bool,
 ) -> Stats:
     """Helper to process a single WARC file, suitable for multiprocessing."""
-    processor = WarcProcessor(top_n=topn)
+    processor = WarcProcessor(
+        top_n=topn,
+        tranco_include_subdomains=tranco_list == "subdomains",
+    )
 
     try:
         body: Any = None

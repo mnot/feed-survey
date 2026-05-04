@@ -15,7 +15,7 @@ by analysis tools without scraping the visual report.
 - **Distributed MapReduce**: Built on `mrjob` for seamless scaling from a few instances to hundreds of nodes on AWS EMR.
 - **Python 3.12 on EMR**: Uses modern Python syntax and efficient libraries (`fastwarc`, `lxml`) for maximum throughput.
 - **Automatic Result Sync**: The build system automatically syncs results from S3 back to your local machine upon completion.
-- **Tranco Filtering**: Built-in support for filtering analysis to the Tranco Top-1M after Public Suffix List site normalization.
+- **Tranco Filtering**: Built-in support for filtering analysis to the Tranco Top-1M, using Tranco's subdomain-inclusive list by default and Public Suffix List site normalization.
 - **Platform Fingerprints**: Conservative CMS/framework hints from HTML pages, feed headers, and feed generator elements, with report-time quality comparisons.
 
 ## Quick Start (EMR)
@@ -81,11 +81,12 @@ environment, or pass another make fragment with `CONFIG=/path/to/config.mk`.
 
 - **`CRAWL_ID`**: The Common Crawl index to process.
 - **`TOP_N`**: Tranco cutoff for EMR runs, applied to registrable sites after Public Suffix List normalization. Private suffixes such as `blogspot.com` and `github.io` make hosted sub-sites count independently.
+- **`TRANCO_LIST`**: Tranco ranking flavor for `TOP_N` scoping. Defaults to `subdomains`, which uses Tranco's list with subdomains included before normalizing to registrable sites. Set `TRANCO_LIST=standard` to use Tranco's domain-only Top-1M.
 - **`OUTPUT_DIR` / `PATHS_PREFIX` / `WHEEL_S3_PATH`**: S3 locations for EMR results, split WARC path inputs, and dependency wheels.
 - **`MAP_TASKS` / `REDUCES`**: Full-run map chunking and reducer count.
 - **`TEST_MAP_TASKS` / `TEST_REDUCES`**: Smoke-test map chunking and reducer count.
 - **`MRJOB_CONFIG` / `MRJOB_TEST_CONFIG`**: mrjob cluster configuration files.
-- **`TRANCO_CACHE_DIR`**: Local cache directory used by `make tranco-cache`; the generated `top-1m.csv` is uploaded to EMR workers.
+- **`TRANCO_CACHE_DIR`**: Local cache directory used by `make tranco-cache`; the selected Tranco CSV is uploaded to EMR workers as `top-1m.csv`.
 - **`MOCK_REPORT` / `RESULTS_DIR`**: Local report output and re-render inputs.
 
 ### `mrjob.conf`

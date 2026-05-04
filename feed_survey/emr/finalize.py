@@ -72,6 +72,9 @@ def _merge_hll_registers(stats: Stats, registers: Any) -> None:
 def _merge_summary(stats: Stats, data: Dict[str, Any]) -> None:
     if data.get("top_n"):
         stats.top_n = data["top_n"]
+        stats.tranco_include_subdomains = data.get("tranco_include_subdomains", True)
+    if data.get("tranco_include_subdomains") is False:
+        stats.tranco_include_subdomains = False
     stats.run_limit = max(stats.run_limit, data.get("run_limit", 0))
 
     stats.pages_seen += data.get("pages_seen", 0)

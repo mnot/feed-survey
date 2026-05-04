@@ -26,4 +26,10 @@ MRJOB_BOOTSTRAP_INSTALL ?= sudo dnf install -y python3.12 python3.12-pip libxml2
 MRJOB_BOOTSTRAP_PIP_INSTALL ?= sudo /usr/bin/python3.12 -m pip install --no-index --find-links=/tmp/wheels/ mrjob fastwarc beautifulsoup4 lxml python-dateutil requests boto3 publicsuffix2
 
 TRANCO_CACHE_DIR ?= $(HOME)/.cache/feed-survey
-TRANCO_CACHE ?= $(TRANCO_CACHE_DIR)/top-1m.csv
+TRANCO_LIST ?= subdomains
+ifeq ($(TRANCO_LIST),standard)
+TRANCO_CACHE_BASENAME ?= top-1m.csv
+else
+TRANCO_CACHE_BASENAME ?= top-1m-incl-subdomains.csv
+endif
+TRANCO_CACHE ?= $(TRANCO_CACHE_DIR)/$(TRANCO_CACHE_BASENAME)

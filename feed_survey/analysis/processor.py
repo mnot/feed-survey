@@ -11,10 +11,13 @@ from feed_survey.url import get_site, normalize_url
 
 
 class WarcProcessor:
-    def __init__(self, top_n: Optional[int] = None) -> None:
+    def __init__(
+        self, top_n: Optional[int] = None, tranco_include_subdomains: bool = True
+    ) -> None:
         self.stats: Stats = Stats()
         self.stats.top_n = top_n
-        self.scope = SiteScope(top_n)
+        self.stats.tranco_include_subdomains = tranco_include_subdomains
+        self.scope = SiteScope(top_n, include_subdomains=tranco_include_subdomains)
         self.html_discovery = HtmlDiscovery(self.stats)
         self.feed_analyzer = FeedAnalyzer(self.stats)
 

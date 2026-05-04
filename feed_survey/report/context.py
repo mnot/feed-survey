@@ -11,6 +11,7 @@ from feed_survey.report.discovery import DiscoverySummary
 from feed_survey.report.formatting import format_number
 from feed_survey.report.histograms import make_histogram
 from feed_survey.report.quality import QUALITY_SPLIT_THRESHOLD
+from feed_survey.tranco import tranco_list_label
 
 
 @dataclass(frozen=True)
@@ -112,8 +113,9 @@ def render_report_markdown(context: ReportContext) -> str:
         [
             "Percentages describe this Common Crawl result set, not the entire Web. "
             "Common Crawl reflects what its crawler fetched, what sites allowed, and "
-            "the response-type prefilter and Tranco domain/sample limits for this run. "
-            "Site counts and TOP_N scoping use registrable domains derived with the "
+            "the response-type prefilter and Tranco list/sample limits for this run. "
+            "Site counts and TOP_N scoping use the Tranco "
+            f"{stats['tranco_list_label']} list, normalized to registrable sites with the "
             "Public Suffix List, including private suffixes for hosted sub-sites.",
             "",
             "## Method Notes",
@@ -593,6 +595,8 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         ),
         "sites_with_autodiscovery": len(discovery.site_to_feeds),
         "top_n": stats.top_n,
+        "tranco_include_subdomains": stats.tranco_include_subdomains,
+        "tranco_list_label": tranco_list_label(stats.tranco_include_subdomains),
         "run_limit": stats.run_limit,
         "feeds_sniffed": stats.feeds_sniffed,
         "total_entries": aggregate["total_entries"],
@@ -610,7 +614,7 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         "mean_quality": round(quality["mean"], 3),
         "active_quality": quality["active"],
         "inactive_quality": quality["inactive"],
-}
+    }
 
 
 def _runtime_counter_stats(stats: Stats) -> Dict[str, int]:

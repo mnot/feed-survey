@@ -12,7 +12,11 @@ from feed_survey.analysis.formats import guess_feed_format
 from feed_survey.analysis.html_discovery import HtmlDiscovery
 from feed_survey.analysis.processor import (
     _feed_content_type,  # pylint: disable=protected-access
+)
+from feed_survey.analysis.processor import (
     _normalized_content_type,  # pylint: disable=protected-access
+)
+from feed_survey.analysis.processor import (
     _sniffable_content_type,  # pylint: disable=protected-access
 )
 from feed_survey.analysis.stats import Stats
@@ -119,21 +123,23 @@ def _html_report(url: str, content: bytes) -> List[str]:
             ],
         ),
         "",
-        _table(
-            ["URL", "rel", "type", "title", "hreflang"],
-            [
+        (
+            _table(
+                ["URL", "rel", "type", "title", "hreflang"],
                 [
-                    link["href"],
-                    link["rel"],
-                    link["type"],
-                    link["title"],
-                    link["hreflang"],
-                ]
-                for link in links
-            ],
-        )
-        if links
-        else "No RSS/Atom autodiscovery links were found.",
+                    [
+                        link["href"],
+                        link["rel"],
+                        link["type"],
+                        link["title"],
+                        link["hreflang"],
+                    ]
+                    for link in links
+                ],
+            )
+            if links
+            else "No RSS/Atom autodiscovery links were found."
+        ),
         "",
     ]
 
@@ -186,15 +192,19 @@ def _feed_report(
         "",
         "## Feed Extensions",
         "",
-        "\n".join(f"- `{extension}`" for extension in extensions)
-        if extensions
-        else "No non-core feed extensions were found.",
+        (
+            "\n".join(f"- `{extension}`" for extension in extensions)
+            if extensions
+            else "No non-core feed extensions were found."
+        ),
         "",
         "## Fingerprints",
         "",
-        "\n".join(f"- {fingerprint}" for fingerprint in fingerprints)
-        if fingerprints
-        else "No known feed fingerprints were detected.",
+        (
+            "\n".join(f"- {fingerprint}" for fingerprint in fingerprints)
+            if fingerprints
+            else "No known feed fingerprints were detected."
+        ),
         "",
     ]
 

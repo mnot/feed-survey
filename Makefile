@@ -59,7 +59,7 @@ MRJOB_BOOTSTRAP_ARGS = \
 
 .PHONY: tranco-cache
 tranco-cache: venv
-	FEED_SURVEY_CACHE_DIR="$(TRANCO_CACHE_DIR)" $(VENV)/python -c "from feed_survey.tranco import get_tranco_list; get_tranco_list(1)"
+	FEED_SURVEY_CACHE_DIR="$(TRANCO_CACHE_DIR)" FEED_SURVEY_TRANCO_LIST="$(TRANCO_LIST)" $(VENV)/python -c "from feed_survey.tranco import get_tranco_list; get_tranco_list(1)"
 
 .PHONY: emr
 emr: venv tranco-cache
@@ -74,7 +74,8 @@ emr: venv tranco-cache
 		--output-dir $(OUTPUT_DIR)$(CRAWL_ID)-$(RUN_ID)/ \
 		--no-read-logs --no-cat-output \
 		--jobconf mapreduce.job.reduces=$(REDUCES) \
-		--topn $(TOP_N)
+		--topn $(TOP_N) \
+		--tranco-list $(TRANCO_LIST)
 	mkdir -p results/$(CRAWL_ID)-$(RUN_ID)
 	aws s3 sync $(OUTPUT_DIR)$(CRAWL_ID)-$(RUN_ID)/ results/$(CRAWL_ID)-$(RUN_ID)/
 	$(VENV)/python -m feed_survey.emr.finalize results/$(CRAWL_ID)-$(RUN_ID)/ $(CRAWL_ID) results/$(CRAWL_ID)-$(RUN_ID)/report.html
@@ -116,6 +117,7 @@ test-emr: venv tranco-cache
 		--output-dir $(OUTPUT_DIR)test-$(RUN_ID)/ \
 		--limit $(LIMIT) \
 		--topn $(TOP_N) \
+		--tranco-list $(TRANCO_LIST) \
 		$(PATHS_PREFIX)test-$(RUN_ID)/
 	mkdir -p results/test-$(RUN_ID)
 	aws s3 sync $(OUTPUT_DIR)test-$(RUN_ID)/ results/test-$(RUN_ID)/

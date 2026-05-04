@@ -4,9 +4,14 @@ from feed_survey.tranco import get_tranco_list
 
 
 class SiteScope:
-    def __init__(self, top_n: Optional[int] = None) -> None:
+    def __init__(
+        self, top_n: Optional[int] = None, include_subdomains: bool = True
+    ) -> None:
+        self.include_subdomains = include_subdomains
         self.top_n_domains: Optional[Set[str]] = (
-            get_tranco_list(top_n) if top_n else None
+            get_tranco_list(top_n, include_subdomains=include_subdomains)
+            if top_n
+            else None
         )
         self._cache: dict[str, bool] = {}
 

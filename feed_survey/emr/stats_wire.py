@@ -55,6 +55,7 @@ def serialize_stats(stats: Stats) -> Dict[str, Any]:
                 "content_length_counts": stats.content_length_counts,
                 "discovery_domain_counts": stats.discovery_domain_counts,
                 "top_n": stats.top_n,
+                "tranco_include_subdomains": stats.tranco_include_subdomains,
                 "run_limit": stats.run_limit,
             }
         ),
@@ -92,6 +93,11 @@ def merge_serialized_stats(merged: Dict[str, Any], incoming: Dict[str, Any]) -> 
         current_top_n = merged.get("top_n")
         if current_top_n is None or incoming_top_n > current_top_n:
             merged["top_n"] = incoming_top_n
+            merged["tranco_include_subdomains"] = incoming.get(
+                "tranco_include_subdomains", True
+            )
+    if incoming.get("tranco_include_subdomains") is False:
+        merged["tranco_include_subdomains"] = False
     merged["run_limit"] = max(merged.get("run_limit", 0), incoming.get("run_limit", 0))
 
     incoming_hll = incoming.get("hll_registers")
@@ -181,6 +187,11 @@ def reduce_stats(values: Generator[Any, None, None]) -> Stats:
         if incoming_top_n is not None:
             if final_stats.top_n is None or incoming_top_n > final_stats.top_n:
                 final_stats.top_n = incoming_top_n
+                final_stats.tranco_include_subdomains = value.get(
+                    "tranco_include_subdomains", True
+                )
+        if value.get("tranco_include_subdomains") is False:
+            final_stats.tranco_include_subdomains = False
         final_stats.run_limit = max(final_stats.run_limit, value.get("run_limit", 0))
 
         final_stats.pages_seen += value.get("pages_seen", 0)
@@ -305,6 +316,7 @@ def summary_record(stats: Stats) -> Dict[str, Any]:
         "html_fp_auto_pages": stats.html_fp_auto_pages,
         "feed_source_fingerprints": stats.feed_source_fingerprints,
         "top_n": stats.top_n,
+        "tranco_include_subdomains": stats.tranco_include_subdomains,
         "run_limit": stats.run_limit,
     }
 

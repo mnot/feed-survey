@@ -214,8 +214,8 @@
             <div class="run-pill pill-warning">
                 <span class="pill-icon">⚠️</span>
                 <span class="pill-label">Filtered to top</span>
-                <span class="pill-value">{{ stats.top_n|comma }} domains</span>
-                <span class="pill-label">(Tranco, by registrable site)</span>
+                <span class="pill-value">{{ stats.top_n|comma }} entries</span>
+                <span class="pill-label">(Tranco {{ stats.tranco_list_label }}, by registrable site)</span>
             </div>
             {% else %}
             <div class="run-pill">
@@ -231,7 +231,7 @@
     <section id="crawl-section">
         <h2 class="main-section-title">1. The Crawl</h2>
         <div class="note-box" style="margin-bottom: 1.5rem;">
-            Percentages describe this Common Crawl result set, not the entire Web. Common Crawl reflects what its crawler fetched, what sites allowed, and the configured Tranco domain/sample limits for this run. Response counters below separate all scoped responses from HTML pages and feed URL checks. Site counts and TOP_N scoping use registrable domains derived with the Public Suffix List, including private suffixes for hosted sub-sites. Recency is computed relative to each crawl record's response time where available.
+            Percentages describe this Common Crawl result set, not the entire Web. Common Crawl reflects what its crawler fetched, what sites allowed, and the configured Tranco list/sample limits for this run. Response counters below separate all scoped responses from HTML pages and feed URL checks. Site counts and TOP_N scoping use the Tranco {{ stats.tranco_list_label }} list, normalized to registrable sites with the Public Suffix List, including private suffixes for hosted sub-sites. Recency is computed relative to each crawl record's response time where available.
         </div>
         <div class="stats-grid">
             <div class="card">

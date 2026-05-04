@@ -47,6 +47,9 @@ EMR packaging, WARC processing, or report finalization.
 Use `feed-survey.mk` for local run configuration. The default `make` targets
 load that file, and you can run with `CONFIG=/path/to/other.mk` when testing
 another AWS account, bucket layout, crawl id, or EMR size.
+The default Tranco filter uses the subdomain-inclusive list, then normalizes
+matches to registrable sites with the Public Suffix List. Use
+`TRANCO_LIST=standard` when you explicitly want Tranco's domain-only list.
 Use `make report RESULTS_DIR=results/...` to re-render the HTML and Markdown
 reports for an existing EMR result without rerunning the distributed job.
 The HTML report is the visual artifact; the Markdown report should stay
