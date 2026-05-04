@@ -26,10 +26,9 @@ by analysis tools without scraping the visual report.
   ```bash
   aws emr create-default-roles
   ```
-- **Local Cache**: The tool requires the Tranco list locally to upload to workers:
+- **Local Cache**: The tool requires the Tranco list locally to upload to workers. `make emr` and `make test-emr` populate it automatically when missing; to do it explicitly:
   ```bash
-  mkdir -p ~/.cache/feed-survey
-  curl -L https://tranco-list.eu/download/K66XN/1000000 -o ~/.cache/feed-survey/top-1m.csv
+  make tranco-cache
   ```
 
 ### 2. Local Setup
@@ -77,6 +76,7 @@ Control the cluster size and instance types.
 - **`REDUCES`**: Number of reducers for the full EMR run.
 - **`TEST_MAP_TASKS` / `TEST_REDUCES`**: Map and reduce sizing for `make test-emr`.
 - **`OUTPUT_DIR`**: The S3 bucket where results and logs will be stored.
+- **`tranco-cache`**: Downloads the Tranco list to `~/.cache/feed-survey/top-1m.csv` for EMR upload.
 - **`MOCK_REPORT`**: HTML output path for `make mock-report`; a Markdown sibling is written automatically.
 - **`RESULTS_DIR`**: Existing local result directory to re-render with `make report`, producing both `report.html` and `report.md`.
 

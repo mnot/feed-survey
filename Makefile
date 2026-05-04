@@ -52,8 +52,12 @@ REDUCES ?= 20
 TEST_MAP_TASKS ?= 20
 TEST_REDUCES ?= 1
 
+.PHONY: tranco-cache
+tranco-cache: venv
+	$(VENV)/python -c "from feed_survey.tranco import get_tranco_list; get_tranco_list(1)"
+
 .PHONY: emr
-emr: venv
+emr: venv tranco-cache
 	$(VENV)/python -m feed_survey.emr.split_paths \
 		s3://commoncrawl/crawl-data/$(CRAWL_ID)/warc.paths.gz \
 		$(PATHS_PREFIX)$(CRAWL_ID)-$(RUN_ID)/ \
@@ -92,7 +96,7 @@ upload-wheels: wheels
 LIMIT ?= 1
 
 .PHONY: test-emr
-test-emr: venv
+test-emr: venv tranco-cache
 	$(VENV)/python -m feed_survey.emr.split_paths \
 		tests/fixtures/warc.paths.txt \
 		$(PATHS_PREFIX)test-$(RUN_ID)/ \
