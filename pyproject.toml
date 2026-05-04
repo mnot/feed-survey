@@ -50,6 +50,7 @@ feed-survey = "feed_survey.main:main"
 feed-survey-job = "feed_survey.emr.job:main"
 feed-survey-finalize = "feed_survey.emr.finalize:main"
 feed-survey-mock-report = "feed_survey.report.mock:main"
+feed-survey-probe = "feed_survey.probe:main"
 feed-survey-split-paths = "feed_survey.emr.split_paths:main"
 
 

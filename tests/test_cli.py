@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from _pytest.capture import CaptureFixture
 from _pytest.monkeypatch import MonkeyPatch
 
+from feed_survey import probe
 from feed_survey.emr import finalize, split_paths
 from feed_survey.report import mock
 
@@ -68,3 +69,62 @@ def test_mock_report_cli_default(monkeypatch: MonkeyPatch) -> None:
     mock.main()
 
     assert calls[0][1:] == (mock.CRAWL_ID, "mock_report.html")
+
+
+def test_probe_html_autodiscovery(monkeypatch: MonkeyPatch) -> None:
+    html = b"""
+    <html><head>
+      <link rel="alternate" type="application/rss+xml" href="/feed.xml" title="RSS">
+      <link rel="feed alternate" type="application/atom+xml" href="/atom.xml" hreflang="en">
+    </head><body></body></html>
+    """
+
+    monkeypatch.setattr(
+        "feed_survey.probe._fetch",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            content=html,
+            headers={"Content-Type": "text/html; charset=utf-8"},
+            status_code=200,
+            url="https://example.com/page",
+        ),
+    )
+
+    output = probe.probe_url("https://example.com/page")
+
+    assert "## HTML Autodiscovery" in output
+    assert "https://example.com/feed.xml" in output
+    assert "https://example.com/atom.xml" in output
+    assert "| Multi-rel feed URLs | 1 |" in output
+
+
+def test_probe_feed(monkeypatch: MonkeyPatch) -> None:
+    body = b"""
+    <rss version="2.0"><channel>
+      <title>Example Feed</title>
+      <link>https://example.com/</link>
+      <lastBuildDate>Fri, 01 May 2026 11:00:00 GMT</lastBuildDate>
+      <item>
+        <title>Entry</title>
+        <link>https://example.com/entry</link>
+        <pubDate>Fri, 01 May 2026 11:30:00 GMT</pubDate>
+        <description>Hello</description>
+      </item>
+    </channel></rss>
+    """
+
+    monkeypatch.setattr(
+        "feed_survey.probe._fetch",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            content=body,
+            headers={"Content-Type": "application/rss+xml"},
+            status_code=200,
+            url="https://example.com/feed.xml",
+        ),
+    )
+
+    output = probe.probe_url("https://example.com/feed.xml")
+
+    assert "## Feed" in output
+    assert "| Valid RSS/Atom | yes |" in output
+    assert "| Format | rss2.0 |" in output
+    assert "| Entries | 1 |" in output

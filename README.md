@@ -49,6 +49,16 @@ You can run the analysis on your own machine for debugging. This uses the `local
 make local-report
 ```
 
+You can also inspect one live URL and get Markdown diagnostics:
+
+```bash
+feed-survey-probe https://example.com/feed.xml
+```
+
+HTML responses report RSS/Atom autodiscovery links. Feed responses report
+parser output, language/date/content signals, extensions, fingerprints, and the
+same operational quality score used by the generated reports.
+
 ### 3. Run a Smoke Test (EMR)
 The `test-emr` target runs a single WARC file through a small EMR cluster to verify your AWS environment is ready.
 ```bash
@@ -98,6 +108,7 @@ Run `make help` for the local development, report, EMR, and wheel targets.
 - `feed_survey/emr/`: EMR orchestration, WARC input, and MapReduce wire-format code.
 - `feed_survey/analysis/`: Core logic for parsing WARC records and extracting feed metadata.
 - `feed_survey/report/`: Report-time aggregation, quality scoring, and HTML/Markdown rendering.
+- `feed_survey/probe.py`: Single-URL Markdown diagnostics for feeds and HTML autodiscovery.
 - `feed_survey/commoncrawl.py`: Common Crawl metadata and WARC path discovery.
 - `feed_survey/tranco.py`: Tranco list loading for top-site scoping.
 - `feed_survey/url.py`: URL normalization and domain extraction helpers.
