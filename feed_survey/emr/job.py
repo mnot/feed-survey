@@ -46,6 +46,7 @@ class CCFeedsJob(MRJob):  # type: ignore[misc]
         self.add_passthru_arg("--limit", type=int, default=0)
 
     def mapper_init(self) -> None:
+        init_start = time.perf_counter()
         try:
             sys.stderr.write("*" * 50 + "\n")
             sys.stderr.write("DEBUG: mapper_init starting\n")
@@ -61,7 +62,11 @@ class CCFeedsJob(MRJob):  # type: ignore[misc]
             # mappers start simultaneously and hit the same S3 partition.
             self._s3_jitter = random.uniform(0, 30)
             self.s3 = create_s3_client()
-            sys.stderr.write("DEBUG: mapper_init finished successfully\n")
+            init_ms = int((time.perf_counter() - init_start) * 1000)
+            self.increment_counter("timing", "mapper_init_ms", init_ms)
+            sys.stderr.write(
+                f"DEBUG: mapper_init finished successfully in {init_ms}ms\n"
+            )
         except Exception as exc:
             sys.stderr.write(f"FATAL: mapper_init failed: {exc}\n")
             sys.stderr.write(traceback.format_exc())
@@ -80,16 +85,24 @@ class CCFeedsJob(MRJob):  # type: ignore[misc]
         try:
             sys.stderr.write(f"INFO: starting WARC {self.count}: {raw_path}\n")
             sys.stderr.flush()
+            warc_start = time.perf_counter()
+            processing_time = 0.0
+            records_before = self.processed_records
             if self.count == 1 and self._s3_jitter > 0:
                 sys.stderr.write(f"INFO: jitter sleep {self._s3_jitter:.1f}s\n")
                 sys.stderr.flush()
                 time.sleep(self._s3_jitter)
+                self.increment_counter(
+                    "timing", "jitter_ms", int(self._s3_jitter * 1000)
+                )
             self.set_status(f"Downloading WARC {self.count}: {raw_path}")
             for record in iter_response_records(
                 raw_path, self.s3, self._download_heartbeat
             ):
                 self.processed_records += 1
+                process_start = time.perf_counter()
                 self.processor.process_record(record)
+                processing_time += time.perf_counter() - process_start
 
                 if self.processed_records % 1000 == 0:
                     self.increment_counter("status", "records_processed", 1000)
@@ -98,6 +111,23 @@ class CCFeedsJob(MRJob):  # type: ignore[misc]
                         f"File {self.count}: {raw_path} | "
                         f"{self.processed_records} recs | {sites_count} sites"
                     )
+            warc_elapsed = time.perf_counter() - warc_start
+            warc_ms = int(warc_elapsed * 1000)
+            process_ms = int(processing_time * 1000)
+            iterator_ms = max(0, warc_ms - process_ms)
+            records_in_warc = self.processed_records - records_before
+            self.increment_counter("timing", "warc_total_ms", warc_ms)
+            self.increment_counter("timing", "record_process_ms", process_ms)
+            self.increment_counter("timing", "iterator_download_ms", iterator_ms)
+            self.increment_counter("timing", "warcs_completed", 1)
+            self.increment_counter("timing", "records_seen", records_in_warc)
+            sys.stderr.write(
+                "INFO: finished WARC "
+                f"{self.count}: {raw_path} | records={records_in_warc} "
+                f"total_ms={warc_ms} process_ms={process_ms} "
+                f"iterator_download_ms={iterator_ms}\n"
+            )
+            sys.stderr.flush()
         except Exception as exc:  # pylint: disable=broad-exception-caught
             sys.stderr.write(f"ERROR processing {raw_path}: {exc}\n")
             sys.stderr.write(traceback.format_exc())
