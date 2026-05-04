@@ -18,7 +18,7 @@ This document contains information for developers who want to modify or extend `
 - `feed_survey/report/template.html`: Jinja2 template for the visual report.
 - `feed_survey/commoncrawl.py`: Common Crawl metadata and WARC path discovery.
 - `feed_survey/tranco.py`: Tranco list loading and caching.
-- `feed_survey/url.py`: URL normalization and domain extraction helpers.
+- `feed_survey/url.py`: URL normalization, host extraction, and registrable-site helpers.
 - `tests/`: Unit tests and integration tests.
 - `tests/fixtures/`: Small local fixtures and profiling helpers used by tests and smoke runs.
 - `docs/`: Research notes and plans for future analysis dimensions.

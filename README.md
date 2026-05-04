@@ -15,7 +15,7 @@ by analysis tools without scraping the visual report.
 - **Distributed MapReduce**: Built on `mrjob` for seamless scaling from a few instances to hundreds of nodes on AWS EMR.
 - **Python 3.12 on EMR**: Uses modern Python syntax and efficient libraries (`fastwarc`, `lxml`) for maximum throughput.
 - **Automatic Result Sync**: The build system automatically syncs results from S3 back to your local machine upon completion.
-- **Tranco Filtering**: Built-in support for filtering analysis to Tranco Top-1M high-traffic domains; report site counts use Public Suffix List registrable sites.
+- **Tranco Filtering**: Built-in support for filtering analysis to the Tranco Top-1M after Public Suffix List site normalization.
 - **Platform Fingerprints**: Conservative CMS/framework hints from HTML pages, feed headers, and feed generator elements, with report-time quality comparisons.
 
 ## Quick Start (EMR)
@@ -80,7 +80,7 @@ This is the main run configuration loaded by `make`. Edit it directly for your
 environment, or pass another make fragment with `CONFIG=/path/to/config.mk`.
 
 - **`CRAWL_ID`**: The Common Crawl index to process.
-- **`TOP_N`**: Tranco domain cutoff for EMR runs.
+- **`TOP_N`**: Tranco cutoff for EMR runs, applied to registrable sites after Public Suffix List normalization. Private suffixes such as `blogspot.com` and `github.io` make hosted sub-sites count independently.
 - **`OUTPUT_DIR` / `PATHS_PREFIX` / `WHEEL_S3_PATH`**: S3 locations for EMR results, split WARC path inputs, and dependency wheels.
 - **`MAP_TASKS` / `REDUCES`**: Full-run map chunking and reducer count.
 - **`TEST_MAP_TASKS` / `TEST_REDUCES`**: Smoke-test map chunking and reducer count.

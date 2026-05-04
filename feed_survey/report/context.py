@@ -113,7 +113,8 @@ def render_report_markdown(context: ReportContext) -> str:
             "Percentages describe this Common Crawl result set, not the entire Web. "
             "Common Crawl reflects what its crawler fetched, what sites allowed, and "
             "the response-type prefilter and Tranco domain/sample limits for this run. "
-            "Site counts use registrable domains derived with the Public Suffix List.",
+            "Site counts and TOP_N scoping use registrable domains derived with the "
+            "Public Suffix List, including private suffixes for hosted sub-sites.",
             "",
             "## Method Notes",
             "",

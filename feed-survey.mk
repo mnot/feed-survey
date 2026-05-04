@@ -7,6 +7,9 @@ CRAWL_ID ?= CC-MAIN-2026-12
 LOCAL_CRAWL_ID ?= CC-MAIN-2024-18
 TOP_N ?= 500000
 LOCAL_TOP_N ?= 1000
+# TOP_N is applied to registrable sites after Public Suffix List normalization.
+# Hosted sub-sites on private suffixes, such as *.blogspot.com or *.github.io,
+# are scoped independently when the Public Suffix List says they are sites.
 
 OUTPUT_DIR ?= s3://mnot-cc-feeds/
 PATHS_PREFIX ?= s3://mnot-cc-feeds/paths/
