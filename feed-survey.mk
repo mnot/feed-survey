@@ -28,8 +28,8 @@ MRJOB_BOOTSTRAP_PIP_INSTALL ?= sudo /usr/bin/python3.12 -m pip install --no-inde
 TRANCO_CACHE_DIR ?= $(HOME)/.cache/feed-survey
 TRANCO_LIST ?= subdomains
 ifeq ($(TRANCO_LIST),standard)
-TRANCO_CACHE_BASENAME ?= top-1m.csv
+TRANCO_CACHE_BASENAME ?= top-1m-sites.csv
 else
-TRANCO_CACHE_BASENAME ?= top-1m-incl-subdomains.csv
+TRANCO_CACHE_BASENAME ?= top-1m-incl-subdomains-sites.csv
 endif
 TRANCO_CACHE ?= $(TRANCO_CACHE_DIR)/$(TRANCO_CACHE_BASENAME)

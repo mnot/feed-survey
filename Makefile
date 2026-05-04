@@ -59,7 +59,7 @@ MRJOB_BOOTSTRAP_ARGS = \
 
 .PHONY: tranco-cache
 tranco-cache: venv
-	FEED_SURVEY_CACHE_DIR="$(TRANCO_CACHE_DIR)" FEED_SURVEY_TRANCO_LIST="$(TRANCO_LIST)" $(VENV)/python -c "from feed_survey.tranco import get_tranco_list; get_tranco_list(1)"
+	FEED_SURVEY_CACHE_DIR="$(TRANCO_CACHE_DIR)" FEED_SURVEY_TRANCO_LIST="$(TRANCO_LIST)" $(VENV)/python -c "from feed_survey.tranco import ensure_tranco_cache; ensure_tranco_cache()"
 
 .PHONY: emr
 emr: venv tranco-cache
@@ -69,7 +69,7 @@ emr: venv tranco-cache
 		$(MAP_TASKS)
 	$(VENV)/python -m feed_survey.emr.job -r emr -c $(MRJOB_CONFIG) \
 		$(MRJOB_BOOTSTRAP_ARGS) \
-		--files "$(TRANCO_CACHE)#top-1m.csv" \
+		--files "$(TRANCO_CACHE)#top-1m-sites.csv" \
 		$(PATHS_PREFIX)$(CRAWL_ID)-$(RUN_ID)/ \
 		--output-dir $(OUTPUT_DIR)$(CRAWL_ID)-$(RUN_ID)/ \
 		--no-read-logs --no-cat-output \
@@ -111,7 +111,7 @@ test-emr: venv tranco-cache
 		$(LIMIT)
 	$(VENV)/python -m feed_survey.emr.job -r emr -c $(MRJOB_TEST_CONFIG) \
 		$(MRJOB_BOOTSTRAP_ARGS) \
-		--files "$(TRANCO_CACHE)#top-1m.csv" \
+		--files "$(TRANCO_CACHE)#top-1m-sites.csv" \
 		--no-read-logs --no-cat-output \
 		--jobconf mapreduce.job.reduces=$(TEST_REDUCES) \
 		--output-dir $(OUTPUT_DIR)test-$(RUN_ID)/ \

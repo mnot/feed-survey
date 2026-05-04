@@ -86,7 +86,7 @@ environment, or pass another make fragment with `CONFIG=/path/to/config.mk`.
 - **`MAP_TASKS` / `REDUCES`**: Full-run map chunking and reducer count.
 - **`TEST_MAP_TASKS` / `TEST_REDUCES`**: Smoke-test map chunking and reducer count.
 - **`MRJOB_CONFIG` / `MRJOB_TEST_CONFIG`**: mrjob cluster configuration files.
-- **`TRANCO_CACHE_DIR`**: Local cache directory used by `make tranco-cache`; the selected Tranco CSV is uploaded to EMR workers as `top-1m.csv`.
+- **`TRANCO_CACHE_DIR`**: Local cache directory used by `make tranco-cache`; the selected Tranco CSV is normalized to registrable sites once locally and uploaded to EMR workers as `top-1m-sites.csv`.
 - **`MOCK_REPORT` / `RESULTS_DIR`**: Local report output and re-render inputs.
 
 ### `mrjob.conf`
