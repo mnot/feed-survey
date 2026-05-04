@@ -1,6 +1,6 @@
-from cc_feeds.analysis.stats import Stats
-from cc_feeds.emr.finalize import _merge_summary
-from cc_feeds.emr.stats_wire import (
+from feed_survey.analysis.stats import Stats
+from feed_survey.emr.finalize import _merge_summary
+from feed_survey.emr.stats_wire import (
     merge_stats_values,
     reduce_stats,
     serialize_stats,

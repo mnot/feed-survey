@@ -4,7 +4,7 @@ import time
 import traceback
 from typing import Any, Generator, Iterator, Tuple
 
-from cc_feeds.emr.compat import install_mrjob_pipes_compat
+from feed_survey.emr.compat import install_mrjob_pipes_compat
 
 install_mrjob_pipes_compat()
 
@@ -12,8 +12,8 @@ install_mrjob_pipes_compat()
 from mrjob.job import MRJob
 from mrjob.protocol import JSONProtocol
 
-from cc_feeds.analysis import WarcProcessor
-from cc_feeds.emr.stats_wire import (
+from feed_survey.analysis import WarcProcessor
+from feed_survey.emr.stats_wire import (
     feed_record,
     json_safe,
     merge_source_samples,
@@ -22,7 +22,7 @@ from cc_feeds.emr.stats_wire import (
     serialize_stats,
     summary_record,
 )
-from cc_feeds.emr.warc_source import create_s3_client, iter_response_records
+from feed_survey.emr.warc_source import create_s3_client, iter_response_records
 
 # ABSOLUTE FIRST LINE LOGGING
 sys.stderr.write("DEBUG: Python interpreter started successfully\n")

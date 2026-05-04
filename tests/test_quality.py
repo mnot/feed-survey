@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from cc_feeds.report.quality import is_active_feed, score_components, score_feed
+from feed_survey.report.quality import is_active_feed, score_components, score_feed
 
 NOW = datetime(2026, 5, 1, tzinfo=timezone.utc)
 

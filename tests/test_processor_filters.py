@@ -1,4 +1,4 @@
-from cc_feeds.analysis.processor import _interesting_content_type
+from feed_survey.analysis.processor import _interesting_content_type
 
 
 def test_json_not_interesting() -> None:

@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 from fastwarc.warc import WarcRecordType  # pylint: disable=no-name-in-module
 
-from cc_feeds.analysis import WarcProcessor
+from feed_survey.analysis import WarcProcessor
 
 
 class _Headers(dict[str, str]):

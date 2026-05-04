@@ -1,4 +1,4 @@
-from cc_feeds.analysis.fingerprints import (
+from feed_survey.analysis.fingerprints import (
     fingerprint_feed_generator,
     fingerprint_html,
     fingerprint_http_headers,

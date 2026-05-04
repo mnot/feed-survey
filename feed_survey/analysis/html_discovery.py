@@ -4,9 +4,9 @@ from urllib.parse import urljoin
 
 import lxml.html
 
-from cc_feeds.analysis.fingerprints import fingerprint_html
-from cc_feeds.analysis.stats import Stats
-from cc_feeds.url import get_domain, normalize_url
+from feed_survey.analysis.fingerprints import fingerprint_html
+from feed_survey.analysis.stats import Stats
+from feed_survey.url import get_domain, normalize_url
 
 _LINK_RE = re.compile(
     b"<link\\s+[^>]*rel\\s*=\\s*[\"'][^\"']*(?:alternate|feed)[^\"']*[\"'][^>]*>",

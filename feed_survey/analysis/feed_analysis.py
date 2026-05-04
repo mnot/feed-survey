@@ -5,14 +5,14 @@ from typing import Any, Dict, Optional
 
 import dateutil.parser
 
-from cc_feeds.analysis.fast_parser import FastFeedParser
-from cc_feeds.analysis.fingerprints import (
+from feed_survey.analysis.fast_parser import FastFeedParser
+from feed_survey.analysis.fingerprints import (
     fingerprint_feed_generator,
     fingerprint_http_headers,
 )
-from cc_feeds.analysis.formats import guess_feed_format
-from cc_feeds.analysis.stats import Stats
-from cc_feeds.url import normalize_url
+from feed_survey.analysis.formats import guess_feed_format
+from feed_survey.analysis.stats import Stats
+from feed_survey.url import normalize_url
 
 logger = logging.getLogger(__name__)
 

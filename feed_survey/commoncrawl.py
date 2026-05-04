@@ -4,7 +4,7 @@ from typing import List, cast
 
 import requests
 
-from cc_feeds.download import CACHE_DIR, download_file
+from feed_survey.download import CACHE_DIR, download_file
 
 
 def get_latest_crawl_id() -> str:

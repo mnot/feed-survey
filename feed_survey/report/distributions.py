@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-from cc_feeds.report.formatting import format_extension
+from feed_survey.report.formatting import format_extension
 
 
 def collapse_content_types(content_type_counts: Dict[str, int]) -> Dict[str, int]:

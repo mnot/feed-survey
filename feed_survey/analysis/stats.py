@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Set, cast
 
 class _StatsUnpickler(pickle.Unpickler):
     def find_class(self, module: str, name: str) -> Any:
-        if module == "cc_feeds.processor" and name == "Stats":
+        if module == "feed_survey.processor" and name == "Stats":
             return Stats
         return super().find_class(module, name)
 

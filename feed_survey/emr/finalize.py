@@ -5,9 +5,9 @@ import os
 from datetime import datetime
 from typing import Any, Dict, Iterator, Tuple
 
-from cc_feeds.analysis import Stats
-from cc_feeds.report import generate_report
-from cc_feeds.report.render import default_markdown_path
+from feed_survey.analysis import Stats
+from feed_survey.report import generate_report
+from feed_survey.report.render import default_markdown_path
 
 
 def _iter_result_records(results_dir: str) -> Iterator[Tuple[str, str, Any]]:
@@ -214,7 +214,7 @@ def main() -> None:
     parser.add_argument(
         "output_path",
         nargs="?",
-        default="cc_feeds_report.html",
+        default="feed_survey_report.html",
         help="HTML report output path; Markdown is written next to it",
     )
     args = parser.parse_args()

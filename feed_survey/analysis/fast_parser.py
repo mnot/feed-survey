@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 
 from lxml import etree
 
-from cc_feeds.analysis.feed_helpers import (
+from feed_survey.analysis.feed_helpers import (
     ATOM_NS,
     CONTENT_NS,
     DC_NS,
@@ -20,7 +20,7 @@ from cc_feeds.analysis.feed_helpers import (
     track_lang,
     update_entry_dates,
 )
-from cc_feeds.url import normalize_url_for_grouping
+from feed_survey.url import normalize_url_for_grouping
 
 logger = logging.getLogger(__name__)
 

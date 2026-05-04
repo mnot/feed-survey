@@ -1,5 +1,5 @@
-PROJECT = cc_feeds
-PYTHON_TARGETS = cc_feeds $(wildcard tests/*.py)
+PROJECT = feed_survey
+PYTHON_TARGETS = feed_survey $(wildcard tests/*.py)
 
 .PHONY: help
 help:
@@ -54,11 +54,11 @@ TEST_REDUCES ?= 1
 
 .PHONY: emr
 emr: venv
-	$(VENV)/python -m cc_feeds.emr.split_paths \
+	$(VENV)/python -m feed_survey.emr.split_paths \
 		s3://commoncrawl/crawl-data/$(CRAWL_ID)/warc.paths.gz \
 		$(PATHS_PREFIX)$(CRAWL_ID)-$(RUN_ID)/ \
 		$(MAP_TASKS)
-	$(VENV)/python -m cc_feeds.emr.job -r emr -c mrjob.conf \
+	$(VENV)/python -m feed_survey.emr.job -r emr -c mrjob.conf \
 		$(PATHS_PREFIX)$(CRAWL_ID)-$(RUN_ID)/ \
 		--output-dir $(OUTPUT_DIR)$(CRAWL_ID)-$(RUN_ID)/ \
 		--no-read-logs --no-cat-output \
@@ -66,7 +66,7 @@ emr: venv
 		--topn 500000
 	mkdir -p results/$(CRAWL_ID)-$(RUN_ID)
 	aws s3 sync $(OUTPUT_DIR)$(CRAWL_ID)-$(RUN_ID)/ results/$(CRAWL_ID)-$(RUN_ID)/
-	$(VENV)/python -m cc_feeds.emr.finalize results/$(CRAWL_ID)-$(RUN_ID)/ $(CRAWL_ID) results/$(CRAWL_ID)-$(RUN_ID)/report.html
+	$(VENV)/python -m feed_survey.emr.finalize results/$(CRAWL_ID)-$(RUN_ID)/ $(CRAWL_ID) results/$(CRAWL_ID)-$(RUN_ID)/report.html
 	@echo "Reports generated at results/$(CRAWL_ID)-$(RUN_ID)/report.html and results/$(CRAWL_ID)-$(RUN_ID)/report.md"
 
 WHEEL_S3_PATH = s3://mnot-cc-feeds/wheels/
@@ -82,7 +82,7 @@ wheels:
 
 .PHONY: mock-report mock_report
 mock-report mock_report: venv
-	$(VENV)/python -m cc_feeds.report.mock $(MOCK_REPORT)
+	$(VENV)/python -m feed_survey.report.mock $(MOCK_REPORT)
 	@echo "Report generated at $(MOCK_REPORT) with Markdown sibling"
 
 .PHONY: upload-wheels
@@ -93,12 +93,12 @@ LIMIT ?= 1
 
 .PHONY: test-emr
 test-emr: venv
-	$(VENV)/python -m cc_feeds.emr.split_paths \
+	$(VENV)/python -m feed_survey.emr.split_paths \
 		tests/fixtures/warc.paths.txt \
 		$(PATHS_PREFIX)test-$(RUN_ID)/ \
 		$(TEST_MAP_TASKS) \
 		$(LIMIT)
-	$(VENV)/python -m cc_feeds.emr.job -r emr -c mrjob-test.conf \
+	$(VENV)/python -m feed_survey.emr.job -r emr -c mrjob-test.conf \
 		--no-read-logs --no-cat-output \
 		--jobconf mapreduce.job.reduces=$(TEST_REDUCES) \
 		--output-dir $(OUTPUT_DIR)test-$(RUN_ID)/ \
@@ -107,18 +107,18 @@ test-emr: venv
 		$(PATHS_PREFIX)test-$(RUN_ID)/
 	mkdir -p results/test-$(RUN_ID)
 	aws s3 sync $(OUTPUT_DIR)test-$(RUN_ID)/ results/test-$(RUN_ID)/
-	$(VENV)/python -m cc_feeds.emr.finalize results/test-$(RUN_ID)/ $(CRAWL_ID) results/test-$(RUN_ID)/report.html
+	$(VENV)/python -m feed_survey.emr.finalize results/test-$(RUN_ID)/ $(CRAWL_ID) results/test-$(RUN_ID)/report.html
 	@echo "Reports generated at results/test-$(RUN_ID)/report.html and results/test-$(RUN_ID)/report.md"
 
 # Update a specific report: make results/test-xxx/report.html
 .PHONY: results/%/report.html
 results/%/report.html: venv
-	$(VENV)/python -m cc_feeds.emr.finalize results/$*/ $(CRAWL_ID) $@
+	$(VENV)/python -m feed_survey.emr.finalize results/$*/ $(CRAWL_ID) $@
 
 .PHONY: report
 report: venv
 	@test -n "$(RESULTS_DIR)" || (echo "Usage: make report RESULTS_DIR=results/test-YYYYMMDD-HHMMSS" && exit 1)
-	$(VENV)/python -m cc_feeds.emr.finalize $(RESULTS_DIR) $(CRAWL_ID) $(RESULTS_DIR)/report.html
+	$(VENV)/python -m feed_survey.emr.finalize $(RESULTS_DIR) $(CRAWL_ID) $(RESULTS_DIR)/report.html
 	@echo "Reports generated at $(RESULTS_DIR)/report.html and $(RESULTS_DIR)/report.md"
 
 include Makefile.pyproject

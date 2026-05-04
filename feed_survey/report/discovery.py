@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
-from cc_feeds.analysis import Stats
-from cc_feeds.analysis.feed_helpers import normalize_entry_title
-from cc_feeds.report.histograms import make_histogram
-from cc_feeds.url import normalize_url_for_grouping
+from feed_survey.analysis import Stats
+from feed_survey.analysis.feed_helpers import normalize_entry_title
+from feed_survey.report.histograms import make_histogram
+from feed_survey.url import normalize_url_for_grouping
 
 
 @dataclass(frozen=True)

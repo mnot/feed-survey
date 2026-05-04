@@ -2,7 +2,7 @@ import datetime
 import time
 from typing import Any, Dict, Generator, Tuple, cast
 
-from cc_feeds.analysis import Stats
+from feed_survey.analysis import Stats
 
 
 def json_safe(obj: Any) -> Any:

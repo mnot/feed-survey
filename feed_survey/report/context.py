@@ -6,11 +6,11 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from jinja2 import Environment, FileSystemLoader
 
-from cc_feeds.analysis import Stats
-from cc_feeds.report.discovery import DiscoverySummary
-from cc_feeds.report.formatting import format_number
-from cc_feeds.report.histograms import make_histogram
-from cc_feeds.report.quality import QUALITY_SPLIT_THRESHOLD
+from feed_survey.analysis import Stats
+from feed_survey.report.discovery import DiscoverySummary
+from feed_survey.report.formatting import format_number
+from feed_survey.report.histograms import make_histogram
+from feed_survey.report.quality import QUALITY_SPLIT_THRESHOLD
 
 
 @dataclass(frozen=True)
@@ -101,7 +101,7 @@ def render_report_markdown(context: ReportContext) -> str:
     total_parsed = stats["parsed_feeds"]
     quality_split_label = f"Quality > {QUALITY_SPLIT_THRESHOLD:.1f} feeds"
     lines = [
-        f"# Feed Analysis Report: {context.crawl_id}",
+        f"# Web Feed Survey: {context.crawl_id}",
         "",
         "Percentages describe this Common Crawl result set, not the entire Web. "
         "Common Crawl reflects what its crawler fetched, what sites allowed, and "

@@ -2,12 +2,12 @@ from typing import Any, Optional
 
 from fastwarc.warc import WarcRecordType  # pylint: disable=no-name-in-module
 
-from cc_feeds.analysis.feed_analysis import FeedAnalyzer
-from cc_feeds.analysis.formats import guess_feed_format
-from cc_feeds.analysis.html_discovery import HtmlDiscovery
-from cc_feeds.analysis.scope import DomainScope
-from cc_feeds.analysis.stats import Stats
-from cc_feeds.url import get_domain, normalize_url
+from feed_survey.analysis.feed_analysis import FeedAnalyzer
+from feed_survey.analysis.formats import guess_feed_format
+from feed_survey.analysis.html_discovery import HtmlDiscovery
+from feed_survey.analysis.scope import DomainScope
+from feed_survey.analysis.stats import Stats
+from feed_survey.url import get_domain, normalize_url
 
 
 class WarcProcessor:

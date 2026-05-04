@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, cast
 
-from cc_feeds.report.quality import (
+from feed_survey.report.quality import (
     ENTRY_RECENCY_CUTOFF_DAYS,
     QUALITY_SPLIT_THRESHOLD,
     WEIGHTS,

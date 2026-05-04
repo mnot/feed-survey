@@ -1,10 +1,10 @@
 [project]
-name = "cc-feeds"
+name = "feed-survey"
 dynamic = ["version"]
 authors = [
     {name="Mark Nottingham", email="mnot@mnot.net"}
 ]
-description = "Finding out about Web feeds on Common Crawl"
+description = "Surveying Web feed usage in Common Crawl"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -43,14 +43,14 @@ dev = [
 ]
 
 [project.urls]
-homepage = "https://github.com/mnot/cc-feeds"
+homepage = "https://github.com/mnot/feed-survey"
 
 [project.scripts]
-cc-feeds = "cc_feeds.main:main"
-cc-feeds-job = "cc_feeds.emr.job:main"
-cc-feeds-finalize = "cc_feeds.emr.finalize:main"
-cc-feeds-mock-report = "cc_feeds.report.mock:main"
-cc-feeds-split-paths = "cc_feeds.emr.split_paths:main"
+feed-survey = "feed_survey.main:main"
+feed-survey-job = "feed_survey.emr.job:main"
+feed-survey-finalize = "feed_survey.emr.finalize:main"
+feed-survey-mock-report = "feed_survey.report.mock:main"
+feed-survey-split-paths = "feed_survey.emr.split_paths:main"
 
 
 [build-system]
@@ -61,11 +61,11 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
-version = {attr = "cc_feeds.__version__"}
+version = {attr = "feed_survey.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["cc_feeds", "cc_feeds.*"]
+include = ["feed_survey", "feed_survey.*"]
 exclude = ["build*", "dist*"]
 namespaces = false
 
@@ -73,8 +73,8 @@ namespaces = false
 include-package-data = true
 
 [tool.setuptools.package-data]
-"cc_feeds" = ["py.typed"]
-"cc_feeds.report" = ["template.html"]
+"feed_survey" = ["py.typed"]
+"feed_survey.report" = ["template.html"]
 
 [tool.mypy]
 strict = true

@@ -2,7 +2,7 @@
 Generate mock HTML and Markdown reports with realistic dummy data.
 
 Usage:
-    python -m cc_feeds.report.mock [output_path]
+    python -m feed_survey.report.mock [output_path]
 
 Default output_path: mock_report.html; Markdown is written next to it.
 """
@@ -13,8 +13,8 @@ from argparse import ArgumentParser
 from datetime import datetime, timedelta, timezone
 from typing import Any, List
 
-from cc_feeds.analysis import Stats
-from cc_feeds.report import generate_report
+from feed_survey.analysis import Stats
+from feed_survey.report import generate_report
 
 CRAWL_ID = "CC-MAIN-2026-12"
 CRAWL_DATE = datetime(2026, 3, 20, 12, 0, 0, tzinfo=timezone.utc)

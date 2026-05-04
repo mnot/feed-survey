@@ -1,10 +1,10 @@
-# Common Crawl Feed Analysis (`cc-feeds`)
+# Web Feed Survey (`feed-survey`)
 
-A high-performance, distributed tool to analyze the prevalence and quality of RSS/Atom feeds within the Common Crawl dataset using AWS EMR.
+A high-performance, distributed survey of RSS/Atom feed usage, autodiscovery, and quality in Common Crawl using AWS EMR.
 
 ## Overview
 
-`cc-feeds` uses MapReduce to process Common Crawl WARC files in parallel. It measures feed autodiscovery, fetches and parses discovered RSS/Atom feeds, and renders HTML and Markdown reports from the aggregated results.
+`feed-survey` uses MapReduce to process Common Crawl WARC files in parallel. It measures feed autodiscovery, parses RSS/Atom feed candidates, and renders HTML and Markdown reports from the aggregated results.
 
 The HTML report is intended for visual exploration. The Markdown sibling uses
 plain sections and tables so the same run can be re-read, compared, or ingested
@@ -28,15 +28,15 @@ by analysis tools without scraping the visual report.
   ```
 - **Local Cache**: The tool requires the Tranco list locally to upload to workers:
   ```bash
-  mkdir -p ~/.cache/cc-feeds
-  curl -L https://tranco-list.eu/download/K66XN/1000000 -o ~/.cache/cc-feeds/top-1m.csv
+  mkdir -p ~/.cache/feed-survey
+  curl -L https://tranco-list.eu/download/K66XN/1000000 -o ~/.cache/feed-survey/top-1m.csv
   ```
 
 ### 2. Local Setup
 ```bash
 # Clone and set up a virtual environment
-git clone https://github.com/mnot/cc-feeds.git
-cd cc-feeds
+git clone https://github.com/mnot/feed-survey.git
+cd feed-survey
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
@@ -84,13 +84,13 @@ Run `make help` for the local development, report, EMR, and wheel targets.
 
 ## Project Structure
 
-- `cc_feeds/emr/`: EMR orchestration, WARC input, and MapReduce wire-format code.
-- `cc_feeds/analysis/`: Core logic for parsing WARC records and extracting feed metadata.
-- `cc_feeds/report/`: Report-time aggregation, quality scoring, and HTML/Markdown rendering.
-- `cc_feeds/commoncrawl.py`: Common Crawl metadata and WARC path discovery.
-- `cc_feeds/tranco.py`: Tranco list loading for top-site scoping.
-- `cc_feeds/url.py`: URL normalization and domain extraction helpers.
-- `cc_feeds/download.py`: Shared download and cache helpers.
+- `feed_survey/emr/`: EMR orchestration, WARC input, and MapReduce wire-format code.
+- `feed_survey/analysis/`: Core logic for parsing WARC records and extracting feed metadata.
+- `feed_survey/report/`: Report-time aggregation, quality scoring, and HTML/Markdown rendering.
+- `feed_survey/commoncrawl.py`: Common Crawl metadata and WARC path discovery.
+- `feed_survey/tranco.py`: Tranco list loading for top-site scoping.
+- `feed_survey/url.py`: URL normalization and domain extraction helpers.
+- `feed_survey/download.py`: Shared download and cache helpers.
 - `tests/`: Unit tests and integration tests.
 - `tests/fixtures/`: Small local fixtures and profiling helpers used by tests and smoke runs.
 - `docs/`: Research notes and plans for future analysis dimensions.

@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
 from pathlib import Path
 
-from cc_feeds.analysis.stats import Stats
-from cc_feeds.report.aggregate import (
+from feed_survey.analysis.stats import Stats
+from feed_survey.report.aggregate import (
     aggregate_feed_data,
     content_profile_prevalence_rows,
     extension_prevalence_rows,
@@ -11,12 +11,12 @@ from cc_feeds.report.aggregate import (
     language_prevalence_rows,
     source_fingerprint_quality_rows,
 )
-from cc_feeds.report.context import ReportContext, build_report_stats
-from cc_feeds.report.discovery import DiscoverySummary, build_discovery_summary
-from cc_feeds.report.distributions import collapse_content_types
-from cc_feeds.report.histograms import build_recency_cdf
-from cc_feeds.report.quality_summary import build_quality_summary
-from cc_feeds.report.render import _feed_error_rows, generate_report
+from feed_survey.report.context import ReportContext, build_report_stats
+from feed_survey.report.discovery import DiscoverySummary, build_discovery_summary
+from feed_survey.report.distributions import collapse_content_types
+from feed_survey.report.histograms import build_recency_cdf
+from feed_survey.report.quality_summary import build_quality_summary
+from feed_survey.report.render import _feed_error_rows, generate_report
 
 
 def _feed(
@@ -559,7 +559,7 @@ def test_generate_report_writes_md(tmp_path: Path) -> None:
     assert html_path.exists()
     assert markdown_path.exists()
     markdown = markdown_path.read_text(encoding="utf-8")
-    assert "# Feed Analysis Report: CC-MAIN-2026-12" in markdown
+    assert "# Web Feed Survey: CC-MAIN-2026-12" in markdown
     assert "## Feed Availability and Freshness" in markdown
 
 

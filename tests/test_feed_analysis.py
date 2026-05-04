@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
 from typing import Any
 
-from cc_feeds.analysis.feed_analysis import FeedAnalyzer, parse_error_label
-from cc_feeds.analysis.stats import Stats
+from feed_survey.analysis.feed_analysis import FeedAnalyzer, parse_error_label
+from feed_survey.analysis.stats import Stats
 
 
 class _Reader:

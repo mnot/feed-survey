@@ -3,7 +3,7 @@ import os
 import requests
 from tqdm import tqdm
 
-CACHE_DIR = os.path.expanduser("~/.cache/cc-feeds")
+CACHE_DIR = os.path.expanduser("~/.cache/feed-survey")
 
 
 def download_file(url: str, dest_path: str) -> None:

@@ -1,6 +1,6 @@
-# Contributing to `cc-feeds`
+# Contributing to Web Feed Survey
 
-This document contains information for developers who want to modify or extend `cc-feeds`.
+This document contains information for developers who want to modify or extend `feed-survey`.
 
 ## Development Setup
 
@@ -12,13 +12,13 @@ This document contains information for developers who want to modify or extend `
 
 ## Project Structure
 
-- `cc_feeds/analysis/`: Core WARC response processing, HTML autodiscovery, feed parsing, and stats collection.
-- `cc_feeds/emr/`: MapReduce job wiring, EMR launch/finalize helpers, and cluster-facing scripts.
-- `cc_feeds/report/`: Report-time aggregation, quality scoring, and HTML/Markdown rendering.
-- `cc_feeds/report/template.html`: Jinja2 template for the visual report.
-- `cc_feeds/commoncrawl.py`: Common Crawl metadata and WARC path discovery.
-- `cc_feeds/tranco.py`: Tranco list loading and caching.
-- `cc_feeds/url.py`: URL normalization and domain extraction helpers.
+- `feed_survey/analysis/`: Core WARC response processing, HTML autodiscovery, feed parsing, and stats collection.
+- `feed_survey/emr/`: MapReduce job wiring, EMR launch/finalize helpers, and cluster-facing scripts.
+- `feed_survey/report/`: Report-time aggregation, quality scoring, and HTML/Markdown rendering.
+- `feed_survey/report/template.html`: Jinja2 template for the visual report.
+- `feed_survey/commoncrawl.py`: Common Crawl metadata and WARC path discovery.
+- `feed_survey/tranco.py`: Tranco list loading and caching.
+- `feed_survey/url.py`: URL normalization and domain extraction helpers.
 - `tests/`: Unit tests and integration tests.
 - `tests/fixtures/`: Small local fixtures and profiling helpers used by tests and smoke runs.
 - `docs/`: Research notes and plans for future analysis dimensions.
@@ -54,4 +54,4 @@ comparison and AI-assisted analysis.
 
 For large-scale analysis across the entire Common Crawl corpus:
 - The tool is designed to be compatible with `mrjob`.
-- See `cc_feeds/emr/` for the MapReduce and EMR wrapper code.
+- See `feed_survey/emr/` for the MapReduce and EMR wrapper code.

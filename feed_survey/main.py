@@ -16,13 +16,13 @@ from .report import generate_report
 from .report.render import default_markdown_path
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("cc-feeds")
+logger = logging.getLogger("feed-survey")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        prog="cc-feeds",
-        description="Process Common Crawl archives to assess RSS/Atom feed usage.",
+        prog="feed-survey",
+        description="Survey RSS/Atom feed usage in Common Crawl archives.",
     )
     parser.add_argument(
         "--version", action="version", version=f"%(prog)s {__version__}"
@@ -66,7 +66,7 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    print(f"Starting cc-feeds {__version__}...")
+    print(f"Starting feed-survey {__version__}...")
 
     crawl_id = args.crawl_id or get_latest_crawl_id()
     print(f"Using crawl: {crawl_id}")

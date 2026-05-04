@@ -2,7 +2,7 @@ import os
 import zipfile
 from typing import Optional, Set
 
-from cc_feeds.download import CACHE_DIR, download_file
+from feed_survey.download import CACHE_DIR, download_file
 
 TRANCO_URL = "https://tranco-list.eu/top-1m.csv.zip"
 

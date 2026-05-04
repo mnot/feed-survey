@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from cc_feeds.report.quality import FUTURE_DATE_TOLERANCE_DAYS
+from feed_survey.report.quality import FUTURE_DATE_TOLERANCE_DAYS
 
 _CDF_BREAKPOINTS: List[Tuple[int, str]] = [
     (0, "Today"),

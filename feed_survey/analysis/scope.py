@@ -1,6 +1,6 @@
 from typing import Optional, Set
 
-from cc_feeds.tranco import get_tranco_list
+from feed_survey.tranco import get_tranco_list
 
 
 class DomainScope:

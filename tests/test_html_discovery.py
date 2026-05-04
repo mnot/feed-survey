@@ -1,5 +1,5 @@
-from cc_feeds.analysis.html_discovery import HtmlDiscovery
-from cc_feeds.analysis.stats import Stats
+from feed_survey.analysis.html_discovery import HtmlDiscovery
+from feed_survey.analysis.stats import Stats
 
 
 def test_discovers_feed_links() -> None:

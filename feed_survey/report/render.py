@@ -5,9 +5,9 @@ from typing import Any, Dict, Optional
 
 import dateutil.parser
 
-from cc_feeds.analysis import Stats
-from cc_feeds.analysis.feed_analysis import parse_error_label
-from cc_feeds.report.aggregate import (
+from feed_survey.analysis import Stats
+from feed_survey.analysis.feed_analysis import parse_error_label
+from feed_survey.report.aggregate import (
     aggregate_feed_data,
     content_profile_prevalence_rows,
     extension_prevalence_rows,
@@ -16,19 +16,19 @@ from cc_feeds.report.aggregate import (
     language_prevalence_rows,
     source_fingerprint_quality_rows,
 )
-from cc_feeds.report.context import (
+from feed_survey.report.context import (
     ReportContext,
     render_report_html,
     render_report_markdown,
 )
-from cc_feeds.report.discovery import build_discovery_summary
-from cc_feeds.report.distributions import (
+from feed_survey.report.discovery import build_discovery_summary
+from feed_survey.report.distributions import (
     collapse_content_types,
     count_content_profiles,
     count_language_buckets,
 )
-from cc_feeds.report.histograms import build_recency_cdf
-from cc_feeds.report.quality_summary import build_quality_summary
+from feed_survey.report.histograms import build_recency_cdf
+from feed_survey.report.quality_summary import build_quality_summary
 
 
 def generate_report(

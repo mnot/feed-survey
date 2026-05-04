@@ -1,5 +1,5 @@
-from cc_feeds.analysis.fast_parser import FastFeedParser
-from cc_feeds.analysis.formats import guess_feed_format
+from feed_survey.analysis.fast_parser import FastFeedParser
+from feed_survey.analysis.formats import guess_feed_format
 
 
 def _date_prefix(value: object) -> list[object]:

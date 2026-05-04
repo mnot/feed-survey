@@ -7,9 +7,9 @@ import sys
 from fastwarc.stream_io import PythonIOStreamAdapter
 from fastwarc.warc import ArchiveIterator, WarcRecordType
 
-# Ensure cc_feeds is in path
+# Ensure feed_survey is in path
 sys.path.insert(0, os.getcwd())
-from cc_feeds.analysis import WarcProcessor
+from feed_survey.analysis import WarcProcessor
 
 
 def run_profile(warc_path):

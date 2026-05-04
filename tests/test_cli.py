@@ -4,8 +4,8 @@ from types import SimpleNamespace
 from _pytest.capture import CaptureFixture
 from _pytest.monkeypatch import MonkeyPatch
 
-from cc_feeds.emr import finalize, split_paths
-from cc_feeds.report import mock
+from feed_survey.emr import finalize, split_paths
+from feed_survey.report import mock
 
 
 def test_split_paths_cli_limit(
@@ -19,7 +19,7 @@ def test_split_paths_cli_limit(
         uploads.append(args)
         assert check is True
 
-    monkeypatch.setattr("cc_feeds.emr.split_paths.subprocess.run", fake_run)
+    monkeypatch.setattr("feed_survey.emr.split_paths.subprocess.run", fake_run)
     monkeypatch.setattr(
         "sys.argv",
         ["split_paths", str(source), "s3://example/chunks", "2", "2"],
@@ -44,7 +44,7 @@ def test_finalize_cli_default(monkeypatch: MonkeyPatch) -> None:
 
     finalize.main()
 
-    assert calls == [("results/test", "CC-MAIN-2026-12", "cc_feeds_report.html")]
+    assert calls == [("results/test", "CC-MAIN-2026-12", "feed_survey_report.html")]
 
 
 def test_mock_report_cli_default(monkeypatch: MonkeyPatch) -> None:

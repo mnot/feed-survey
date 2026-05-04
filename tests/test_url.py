@@ -1,4 +1,4 @@
-from cc_feeds.url import get_domain, normalize_url, normalize_url_for_grouping
+from feed_survey.url import get_domain, normalize_url, normalize_url_for_grouping
 
 
 def test_normalize_keeps_path_case() -> None:
