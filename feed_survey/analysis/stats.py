@@ -124,14 +124,14 @@ class Stats:
         self.sites_seen.update(other.sites_seen)
         self.sites_seen_count += getattr(other, "sites_seen_count", 0)
 
-        for feed_url, domains in other.autodiscovery_links.items():
+        for feed_url, sites in other.autodiscovery_links.items():
             if feed_url not in self.autodiscovery_links:
                 self.autodiscovery_links[feed_url] = []
             existing = set(self.autodiscovery_links[feed_url])
-            for domain in domains:
-                if domain not in existing and len(existing) < 100:
-                    self.autodiscovery_links[feed_url].append(domain)
-                    existing.add(domain)
+            for site in sites:
+                if site not in existing and len(existing) < 100:
+                    self.autodiscovery_links[feed_url].append(site)
+                    existing.add(site)
 
         for feed_url, count in getattr(other, "discovery_domain_counts", {}).items():
             self.discovery_domain_counts[feed_url] = (
@@ -169,13 +169,13 @@ class Stats:
         with open(path, "rb") as f_in:
             return cast(Stats, _StatsUnpickler(f_in).load())
 
-    def add_site(self, domain: str) -> None:
+    def add_site(self, site: str) -> None:
         """Add a site to the HLL counter and the set."""
-        if not domain:
+        if not site:
             return
-        self.sites_seen.add(domain)
+        self.sites_seen.add(site)
 
-        hashed_domain = zlib.crc32(domain.encode("utf-8")) & 0xFFFFFFFF
+        hashed_domain = zlib.crc32(site.encode("utf-8")) & 0xFFFFFFFF
 
         idx = hashed_domain & (self.hll_m - 1)
         w_bits = 32 - self.hll_p

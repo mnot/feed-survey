@@ -82,6 +82,19 @@ def test_processor_integration() -> None:
     assert result["title"] == "Integration Feed"
 
 
+def test_processor_counts_sites() -> None:
+    processor = WarcProcessor()
+
+    processor.process_record(
+        _Record("http://www.example.co.uk/page.html", "text/html", b"<html></html>")
+    )
+    processor.process_record(
+        _Record("http://blog.example.co.uk/page.html", "text/html", b"<html></html>")
+    )
+
+    assert processor.stats.sites_seen == {"example.co.uk"}
+
+
 def test_plain_text_200_must_sniff() -> None:
     processor = WarcProcessor()
 

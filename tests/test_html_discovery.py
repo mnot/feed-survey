@@ -35,6 +35,24 @@ def test_discovers_feed_links() -> None:
     assert stats.discovery_domain_counts["https://example.com/feed.xml"] == 1
 
 
+def test_records_source_site() -> None:
+    stats = Stats()
+    discovery = HtmlDiscovery(stats)
+
+    discovery.process(
+        "https://www.example.co.uk/articles/",
+        b"""
+        <html><head>
+          <link rel="alternate" type="application/rss+xml" href="/feed.xml">
+        </head></html>
+        """,
+    )
+
+    assert stats.autodiscovery_links["https://www.example.co.uk/feed.xml"] == [
+        "example.co.uk"
+    ]
+
+
 def test_html_fingerprint_auto() -> None:
     stats = Stats()
     discovery = HtmlDiscovery(stats)

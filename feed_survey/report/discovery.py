@@ -83,11 +83,11 @@ def build_discovery_summary(stats: Stats) -> DiscoverySummary:
 
 def build_page_map(stats: Stats) -> Dict[str, Set[str]]:
     page_to_feeds: Dict[str, Set[str]] = {}
-    for feed_url, domains in stats.autodiscovery_links.items():
-        for domain_or_url in domains:
-            if domain_or_url not in page_to_feeds:
-                page_to_feeds[domain_or_url] = set()
-            page_to_feeds[domain_or_url].add(feed_url)
+    for feed_url, pages_or_sites in stats.autodiscovery_links.items():
+        for page_or_site in pages_or_sites:
+            if page_or_site not in page_to_feeds:
+                page_to_feeds[page_or_site] = set()
+            page_to_feeds[page_or_site].add(feed_url)
     return page_to_feeds
 
 
@@ -113,11 +113,11 @@ def build_page_chart_data(per_page_hist: Dict[str, int]) -> Dict[str, Any]:
 
 def build_site_map(stats: Stats) -> Dict[str, Set[str]]:
     site_to_feeds: Dict[str, Set[str]] = {}
-    for feed_url, domains in stats.autodiscovery_links.items():
-        for domain in domains:
-            if domain not in site_to_feeds:
-                site_to_feeds[domain] = set()
-            site_to_feeds[domain].add(feed_url)
+    for feed_url, sites in stats.autodiscovery_links.items():
+        for site in sites:
+            if site not in site_to_feeds:
+                site_to_feeds[site] = set()
+            site_to_feeds[site].add(feed_url)
     return site_to_feeds
 
 

@@ -1,4 +1,7 @@
+from ipaddress import ip_address
 from urllib.parse import ParseResult, urlparse, urlunparse
+
+from publicsuffix2 import get_sld
 
 
 def normalize_url(url: str) -> str:
@@ -51,8 +54,35 @@ def _normalize_netloc(parsed: ParseResult) -> str:
     return f"{userinfo}{hostname}:{port}"
 
 
-def get_domain(url: str) -> str:
-    """High-performance extraction of domain from URL."""
+def get_host(url: str) -> str:
+    """Extract the normalized URL host."""
     if url.lower().startswith("http"):
         return (urlparse(url).hostname or "").lower()
     return url.split("/", 1)[0].lower()
+
+
+def get_site(url: str) -> str:
+    """Extract the registrable site for a URL or host.
+
+    This uses the Public Suffix List for DNS names. IP literals and localhost-like
+    names fall back to the host itself because they do not have a registrable
+    domain.
+    """
+    host = get_host(url).strip(".")
+    if not host:
+        return ""
+    try:
+        ip_address(host)
+        return host
+    except ValueError:
+        pass
+    return (get_sld(host) or host).lower()
+
+
+def get_domain(url: str) -> str:
+    """Extract the normalized URL host.
+
+    Prefer get_site() when grouping web properties for the report. This function
+    is retained for host-level callers and tests.
+    """
+    return get_host(url)

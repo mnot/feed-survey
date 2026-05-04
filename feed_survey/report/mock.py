@@ -116,8 +116,8 @@ def _random_date(rng: random.Random, min_days_ago: int, max_days_ago: int) -> Li
     return _date_list(dt)
 
 
-def _add_hll_site(stats: Stats, domain: str) -> None:
-    hash_value = zlib.crc32(domain.encode("utf-8")) & 0xFFFFFFFF
+def _add_hll_site(stats: Stats, site: str) -> None:
+    hash_value = zlib.crc32(site.encode("utf-8")) & 0xFFFFFFFF
     idx = hash_value & (stats.hll_m - 1)
     w_bits = 32 - stats.hll_p
     shifted_hash = hash_value >> stats.hll_p
@@ -246,16 +246,16 @@ def _populate_crawl_totals(stats: Stats) -> None:
 
 def _populate_site_estimate(stats: Stats, rng: random.Random) -> None:
     for idx in range(400_000):
-        domain = f"site{idx}.{rng.choice(SITE_TLDS)}"
-        _add_hll_site(stats, domain)
+        site = f"site{idx}.{rng.choice(SITE_TLDS)}"
+        _add_hll_site(stats, site)
     stats.sites_seen_count = stats.get_unique_sites_estimate()
 
 
 def _build_feed_info(rng: random.Random, idx: int) -> tuple[str, dict[str, Any]]:
     feed_format = _choose_format(rng)
-    domain = f"example{idx % 50000}.{rng.choice(FEED_TLDS)}"
-    feed_url = f"https://{domain}/feed{idx % 5}.xml"
-    page_url = f"https://{domain}/"
+    site = f"example{idx % 50000}.{rng.choice(FEED_TLDS)}"
+    feed_url = f"https://{site}/feed{idx % 5}.xml"
+    page_url = f"https://{site}/"
 
     newest = _random_date(rng, 0, 180)
     oldest = _random_date(rng, max(newest[2], 30), 730)
@@ -308,16 +308,16 @@ def _populate_feed_results(stats: Stats, rng: random.Random) -> None:
 
         if rng.random() < 0.60:
             source_platform = _choose_platform(rng)
-            n_domains = rng.randint(1, 8)
-            domains = [
+            n_sites = rng.randint(1, 8)
+            sites = [
                 f"example{rng.randint(0, 100000)}.{rng.choice(FEED_TLDS)}"
-                for _ in range(n_domains)
+                for _ in range(n_sites)
             ]
-            stats.autodiscovery_links[feed_url] = domains
-            stats.discovery_domain_counts[feed_url] = n_domains * rng.randint(1, 20)
+            stats.autodiscovery_links[feed_url] = sites
+            stats.discovery_domain_counts[feed_url] = n_sites * rng.randint(1, 20)
             if source_platform:
                 stats.feed_source_fingerprints[feed_url] = {
-                    source_platform: rng.randint(1, n_domains)
+                    source_platform: rng.randint(1, n_sites)
                 }
 
 

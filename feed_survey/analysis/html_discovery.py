@@ -6,7 +6,7 @@ import lxml.html
 
 from feed_survey.analysis.fingerprints import fingerprint_html
 from feed_survey.analysis.stats import Stats
-from feed_survey.url import get_domain, normalize_url
+from feed_survey.url import get_site, normalize_url
 
 _LINK_RE = re.compile(
     b"<link\\s+[^>]*rel\\s*=\\s*[\"'][^\"']*(?:alternate|feed)[^\"']*[\"'][^>]*>",
@@ -94,17 +94,17 @@ class HtmlDiscovery:
         found_rels.update(feed_rel_tokens)
         page_discoveries.setdefault(feed_url, set()).update(feed_rel_tokens)
 
-        domain = get_domain(page_url).lower()
+        site = get_site(page_url)
         if feed_url not in self.stats.autodiscovery_links:
             self.stats.autodiscovery_links[feed_url] = []
             self.stats.discovery_domain_counts[feed_url] = 0
 
         self.stats.discovery_domain_counts[feed_url] += 1
         if (
-            domain not in self.stats.autodiscovery_links[feed_url]
+            site not in self.stats.autodiscovery_links[feed_url]
             and len(self.stats.autodiscovery_links[feed_url]) < 10
         ):
-            self.stats.autodiscovery_links[feed_url].append(domain)
+            self.stats.autodiscovery_links[feed_url].append(site)
 
     def _record_page_stats(
         self,

@@ -3,29 +3,27 @@ from typing import Optional, Set
 from feed_survey.tranco import get_tranco_list
 
 
-class DomainScope:
+class SiteScope:
     def __init__(self, top_n: Optional[int] = None) -> None:
         self.top_n_domains: Optional[Set[str]] = (
             get_tranco_list(top_n) if top_n else None
         )
         self._cache: dict[str, bool] = {}
 
-    def includes(self, domain: str) -> bool:
+    def includes(self, site: str) -> bool:
         if not self.top_n_domains:
             return True
-        if not domain:
+        if not site:
             return False
 
-        if domain in self._cache:
-            return self._cache[domain]
+        if site in self._cache:
+            return self._cache[site]
 
-        in_scope = False
-        parts = domain.split(".")
-        for idx in range(len(parts)):
-            if ".".join(parts[idx:]) in self.top_n_domains:
-                in_scope = True
-                break
+        in_scope = site in self.top_n_domains
 
         if len(self._cache) < 50000:
-            self._cache[domain] = in_scope
+            self._cache[site] = in_scope
         return in_scope
+
+
+DomainScope = SiteScope

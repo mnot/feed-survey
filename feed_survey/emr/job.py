@@ -110,8 +110,8 @@ class CCFeedsJob(MRJob):  # type: ignore[misc]
             yield f"feed:{feed_url}", json_safe(result)
 
         # Yield discovery links
-        for feed_url, domains in self.processor.stats.autodiscovery_links.items():
-            yield f"discovery:{feed_url}", domains
+        for feed_url, sites in self.processor.stats.autodiscovery_links.items():
+            yield f"discovery:{feed_url}", sites
 
     def combiner(
         self, key: str, values: Generator[Any, None, None]

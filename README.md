@@ -15,7 +15,7 @@ by analysis tools without scraping the visual report.
 - **Distributed MapReduce**: Built on `mrjob` for seamless scaling from a few instances to hundreds of nodes on AWS EMR.
 - **Python 3.12 on EMR**: Uses modern Python syntax and efficient libraries (`fastwarc`, `lxml`) for maximum throughput.
 - **Automatic Result Sync**: The build system automatically syncs results from S3 back to your local machine upon completion.
-- **Tranco Filtering**: Built-in support for filtering analysis to the Tranco Top-1M high-traffic domains.
+- **Tranco Filtering**: Built-in support for filtering analysis to Tranco Top-1M high-traffic domains; report site counts use Public Suffix List registrable sites.
 - **Platform Fingerprints**: Conservative CMS/framework hints from HTML pages, feed headers, and feed generator elements, with report-time quality comparisons.
 
 ## Quick Start (EMR)
@@ -111,7 +111,7 @@ Run `make help` for the local development, report, EMR, and wheel targets.
 - `feed_survey/probe.py`: Single-URL Markdown diagnostics for feeds and HTML autodiscovery.
 - `feed_survey/commoncrawl.py`: Common Crawl metadata and WARC path discovery.
 - `feed_survey/tranco.py`: Tranco list loading for top-site scoping.
-- `feed_survey/url.py`: URL normalization and domain extraction helpers.
+- `feed_survey/url.py`: URL normalization, host extraction, and registrable-site helpers.
 - `feed_survey/download.py`: Shared download and cache helpers.
 - `tests/`: Unit tests and integration tests.
 - `tests/fixtures/`: Small local fixtures and profiling helpers used by tests and smoke runs.

@@ -231,13 +231,13 @@
     <section id="crawl-section">
         <h2 class="main-section-title">1. The Crawl</h2>
         <div class="note-box" style="margin-bottom: 1.5rem;">
-            Percentages describe this Common Crawl result set, not the entire Web. Common Crawl reflects what its crawler fetched, what sites allowed, and the configured domain/sample limits for this run. Response counters below separate all scoped responses from HTML pages and feed URL checks. Recency is computed relative to each crawl record's response time where available.
+            Percentages describe this Common Crawl result set, not the entire Web. Common Crawl reflects what its crawler fetched, what sites allowed, and the configured Tranco domain/sample limits for this run. Response counters below separate all scoped responses from HTML pages and feed URL checks. Site counts use registrable domains derived with the Public Suffix List. Recency is computed relative to each crawl record's response time where available.
         </div>
         <div class="stats-grid">
             <div class="card">
                 <div class="card-title">Responses Processed</div>
                 <div class="card-value">{{ total_pages_f }}</div>
-                <div class="card-sub">All WARC responses after domain filtering; {{ stats.pages_seen|comma }} had HTML, feed, XML, or sniffable content types and were analyzed further.</div>
+                <div class="card-sub">All WARC responses after Tranco filtering; {{ stats.pages_seen|comma }} had HTML, feed, XML, or sniffable content types and were analyzed further.</div>
             </div>
             <div class="card">
                 <div class="card-title">HTML Pages Processed</div>
@@ -245,9 +245,9 @@
                 <div class="card-sub">HTML/XHTML responses used as the denominator for autodiscovery page rates.</div>
             </div>
             <div class="card">
-                <div class="card-title">Unique Domains</div>
+                <div class="card-title">Unique Sites</div>
                 <div class="card-value">{{ total_sites_f }}</div>
-                <div class="card-sub">Distinct domains among processed responses (HyperLogLog estimate)</div>
+                <div class="card-sub">Distinct registrable sites among processed responses (HyperLogLog estimate)</div>
             </div>
             <div class="card">
                 <div class="card-title">Feed URLs Checked</div>
@@ -307,7 +307,7 @@
                 <div class="card-title">Sites with Feed Links</div>
                 <div class="card-value">{{ sites_with_auto_f }}</div>
                 <div class="card-sub">
-                    {{ "%.2f"|format(stats.sites_with_autodiscovery / stats.sites_seen * 100 if stats.sites_seen else 0) }}% of analyzed domains (est. lower bound)
+                    {{ "%.2f"|format(stats.sites_with_autodiscovery / stats.sites_seen * 100 if stats.sites_seen else 0) }}% of analyzed registrable sites (est. lower bound)
                 </div>
             </div>
             <div class="card">
@@ -333,7 +333,7 @@
             </div>
             <div class="chart-card">
                 <div class="chart-title">Autodiscovery Links per Site</div>
-                <p class="chart-sub">Unique feed URLs per site. Based on a sample of up to 100 domains per feed URL. Sites with zero links omitted: {{ zero_sites_f }}.</p>
+                <p class="chart-sub">Unique feed URLs per registrable site. Based on a sample of up to 100 source sites per feed URL. Sites with zero links omitted: {{ zero_sites_f }}.</p>
                 <canvas id="feedsPerSiteHistogram"></canvas>
             </div>
         </div>

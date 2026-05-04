@@ -112,7 +112,8 @@ def render_report_markdown(context: ReportContext) -> str:
         [
             "Percentages describe this Common Crawl result set, not the entire Web. "
             "Common Crawl reflects what its crawler fetched, what sites allowed, and "
-            "the response-type prefilter and domain/sample limits for this run.",
+            "the response-type prefilter and Tranco domain/sample limits for this run. "
+            "Site counts use registrable domains derived with the Public Suffix List.",
             "",
             "## Method Notes",
             "",
@@ -167,7 +168,7 @@ def render_report_markdown(context: ReportContext) -> str:
                         format_number(stats["pages_seen"]),
                     ],
                     ["HTML pages processed", format_number(stats["html_responses"])],
-                    ["Unique analyzed domains", format_number(stats["sites_seen"])],
+                    ["Unique analyzed sites", format_number(stats["sites_seen"])],
                     ["Feed URLs checked", format_number(stats["feed_results_count"])],
                     ["Successfully parsed feeds", format_number(total_parsed)],
                     [
@@ -181,7 +182,7 @@ def render_report_markdown(context: ReportContext) -> str:
             "## Autodiscovery",
             "",
             "Parenthetical page percentages use HTML pages processed as the "
-            "denominator. Site percentages use unique analyzed domains.",
+            "denominator. Site percentages use unique analyzed registrable sites.",
             "",
             _markdown_table(
                 ["Metric", "Value"],
