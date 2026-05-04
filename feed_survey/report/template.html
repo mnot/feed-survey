@@ -89,6 +89,22 @@
             text-align: left; padding: 0.75rem 1rem; font-weight: 700;
             border-bottom: 2px solid var(--border);
         }
+        .data-table.sortable th {
+            cursor: pointer;
+            padding-right: 1.75rem;
+            position: sticky;
+            user-select: none;
+        }
+        .data-table.sortable th::after {
+            color: var(--text-muted);
+            content: " ↕";
+            font-weight: 400;
+            position: absolute;
+            right: 0.7rem;
+            white-space: nowrap;
+        }
+        .data-table.sortable th.sort-asc::after { content: " ↑"; }
+        .data-table.sortable th.sort-desc::after { content: " ↓"; }
         .data-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
         .data-table tr:hover { background: #f8fafc; }
         .badge {
@@ -98,6 +114,7 @@
         .badge-primary { background: #e0e7ff; color: var(--primary); }
         .badge-danger  { background: #fee2e2; color: var(--danger); }
         canvas { width: 100% !important; height: 300px !important; }
+        .profile-chart-container canvas { height: 220px !important; }
 
         /* Error summary strip */
         .error-strip {
@@ -133,7 +150,8 @@
         .ct-bar-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
         .ct-bar-label { width: 9rem; font-size: 0.85rem; font-weight: 600; flex-shrink: 0; }
         .ct-bar-track {
-            flex: 1; background: var(--border); border-radius: 9999px; height: 10px;
+            flex: 1; background: #f1f5f9; border-radius: 9999px; height: 10px;
+            border: 1px solid var(--border);
         }
         .ct-bar-fill { height: 100%; border-radius: 9999px; }
         .ct-bar-val { font-size: 0.8rem; color: var(--text-muted); width: 7rem; text-align: right; flex-shrink: 0; }
@@ -178,6 +196,13 @@
             <p>Common Crawl Archive: <strong>{{ crawl_id }}</strong></p>
         </div>
         <div class="run-context">
+            {% if stats.run_limit %}
+            <div class="run-pill pill-warning">
+                <span class="pill-icon">⚠️</span>
+                <span class="pill-label">Limited test run</span>
+                <span class="pill-value">LIMIT={{ stats.run_limit|comma }}</span>
+            </div>
+            {% endif %}
             {% if stats.max_crawl_time %}
             <div class="run-pill">
                 <span class="pill-icon">📅</span>
@@ -206,35 +231,40 @@
     <section id="crawl-section">
         <h2 class="main-section-title">1. The Crawl</h2>
         <div class="note-box" style="margin-bottom: 1.5rem;">
-            Percentages describe this Common Crawl result set, not the entire Web. Common Crawl reflects what its crawler fetched, what sites allowed, the response-type prefilter used by this analysis, and the configured domain/sample limits for this run.
+            Percentages describe this Common Crawl result set, not the entire Web. Common Crawl reflects what its crawler fetched, what sites allowed, and the configured domain/sample limits for this run. Response counters below separate all scoped responses from HTML pages and feed URL checks. Recency is computed relative to each crawl record's response time where available.
         </div>
         <div class="stats-grid">
             <div class="card">
-                <div class="card-title">Candidate Responses Analyzed</div>
+                <div class="card-title">Responses Processed</div>
                 <div class="card-value">{{ total_pages_f }}</div>
-                <div class="card-sub">HTML, XML, feed, and sniffable HTTP responses after prefiltering</div>
+                <div class="card-sub">All WARC responses after domain filtering; {{ stats.pages_seen|comma }} had HTML, feed, XML, or sniffable content types and were analyzed further.</div>
+            </div>
+            <div class="card">
+                <div class="card-title">HTML Pages Processed</div>
+                <div class="card-value">{{ stats.html_responses|comma }}</div>
+                <div class="card-sub">HTML/XHTML responses used as the denominator for autodiscovery page rates.</div>
             </div>
             <div class="card">
                 <div class="card-title">Unique Domains</div>
                 <div class="card-value">{{ total_sites_f }}</div>
-                <div class="card-sub">Distinct domains among candidate responses (HyperLogLog estimate)</div>
+                <div class="card-sub">Distinct domains among processed responses (HyperLogLog estimate)</div>
             </div>
             <div class="card">
                 <div class="card-title">Feed URLs Checked</div>
                 <div class="card-value">{{ stats.feed_results_count|comma }}</div>
-                <div class="card-sub">{{ stats.feeds_sniffed|comma }} discovered by content sniffing; the rest were feed-looking responses.</div>
+                <div class="card-sub">{{ stats.feeds_sniffed|comma }} generic XML/text/plain/octet-stream responses sniffed as feeds; the rest had exact RSS/Atom media types.</div>
             </div>
         </div>
 
         <!-- Content-Type distribution (collapsed) -->
         <div class="chart-card" style="margin-bottom: 2rem;">
-            <div class="chart-title">Content-Type Distribution</div>
-            <div class="chart-sub">HTTP <code>Content-Type</code> header values, grouped by category.</div>
+            <div class="chart-title">Analyzed Response Content-Type Distribution</div>
+            <div class="chart-sub">HTTP <code>Content-Type</code> header values among responses that passed the analysis prefilter. “Other XML” is XML content without an exact RSS/Atom media type, such as <code>application/xml</code> or <code>text/xml</code>. “Other Non-XML” is sniffable non-XML content such as <code>text/plain</code> or <code>application/octet-stream</code>. Either is only counted as a feed URL if sniffing finds RSS/Atom. Parenthetical percentages use all analyzed responses as the denominator.</div>
             {% set total_ct = stats.content_types_collapsed.values()|sum %}
             {% set html_count = stats.content_types_collapsed.get("HTML", 0) %}
             {% set html_pct = (html_count / total_ct * 100) if total_ct else 0 %}
             {% set non_html_total = total_ct - html_count %}
-            {% set ct_colors = {"HTML": "#94a3b8", "Atom": "#6366f1", "RSS": "#10b981", "Other XML": "#8b5cf6", "Other": "#e2e8f0"} %}
+            {% set ct_colors = {"HTML": "#94a3b8", "Atom": "#6366f1", "RSS": "#10b981", "Other XML": "#8b5cf6", "Other Non-XML": "#64748b"} %}
 
             <!-- HTML callout -->
             <div style="display:flex; align-items:center; gap:1.5rem; margin-bottom:1.25rem; padding:0.75rem 1rem; background:#f1f5f9; border-radius:10px;">
@@ -281,14 +311,16 @@
                 </div>
             </div>
             <div class="card">
-                <div class="card-title">Discovery Rel Usage</div>
+                <div class="card-title">Discovery Link Relations</div>
                 <div class="card-value">{{ stats.pages_with_autodiscovery|comma }}</div>
                 <div class="card-sub">
-                    <div class="row"><span>rel="alternate"</span> <strong>{{ stats.discovery_rel_alternate|comma }}</strong></div>
-                    <div class="row"><span>rel="feed"</span> <strong>{{ stats.discovery_rel_feed|comma }}</strong></div>
-                    <div class="row divider"><span>Both on same page</span> <strong>{{ stats.discovery_rel_both_page|comma }}</strong></div>
-                    <div class="row"><span>Multi-rel URLs</span> <strong>{{ stats.discovery_multi_rel_url|comma }}</strong></div>
-                    <div style="margin-top:0.35rem;color:var(--text-muted);">Page counts; rows can overlap.</div>
+                    <div style="margin-bottom:0.5rem;">HTML pages with at least one RSS/Atom autodiscovery link.</div>
+                    <div class="row"><span>Pages with rel="alternate"</span> <strong>{{ stats.discovery_rel_alternate|comma }}</strong></div>
+                    <div class="row"><span>Pages with rel="feed"</span> <strong>{{ stats.discovery_rel_feed|comma }}</strong></div>
+                    <div class="row divider"><span>Pages using both relations</span> <strong>{{ stats.discovery_rel_both_page|comma }}</strong></div>
+                    <div class="row"><span>Pages with a multi-rel link</span> <strong>{% if stats.discovery_link_rel_both_page_known %}{{ stats.discovery_link_rel_both_page|comma }}{% else %}not recorded{% endif %}</strong></div>
+                    <div class="row"><span>Multi-rel links</span> <strong>{{ stats.discovery_link_rel_both|comma }}</strong></div>
+                    <div style="margin-top:0.35rem;color:var(--text-muted);">Pages using both relations includes pages with separate <code>alternate</code> and <code>feed</code> links, plus pages with a single link whose <code>rel</code> contains both. Multi-rel links counts those single link elements, so it can be larger than the page subset.</div>
                 </div>
             </div>
         </div>
@@ -312,6 +344,16 @@
                 <div style="font-size:2.8rem;font-weight:700;color:var(--danger);margin:0.5rem 0;">{{ pages_with_duplicates|comma }}</div>
                 <div style="font-size:1.4rem;font-weight:600;color:var(--muted);margin-bottom:0.5rem;">{{ "%.1f"|format(duplicate_prevalence_pct) }}% of {{ multi_feed_pages_total|comma }} multi-feed pages</div>
                 <p class="chart-sub">Pages that link to redundant format variants of the same feed (same internal title and link after light normalization).</p>
+                {% if duplicate_format_pairs %}
+                <table class="data-table" style="margin-top:1rem;text-align:left;">
+                    <thead><tr><th>Coincident formats</th><th>Pages</th></tr></thead>
+                    <tbody>
+                        {% for pair, count in duplicate_format_pairs %}
+                        <tr><td>{{ pair }}</td><td>{{ count|comma }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
             </div>
             <div class="chart-card">
                 <div class="chart-title">Quality: Autodiscovered vs. Not</div>
@@ -326,8 +368,8 @@
 
         <div class="chart-grid">
             <div class="chart-card">
-                <div class="chart-title">HTML Platform Fingerprints</div>
-                <div class="chart-sub">Known page-side platform hints among analyzed HTML responses, and how often those pages expose RSS/Atom autodiscovery links. Detection is conservative and based on generator metadata plus common asset markers; missing rows mean “not identified,” not “custom.”</div>
+                <div class="chart-title">Autodiscovery Usage by HTML Platform</div>
+                <div class="chart-sub">Known page-side platform hints among analyzed HTML responses, plus an unknown row for pages with no recognized fingerprint. Parenthetical percentages use HTML pages in that row as the denominator and show how often those pages expose RSS/Atom links. Detection is conservative and based on generator metadata plus common asset markers.</div>
                 <div class="table-container">
                     <table class="data-table">
                         <thead><tr><th>Fingerprint</th><th>HTML pages</th><th>With autodiscovery</th></tr></thead>
@@ -343,25 +385,6 @@
                     </table>
                 </div>
             </div>
-            <div class="chart-card">
-                <div class="chart-title">Feed Quality by Source Fingerprint</div>
-                <div class="chart-sub">Quality of parsed feeds that were discovered from fingerprinted HTML pages. Denominator is parsed RSS/Atom feeds with at least one matching source-page fingerprint, not all feeds on that platform. A feed may count under more than one source fingerprint if it was discovered from multiple page types.</div>
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead><tr><th>Source fingerprint</th><th>Parsed feeds</th><th>Quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }} within source</th><th>Mean quality</th></tr></thead>
-                        <tbody>
-                            {% for row in stats.source_fingerprint_quality %}
-                            <tr>
-                                <td>{{ row.fingerprint }}</td>
-                                <td>{{ row.parsed_feeds|comma }}</td>
-                                <td>{{ row.quality_count|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.quality_pct) }}%)</span></td>
-                                <td>{{ "%.3f"|format(row.mean_quality) }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
     </section>
 
@@ -370,10 +393,11 @@
         <h2 class="main-section-title">3. Feeds</h2>
         <div class="stats-grid">
             <div class="card">
-                <div class="card-title">Successfully Parsed</div>
+                <div class="card-title">Successfully Parsed Feeds</div>
                 <div class="card-value">{{ stats.parsed_feeds|comma }}</div>
                 <div class="card-sub">
                     {% set total_parsed = stats.parsed_feeds %}
+                    <div style="margin-bottom:0.5rem;">Percentages use feed URLs checked as the denominator for parse results, and successfully parsed feeds as the denominator for autodiscovery rows.</div>
                     <div class="row"><span>Parse success rate</span> <strong>{{ "%.1f"|format(stats.parse_success_pct) }}%</strong></div>
                     <div class="row"><span>Broken/unparseable</span> <strong>{{ stats.unparsed_feeds|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.unparsed_pct) }}%)</span></strong></div>
                     <div class="row"><span>With autodiscovery link</span> <strong>{{ stats.feeds_with_autodiscovery|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.feeds_with_autodiscovery / total_parsed * 100 if total_parsed else 0) }}%)</span></strong></div>
@@ -381,27 +405,29 @@
                 </div>
             </div>
             <div class="card">
-                <div class="card-title">Content Coverage</div>
+                <div class="card-title">Feeds with Entry Content</div>
                 <div class="card-value">{{ (stats.feeds_with_content + stats.feeds_with_summary)|comma }}</div>
                 <div class="card-sub">
-                    <div class="row"><span>Any entry content</span> <strong>{{ "%.1f"|format((stats.feeds_with_content + stats.feeds_with_summary) / total_parsed * 100 if total_parsed else 0) }}%</strong></div>
-                    <div class="row"><span>Full content</span> <strong>{{ stats.feeds_with_content|comma }}</strong></div>
-                    <div class="row"><span>Summary only</span> <strong>{{ stats.feeds_with_summary|comma }}</strong></div>
-                    <div class="row"><span>Neither</span> <strong>{{ stats.feeds_with_neither|comma }}</strong></div>
+                    <div class="row"><span>Coverage rate</span> <strong>{{ "%.1f"|format((stats.feeds_with_content + stats.feeds_with_summary) / total_parsed * 100 if total_parsed else 0) }}%</strong></div>
+                    <div class="row"><span>Full content</span> <strong>{{ stats.feeds_with_content|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.feeds_with_content / total_parsed * 100 if total_parsed else 0) }}%)</span></strong></div>
+                    <div class="row"><span>Summary only</span> <strong>{{ stats.feeds_with_summary|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.feeds_with_summary / total_parsed * 100 if total_parsed else 0) }}%)</span></strong></div>
+                    <div class="row"><span>Neither</span> <strong>{{ stats.feeds_with_neither|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.feeds_with_neither / total_parsed * 100 if total_parsed else 0) }}%)</span></strong></div>
+                    <div style="margin-top:0.35rem;color:var(--text-muted);">Denominator: successfully parsed feeds.</div>
                 </div>
             </div>
             <div class="card">
-                <div class="card-title">Entries &amp; Feed Dates</div>
+                <div class="card-title">Entries Found</div>
                 <div class="card-value">{{ stats.total_entries|comma }}</div>
                 <div class="card-sub">
-                    <div class="row"><span>Total entries found</span> <strong>{{ stats.total_entries|comma }}</strong></div>
+                    <div style="margin-bottom:0.5rem;">Percentages use successfully parsed feeds as the denominator, except dated entries use parsed feeds with entries.</div>
                     <div class="row"><span>Mean entries per parsed feed</span> <strong>{{ "%.1f"|format(stats.total_entries / total_parsed if total_parsed else 0) }}</strong></div>
                     <div class="row"><span>Parsed feeds with entries</span> <strong>{{ stats.feeds_with_entries|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.feeds_with_entries / total_parsed * 100 if total_parsed else 0) }}%)</span></strong></div>
                     <div class="row"><span>Feeds with dated entries</span> <strong>{{ stats.feeds_with_entry_dates|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.feeds_with_entry_dates / stats.feeds_with_entries * 100 if stats.feeds_with_entries else 0) }}%)</span></strong></div>
                     <div class="row"><span>Feeds with feed-level dates</span> <strong>{{ stats.feeds_with_updated_date|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.feeds_with_updated_date / total_parsed * 100 if total_parsed else 0) }}%)</span></strong></div>
                     <div class="row divider"><span>Feeds with repeated entry titles</span> <strong>{{ stats.feeds_with_repeated_entry_titles|comma }}</strong></div>
-                    <div class="row"><span>Feeds with default-looking titles</span> <strong>{{ stats.feeds_with_default_entry_titles|comma }}</strong></div>
+                    <div class="row"><span>Feeds with default entry titles</span> <strong>{{ stats.feeds_with_default_entry_titles|comma }}</strong></div>
                     <div class="row"><span>Feeds with repeated entry links</span> <strong>{{ stats.feeds_with_repeated_entry_links|comma }}</strong></div>
+                    <div style="margin-top:0.35rem;color:var(--text-muted);">Default entry titles are generic placeholder-like values such as “Default Title”.</div>
                 </div>
             </div>
         </div>
@@ -413,8 +439,9 @@
                 <div class="err-count">{{ stats.total_errors|comma }}</div>
                 <div class="err-label">feed parse errors</div>
                 {% if stats.feed_results_count %}
-                <div class="err-label" style="margin-top:0.2rem;">{{ "%.1f"|format(stats.total_errors / stats.feed_results_count * 100) }}% of {{ stats.feed_results_count|comma }} feed URL checks</div>
+                <div class="err-label" style="margin-top:0.2rem;">{{ "%.1f"|format(stats.total_errors / stats.feed_results_count * 100) }}% of {{ stats.feed_results_count|comma }} feed URLs checked</div>
                 {% endif %}
+                <div class="err-label" style="margin-top:0.2rem;">Error-row percentages use total parse errors as the denominator.</div>
             </div>
             <table>
                 {% for row in stats.error_column_rows %}
@@ -433,10 +460,10 @@
 
         <div class="chart-card" style="margin-bottom: 2rem;">
             <div class="chart-title">Feed Availability and Freshness</div>
-            <div class="chart-sub">Step-down view from every feed URL check to feeds that appear active. Active means successfully parsed with a usable freshness signal within {{ stats.inactive_quality.cutoff_days|comma }} days; a feed can be active but still have zero entries in the captured response.</div>
+                <div class="chart-sub">Step-down view from every feed URL checked to parsed feeds with entries that appear fresh. Fresh means the newest entry date, or feed-level updated date when no entry date exists, is within {{ stats.inactive_quality.cutoff_days|comma }} days of the crawl response time. Funnel percentages use feed URLs checked as the denominator.</div>
             <div class="funnel">
                 <div class="funnel-row">
-                    <div class="funnel-label">Feed URL checks</div>
+                    <div class="funnel-label">Feed URLs checked</div>
                     <div class="funnel-track"><div class="funnel-fill" style="width:100%;"></div></div>
                     <div class="funnel-value">{{ stats.feed_results_count|comma }}</div>
                 </div>
@@ -446,7 +473,7 @@
                     <div class="funnel-value">{{ stats.parsed_feeds|comma }}</div>
                 </div>
                 <div class="funnel-row">
-                    <div class="funnel-label">Recent/datable</div>
+                    <div class="funnel-label">Freshness signal within cutoff</div>
                     <div class="funnel-track"><div class="funnel-fill" style="width:{{ "%.1f"|format(stats.active_quality.n / stats.feed_results_count * 100 if stats.feed_results_count else 0) }}%;"></div></div>
                     <div class="funnel-value">{{ stats.active_quality.n|comma }}</div>
                 </div>
@@ -454,11 +481,6 @@
                     <div class="funnel-label">Active with entries</div>
                     <div class="funnel-track"><div class="funnel-fill" style="width:{{ "%.1f"|format(stats.active_quality.with_entries / stats.feed_results_count * 100 if stats.feed_results_count else 0) }}%;"></div></div>
                     <div class="funnel-value">{{ stats.active_quality.with_entries|comma }}</div>
-                </div>
-                <div class="funnel-row">
-                    <div class="funnel-label">Active, zero-entry</div>
-                    <div class="funnel-track"><div class="funnel-fill" style="width:{{ "%.1f"|format(stats.active_quality.without_entries / stats.feed_results_count * 100 if stats.feed_results_count else 0) }}%;"></div></div>
-                    <div class="funnel-value">{{ stats.active_quality.without_entries|comma }}</div>
                 </div>
             </div>
         </div>
@@ -468,12 +490,12 @@
             <div class="chart-card">
                 <div class="card-title">Operational Quality</div>
                 <div class="card-value">{{ "%.3f"|format(stats.mean_quality) }}</div>
+                <div class="card-sub" style="margin-top:-0.5rem;margin-bottom:0.6rem;">mean score, 0-1, across successfully parsed feeds</div>
                 <div class="card-sub">
-                    <div class="row"><span>All parsed feeds</span> <strong>{{ "%.3f"|format(stats.mean_quality) }}</strong></div>
-                    <div class="row"><span>Active-only mean</span> <strong>{{ "%.3f"|format(stats.active_quality.mean) }}</strong></div>
-                    <div class="row"><span>Recent/datable share</span> <strong>{{ stats.active_quality.n|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.active_quality.pct) }}%)</span></strong></div>
+                    <div style="margin-bottom:0.5rem;">Parenthetical percentages use successfully parsed feeds as the denominator.</div>
+                    <div class="row"><span>Freshness signal within cutoff</span> <strong>{{ stats.active_quality.n|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.active_quality.pct) }}%)</span></strong></div>
+                    <div class="row"><span>Mean among those feeds</span> <strong>{{ "%.3f"|format(stats.active_quality.mean) }}</strong></div>
                     <div class="row"><span>Active with entries</span> <strong>{{ stats.active_quality.with_entries|comma }}</strong></div>
-                    <div class="row"><span>Active, zero-entry</span> <strong>{{ stats.active_quality.without_entries|comma }}</strong></div>
                     <div class="row divider"><span>Undated or stale</span> <strong>{{ stats.inactive_quality.n|comma }}</strong></div>
                 </div>
             </div>
@@ -482,13 +504,13 @@
                 <div class="chart-sub">
                     Operational, non-editorial score 0–1 among successfully parsed feeds.
                     In split tables, “quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}”
-                    means a feed is recent/datable and has enough basic entry/feed
+                    means a feed has a usable freshness signal and enough basic entry/feed
                     metadata to look usable; lower-scoring feeds remain in the
                     all-feeds columns so abandoned or sparse feeds still count.
                     Feeds with no usable date, or no freshness signal within
                     {{ stats.inactive_quality.cutoff_days|comma }} days, score 0 here;
                     the card above also shows the mean after
-                    counting those feeds out. Excluded from the recent/datable mean:
+                    counting those feeds out. Excluded from the freshness-filtered mean:
                     {{ stats.inactive_quality.undated|comma }} undated and
                     {{ stats.inactive_quality.stale|comma }} stale feeds.
                 </div>
@@ -526,9 +548,9 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Feed Formats</div>
-                <div class="chart-sub">Successfully parsed feeds only. RSS-family feeds: {{ stats.rss_count|comma }}; Atom feeds: {{ stats.atom_count|comma }}. Quality split shows share of feeds with operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
+                <div class="chart-sub">Successfully parsed feeds only. RSS-family feeds: {{ stats.rss_count|comma }}; Atom feeds: {{ stats.atom_count|comma }}. Parenthetical percentages use feeds in that format as the denominator and show the share with operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
                 <table class="data-table">
-                    <thead><tr><th>Format</th><th>Count</th><th>Quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }} within format</th><th>Mean quality</th></tr></thead>
+                    <thead><tr><th>Format</th><th>Count</th><th>Quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}</th><th>Mean quality</th></tr></thead>
                     <tbody>
                         {% for row in format_quality_rows %}
                         <tr>
@@ -574,8 +596,10 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Entry Content Profile</div>
-                <div class="chart-sub">Content type classification based on Atom <code>type</code> attribute and RSS element semantics. The table splits prevalence across all parsed feeds and feeds with operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
-                <canvas id="contentProfileChart"></canvas>
+                <div class="chart-sub">Content type classification based on Atom <code>type</code> attribute and RSS element semantics. Parenthetical percentages in the first count column use all successfully parsed feeds as the denominator; percentages in the quality column use feeds with operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
+                <div class="profile-chart-container" style="height:220px;margin-bottom:1rem;">
+                    <canvas id="contentProfileChart"></canvas>
+                </div>
                 <div class="table-container">
                     <table class="data-table">
                         <thead><tr><th>Profile</th><th>All parsed feeds</th><th>Among quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }} feeds</th></tr></thead>
@@ -603,7 +627,7 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Feed Languages</div>
-                <div class="chart-sub">Top feed language declarations across successfully parsed feeds. Quality split shows share of feeds with operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
+                <div class="chart-sub">Top feed language declarations across successfully parsed feeds. Parenthetical percentages in the first count column use all successfully parsed feeds as the denominator; percentages in the quality column use feeds with operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
                 <div class="table-container">
                     <table class="data-table">
                         <thead><tr><th>Language</th><th>All parsed feeds</th><th>Among quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }} feeds</th></tr></thead>
@@ -621,8 +645,7 @@
             </div>
             <div class="chart-card">
                 <div class="chart-title">Language Tagging</div>
-                <div class="chart-sub">Feed-internal language signals are read from <code>xml:lang</code> attributes, RSS <code>&lt;language&gt;</code>, and Dublin Core <code>dc:language</code>; HTTP <code>Content-Language</code> is tracked separately. Multi-language feeds count distinct language tags inside one feed; multi-feed pages are tracked separately in autodiscovery.</div>
-                <canvas id="langCountChart"></canvas>
+                <div class="chart-sub">Feed-internal language signals are read from <code>xml:lang</code> attributes, RSS <code>&lt;language&gt;</code>, and Dublin Core <code>dc:language</code>; HTTP <code>Content-Language</code> is tracked separately. HTTP/feed mismatches are only counted when an HTTP language conflicts with a feed-level language, not when entries use other languages. Multi-language feeds count distinct language tags inside one feed; multi-feed pages are tracked separately in autodiscovery.</div>
                 <div class="card-sub" style="margin-top: 1.5rem;">
                     <div class="row"><span>HTTP <code>Content-Language</code></span> <strong>{{ stats.lang_src_http|comma }}</strong></div>
                     <div class="row"><span>Feed-level language tag</span> <strong>{{ stats.lang_src_feed|comma }}</strong></div>
@@ -676,14 +699,22 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Top Feed Extensions</div>
-                <div class="chart-sub">Non-core namespace elements encountered across successfully parsed feeds. Quality split uses feeds with operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
+                <div class="chart-sub">Non-core namespace elements encountered across successfully parsed feeds. Parenthetical percentages in the first count column use all successfully parsed feeds as the denominator; percentages in the quality column use feeds with operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
                 <div class="table-container">
                     <table class="data-table">
                         <thead><tr><th>Element</th><th>All parsed feeds</th><th>Among quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }} feeds</th></tr></thead>
                         <tbody>
                             {% for row in extension_prevalence %}
                             <tr>
-                                <td><code>{{ row.extension }}</code></td>
+                                <td>
+                                    <code>
+                                        {% if row.extension_href %}
+                                        <a href="{{ row.extension_href }}">{{ row.extension_prefix }}</a>:{{ row.extension_local }}
+                                        {% else %}
+                                        {{ row.extension }}
+                                        {% endif %}
+                                    </code>
+                                </td>
                                 <td>{{ row.all_count|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.all_pct) }}%)</span></td>
                                 <td>{{ row.quality_count|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.quality_pct) }}%)</span></td>
                             </tr>
@@ -694,7 +725,7 @@
             </div>
             <div class="chart-card">
                 <div class="chart-title">Platform Fingerprints</div>
-                <div class="chart-sub">Known feed generators or platform headers observed on parsed feeds. This is intentionally conservative; absent fingerprints mean “not identified,” not “custom-built.”</div>
+                <div class="chart-sub">Known feed generators or platform headers observed on parsed feeds. This is intentionally conservative; absent fingerprints mean “not identified,” not “custom-built.” Parenthetical percentages in the first count column use all successfully parsed feeds as the denominator; percentages in the quality column use feeds with operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
                 <div class="table-container">
                     <table class="data-table">
                         <thead><tr><th>Fingerprint</th><th>All parsed feeds</th><th>Among quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }} feeds</th></tr></thead>
@@ -711,10 +742,76 @@
                 </div>
             </div>
         </div>
+
+        <div class="chart-grid">
+            <div class="chart-card">
+                <div class="chart-title">Feed Quality by Source Fingerprint</div>
+                <div class="chart-sub">Quality of parsed feeds that were discovered from fingerprinted HTML pages. “unknown” covers parsed feeds without a matched source-page fingerprint, so identified platforms have a baseline for comparison. Parenthetical percentages use parsed feeds in that source-fingerprint row as the denominator.</div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead><tr><th>Source fingerprint</th><th>Parsed feeds</th><th>Quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }} within source</th><th>Mean quality</th></tr></thead>
+                        <tbody>
+                            {% for row in stats.source_fingerprint_quality %}
+                            <tr>
+                                <td>{{ row.fingerprint }}</td>
+                                <td>{{ row.parsed_feeds|comma }}</td>
+                                <td>{{ row.quality_count|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.quality_pct) }}%)</span></td>
+                                <td>{{ "%.3f"|format(row.mean_quality) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </section>
 </div>
 
 <script>
+    function tableCellSortValue(cell) {
+        const text = (cell?.textContent || '').trim();
+        const normalized = text.replace(/,/g, '');
+        const parentheticalPercent = normalized.match(/\((-?\d+(?:\.\d+)?)%\)/);
+        if (parentheticalPercent) return Number(parentheticalPercent[1]);
+        const numeric = normalized.match(/-?\d+(?:\.\d+)?/);
+        if (numeric) return Number(numeric[0]);
+        return text.toLocaleLowerCase();
+    }
+
+    function compareTableValues(a, b) {
+        if (typeof a === 'number' && typeof b === 'number') return a - b;
+        return String(a).localeCompare(String(b), undefined, { numeric: true });
+    }
+
+    function makeTablesSortable() {
+        document.querySelectorAll('table.data-table').forEach(table => {
+            if (table.querySelector('[rowspan], [colspan]')) return;
+            const tbody = table.tBodies[0];
+            const headers = Array.from(table.tHead?.rows[0]?.cells || []);
+            if (!tbody || !headers.length) return;
+
+            table.classList.add('sortable');
+            headers.forEach((header, columnIndex) => {
+                header.addEventListener('click', () => {
+                    const ascending = !header.classList.contains('sort-asc');
+                    headers.forEach(item => item.classList.remove('sort-asc', 'sort-desc'));
+                    header.classList.add(ascending ? 'sort-asc' : 'sort-desc');
+
+                    const rows = Array.from(tbody.rows);
+                    rows.sort((rowA, rowB) => {
+                        const valueA = tableCellSortValue(rowA.cells[columnIndex]);
+                        const valueB = tableCellSortValue(rowB.cells[columnIndex]);
+                        const result = compareTableValues(valueA, valueB);
+                        return ascending ? result : -result;
+                    });
+                    rows.forEach(row => tbody.appendChild(row));
+                });
+            });
+        });
+    }
+
+    makeTablesSortable();
+
     const baseScales = () => ({
         x: {
             ticks: { maxRotation: 0, minRotation: 0, autoSkip: true, maxTicksLimit: 16, font: { size: 11 } },
@@ -862,17 +959,6 @@
             datasets: [{ data: Object.values(entriesData), backgroundColor: 'rgba(99,102,241,0.5)', borderColor: '#6366f1', borderWidth: 1 }]
         },
         options: baseOpts()
-    });
-
-    // ── Language count histogram ──────────────────────────────────────────────
-    const langCountData = {{ stats.lang_count_hist|tojson }};
-    new Chart(document.getElementById('langCountChart'), {
-        type: 'bar',
-        data: {
-            labels: Object.keys(langCountData).map(k => k === '0' ? 'No language' : k + (k==='3+' ? '' : ' language') + (k==='1'?'':'s')),
-            datasets: [{ data: Object.values(langCountData), backgroundColor: ['#e2e8f0','#6366f1','#8b5cf6','#c4b5fd'] }]
-        },
-        options: { ...baseOpts(), plugins: { legend: { display: false } } }
     });
 
     // ── Recency CDFs ──────────────────────────────────────────────────────────

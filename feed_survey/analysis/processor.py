@@ -24,12 +24,14 @@ class WarcProcessor:
     def process_record(self, record: Any) -> None:
         if record.record_type != WarcRecordType.response:
             return
-        if not _interesting_warc_content_type(record):
-            return
 
         url = record.headers.get("WARC-Target-URI")
         domain = get_domain(url or "")
         if not url or not self.is_in_scope(domain):
+            return
+
+        self.stats.responses_processed += 1
+        if not _interesting_warc_content_type(record):
             return
 
         record.parse_http()
@@ -53,7 +55,9 @@ class WarcProcessor:
         if status_code == 200:
             if _feed_content_type(content_type):
                 normalized_url = normalize_url(url)
-                self._process_feed(record, normalized_url, status_code, request_time_str)
+                self._process_feed(
+                    record, normalized_url, status_code, request_time_str
+                )
             elif _sniffable_content_type(content_type):
                 self._process_sniffed_feed(record, url, status_code, request_time_str)
 
@@ -144,7 +148,8 @@ def _normalized_content_type(content_type_header: str) -> str:
 
 def _feed_content_type(content_type: str) -> bool:
     return (
-        content_type in {
+        content_type
+        in {
             "application/rss+xml",
             "application/atom+xml",
             "application/xml+rss",

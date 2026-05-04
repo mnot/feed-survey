@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from itertools import combinations
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from feed_survey.analysis import Stats
@@ -21,6 +22,7 @@ class DiscoverySummary:
     pages_with_duplicates: int
     duplicate_prevalence_pct: float
     multi_feed_pages_total: int
+    duplicate_format_pairs: List[Tuple[str, int]]
 
 
 def build_discovery_summary(stats: Stats) -> DiscoverySummary:
@@ -47,6 +49,9 @@ def build_discovery_summary(stats: Stats) -> DiscoverySummary:
     per_site_hist.pop("0", None)
 
     duplicate_counts = detect_duplicates(stats.multi_feed_pages, stats.feed_results)
+    duplicate_format_pairs = detect_duplicate_format_pairs(
+        stats.multi_feed_pages, stats.feed_results
+    )
     pages_with_duplicates = len(duplicate_counts)
     multi_feed_pages_total = len(stats.multi_feed_pages)
     duplicate_prevalence_pct = (
@@ -72,6 +77,7 @@ def build_discovery_summary(stats: Stats) -> DiscoverySummary:
         pages_with_duplicates=pages_with_duplicates,
         duplicate_prevalence_pct=duplicate_prevalence_pct,
         multi_feed_pages_total=multi_feed_pages_total,
+        duplicate_format_pairs=duplicate_format_pairs,
     )
 
 
@@ -120,29 +126,51 @@ def detect_duplicates(
 ) -> List[int]:
     duplicate_counts = []
     for feed_urls in multi_feed_pages.values():
-        link_to_feeds: Dict[Tuple[Optional[str], Optional[str]], Set[str]] = {}
-        for url in feed_urls:
-            res = feed_results.get(url)
-            if not isinstance(res, dict):
-                continue
-            link = res.get("link")
-            title = res.get("title")
-            if link or title:
-                key = (
-                    normalize_url_for_grouping(link) if link else None,
-                    normalize_entry_title(title),
-                )
-                if key not in link_to_feeds:
-                    link_to_feeds[key] = set()
-                link_to_feeds[key].add(url)
-
         page_dups = 0
-        for feeds in link_to_feeds.values():
-            if len(feeds) > 1:
-                page_dups += len(feeds) - 1
+        for feeds in _duplicate_feed_groups(feed_urls, feed_results):
+            page_dups += len(feeds) - 1
         if page_dups > 0:
             duplicate_counts.append(page_dups)
     return duplicate_counts
+
+
+def detect_duplicate_format_pairs(
+    multi_feed_pages: Dict[str, List[str]], feed_results: Dict[str, Any]
+) -> List[Tuple[str, int]]:
+    pair_counts: Dict[str, int] = {}
+    for feed_urls in multi_feed_pages.values():
+        for feeds in _duplicate_feed_groups(feed_urls, feed_results):
+            formats = sorted(
+                str(feed_results.get(feed_url, {}).get("format") or "unknown")
+                for feed_url in feeds
+            )
+            for first, second in combinations(formats, 2):
+                pair = f"{first} and {second}"
+                pair_counts[pair] = pair_counts.get(pair, 0) + 1
+
+    pairs = sorted(pair_counts.items(), key=lambda item: item[1], reverse=True)
+    return pairs[:10]
+
+
+def _duplicate_feed_groups(
+    feed_urls: List[str], feed_results: Dict[str, Any]
+) -> List[Set[str]]:
+    link_to_feeds: Dict[Tuple[Optional[str], Optional[str]], Set[str]] = {}
+    for url in feed_urls:
+        res = feed_results.get(url)
+        if not isinstance(res, dict):
+            continue
+        link = res.get("link")
+        title = res.get("title")
+        if link or title:
+            key = (
+                normalize_url_for_grouping(link) if link else None,
+                normalize_entry_title(title),
+            )
+            if key not in link_to_feeds:
+                link_to_feeds[key] = set()
+            link_to_feeds[key].add(url)
+    return [feeds for feeds in link_to_feeds.values() if len(feeds) > 1]
 
 
 def build_stacked_data(

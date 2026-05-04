@@ -30,6 +30,8 @@ class HtmlDiscovery:
 
         try:
             fingerprints = fingerprint_html(content)
+            if fingerprints:
+                self.stats.html_fp_pages += 1
             for fingerprint in fingerprints:
                 self.stats.html_fingerprint_counts[fingerprint] = (
                     self.stats.html_fingerprint_counts.get(fingerprint, 0) + 1
@@ -53,6 +55,8 @@ class HtmlDiscovery:
                 page_url, found_rels, page_discoveries
             )
             if has_discovery:
+                if fingerprints:
+                    self.stats.html_fp_auto_pages += 1
                 for fingerprint in fingerprints:
                     self.stats.html_fingerprint_auto_counts[fingerprint] = (
                         self.stats.html_fingerprint_auto_counts.get(fingerprint, 0) + 1
@@ -116,9 +120,13 @@ class HtmlDiscovery:
             self.stats.discovery_rel_feed += 1
         if "alternate" in found_rels and "feed" in found_rels:
             self.stats.discovery_rel_both_page += 1
-        self.stats.discovery_multi_rel_url += sum(
+        both_rel_links = sum(
             1 for rel_tokens in page_discoveries.values() if len(rel_tokens) > 1
         )
+        if both_rel_links:
+            self.stats.discovery_link_rel_both_page += 1
+        self.stats.discovery_link_rel_both += both_rel_links
+        self.stats.discovery_multi_rel_url += both_rel_links
         feed_count = len(page_discoveries)
         if feed_count:
             self.stats.discovery_links_per_page_counts[feed_count] = (

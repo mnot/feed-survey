@@ -23,6 +23,8 @@ def test_summary_record_counts() -> None:
     stats.error_types = {"ParseError": 13}
     stats.html_fingerprint_counts = {"wordpress": 11}
     stats.html_fingerprint_auto_counts = {"wordpress": 8}
+    stats.html_fp_pages = 12
+    stats.html_fp_auto_pages = 9
     stats.feed_source_fingerprints = {"https://example.com/feed.xml": {"wordpress": 7}}
     stats.top_n = 500000
 
@@ -41,6 +43,8 @@ def test_summary_record_counts() -> None:
     assert record["error_types"] == {"ParseError": 13}
     assert record["html_fingerprint_counts"] == {"wordpress": 11}
     assert record["html_fingerprint_auto_counts"] == {"wordpress": 8}
+    assert record["html_fp_pages"] == 12
+    assert record["html_fp_auto_pages"] == 9
     assert record["feed_source_fingerprints"] == {
         "https://example.com/feed.xml": {"wordpress": 7}
     }
@@ -66,6 +70,8 @@ def test_merge_summary_counts_once() -> None:
             "error_types": {"ParseError": 13},
             "html_fingerprint_counts": {"wordpress": 11},
             "html_fingerprint_auto_counts": {"wordpress": 8},
+            "html_fp_pages": 12,
+            "html_fp_auto_pages": 9,
             "feed_source_fingerprints": {
                 "https://example.com/feed.xml": {"wordpress": 7}
             },
@@ -86,6 +92,8 @@ def test_merge_summary_counts_once() -> None:
     assert stats.error_types == {"ParseError": 13}
     assert stats.html_fingerprint_counts == {"wordpress": 11}
     assert stats.html_fingerprint_auto_counts == {"wordpress": 8}
+    assert stats.html_fp_pages == 12
+    assert stats.html_fp_auto_pages == 9
     assert stats.feed_source_fingerprints == {
         "https://example.com/feed.xml": {"wordpress": 7}
     }
@@ -107,12 +115,16 @@ def test_combiner_merges_summary() -> None:
     first.discovery_rel_feed = 12
     first.discovery_rel_both_page = 13
     first.discovery_multi_rel_url = 14
+    first.discovery_link_rel_both = 15
+    first.discovery_link_rel_both_page = 16
     first.discovery_pages_count = 15
     first.discovery_links_per_page_counts = {1: 16}
     first.error_types = {"ParseError": 17}
     first.multi_feed_pages = {"https://example.com/": ["https://example.com/a.xml"]}
     first.html_fingerprint_counts = {"wordpress": 18}
     first.html_fingerprint_auto_counts = {"wordpress": 18}
+    first.html_fp_pages = 20
+    first.html_fp_auto_pages = 12
     first.feed_source_fingerprints = {"https://example.com/feed.xml": {"wordpress": 19}}
     first.top_n = 100000
 
@@ -130,12 +142,16 @@ def test_combiner_merges_summary() -> None:
     second.discovery_rel_feed = 27
     second.discovery_rel_both_page = 28
     second.discovery_multi_rel_url = 29
+    second.discovery_link_rel_both = 30
+    second.discovery_link_rel_both_page = 31
     second.discovery_pages_count = 30
     second.discovery_links_per_page_counts = {1: 31, 2: 32}
     second.error_types = {"ParseError": 33, "XMLSyntaxError": 34}
     second.multi_feed_pages = {"https://example.org/": ["https://example.org/a.xml"]}
     second.html_fingerprint_counts = {"wordpress": 33, "drupal": 34}
     second.html_fingerprint_auto_counts = {"wordpress": 35, "drupal": 36}
+    second.html_fp_pages = 40
+    second.html_fp_auto_pages = 22
     second.feed_source_fingerprints = {
         "https://example.com/feed.xml": {"wordpress": 37, "drupal": 38}
     }
@@ -158,6 +174,8 @@ def test_combiner_merges_summary() -> None:
     assert merged["discovery_rel_feed"] == 39
     assert merged["discovery_rel_both_page"] == 41
     assert merged["discovery_multi_rel_url"] == 43
+    assert merged["discovery_link_rel_both"] == 45
+    assert merged["discovery_link_rel_both_page"] == 47
     assert merged["discovery_pages_count"] == 45
     assert merged["discovery_links_per_page_counts"] == {"1": 47, "2": 32}
     assert merged["error_types"] == {"ParseError": 50, "XMLSyntaxError": 34}
@@ -170,6 +188,8 @@ def test_combiner_merges_summary() -> None:
         "wordpress": 53,
         "drupal": 36,
     }
+    assert merged["html_fp_pages"] == 60
+    assert merged["html_fp_auto_pages"] == 34
     assert merged["feed_source_fingerprints"] == {
         "https://example.com/feed.xml": {"wordpress": 56, "drupal": 38}
     }

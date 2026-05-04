@@ -14,6 +14,7 @@ class _StatsUnpickler(pickle.Unpickler):
 class Stats:
     def __init__(self) -> None:
         self.pages_seen: int = 0
+        self.responses_processed: int = 0
         self.sites_seen: Set[str] = set()
         self.sites_seen_count: int = 0
         self.autodiscovery_links: Dict[str, List[str]] = {}
@@ -21,6 +22,7 @@ class Stats:
         self.content_type_counts: Dict[str, int] = {}
         self.error_types: Dict[str, int] = {}
         self.top_n: Optional[int] = None
+        self.run_limit: int = 0
         self.max_crawl_time_str: Optional[str] = None
         self.feeds_sniffed: int = 0
         self.pages_processed: int = 0
@@ -32,11 +34,15 @@ class Stats:
         self.discovery_rel_feed: int = 0
         self.discovery_rel_both_page: int = 0
         self.discovery_multi_rel_url: int = 0
+        self.discovery_link_rel_both: int = 0
+        self.discovery_link_rel_both_page: int = 0
         self.discovery_pages_count: int = 0
         self.discovery_links_per_page_counts: Dict[int, int] = {}
         self.multi_feed_pages: Dict[str, List[str]] = {}
         self.html_fingerprint_counts: Dict[str, int] = {}
         self.html_fingerprint_auto_counts: Dict[str, int] = {}
+        self.html_fp_pages: int = 0
+        self.html_fp_auto_pages: int = 0
         self.feed_source_fingerprints: Dict[str, Dict[str, int]] = {}
 
         self.hll_p = 12
@@ -58,6 +64,7 @@ class Stats:
             ):
                 self.max_crawl_time_str = other.max_crawl_time_str
         self.pages_seen += other.pages_seen
+        self.responses_processed += other.responses_processed
         self.feeds_sniffed += other.feeds_sniffed
         self.pages_processed += other.pages_processed
         self.total_entries += other.total_entries
@@ -71,6 +78,10 @@ class Stats:
         self.discovery_rel_feed += other.discovery_rel_feed
         self.discovery_rel_both_page += other.discovery_rel_both_page
         self.discovery_multi_rel_url += other.discovery_multi_rel_url
+        self.discovery_link_rel_both += other.discovery_link_rel_both
+        self.discovery_link_rel_both_page += getattr(
+            other, "discovery_link_rel_both_page", 0
+        )
         self.discovery_pages_count += getattr(other, "discovery_pages_count", 0)
         for count, pages in getattr(
             other, "discovery_links_per_page_counts", {}
@@ -95,6 +106,8 @@ class Stats:
             self.html_fingerprint_auto_counts[label] = (
                 self.html_fingerprint_auto_counts.get(label, 0) + count
             )
+        self.html_fp_pages += getattr(other, "html_fp_pages", 0)
+        self.html_fp_auto_pages += getattr(other, "html_fp_auto_pages", 0)
         for feed_url, counts in getattr(other, "feed_source_fingerprints", {}).items():
             if feed_url not in self.feed_source_fingerprints:
                 self.feed_source_fingerprints[feed_url] = {}
@@ -144,6 +157,8 @@ class Stats:
         if other_top_n is not None:
             if self.top_n is None or other_top_n > self.top_n:
                 self.top_n = other_top_n
+
+        self.run_limit = max(self.run_limit, getattr(other, "run_limit", 0))
 
     def save(self, path: str) -> None:
         with open(path, "wb") as f_out:

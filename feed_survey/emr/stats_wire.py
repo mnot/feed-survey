@@ -25,6 +25,7 @@ def serialize_stats(stats: Stats) -> Dict[str, Any]:
         json_safe(
             {
                 "pages_seen": stats.pages_seen,
+                "responses_processed": stats.responses_processed,
                 "max_crawl_time_str": stats.max_crawl_time_str,
                 "hll_registers": stats.hll_registers,
                 "content_type_counts": stats.content_type_counts,
@@ -41,22 +42,33 @@ def serialize_stats(stats: Stats) -> Dict[str, Any]:
                 "discovery_rel_feed": stats.discovery_rel_feed,
                 "discovery_rel_both_page": stats.discovery_rel_both_page,
                 "discovery_multi_rel_url": stats.discovery_multi_rel_url,
+                "discovery_link_rel_both": stats.discovery_link_rel_both,
+                "discovery_link_rel_both_page": stats.discovery_link_rel_both_page,
                 "discovery_pages_count": stats.discovery_pages_count,
                 "discovery_links_per_page_counts": stats.discovery_links_per_page_counts,
                 "multi_feed_pages": stats.multi_feed_pages,
                 "html_fingerprint_counts": stats.html_fingerprint_counts,
                 "html_fingerprint_auto_counts": (stats.html_fingerprint_auto_counts),
+                "html_fp_pages": stats.html_fp_pages,
+                "html_fp_auto_pages": (stats.html_fp_auto_pages),
                 "feed_source_fingerprints": stats.feed_source_fingerprints,
                 "content_length_counts": stats.content_length_counts,
                 "discovery_domain_counts": stats.discovery_domain_counts,
                 "top_n": stats.top_n,
+                "run_limit": stats.run_limit,
             }
         ),
     )
 
 
 def merge_serialized_stats(merged: Dict[str, Any], incoming: Dict[str, Any]) -> None:
+    merged.setdefault("responses_processed", merged.get("pages_seen", 0))
+    merged.setdefault(
+        "discovery_link_rel_both", merged.get("discovery_multi_rel_url", 0)
+    )
+    merged.setdefault("discovery_link_rel_both_page", 0)
     merged["pages_seen"] += incoming.get("pages_seen", 0)
+    merged["responses_processed"] += incoming.get("responses_processed", 0)
     merged["pages_processed"] += incoming.get("pages_processed", 0)
     merged["feeds_sniffed"] += incoming.get("feeds_sniffed", 0)
     merged["total_entries"] += incoming.get("total_entries", 0)
@@ -69,6 +81,10 @@ def merge_serialized_stats(merged: Dict[str, Any], incoming: Dict[str, Any]) -> 
     merged["discovery_rel_feed"] += incoming.get("discovery_rel_feed", 0)
     merged["discovery_rel_both_page"] += incoming.get("discovery_rel_both_page", 0)
     merged["discovery_multi_rel_url"] += incoming.get("discovery_multi_rel_url", 0)
+    merged["discovery_link_rel_both"] += incoming.get("discovery_link_rel_both", 0)
+    merged["discovery_link_rel_both_page"] += incoming.get(
+        "discovery_link_rel_both_page", 0
+    )
     merged["discovery_pages_count"] += incoming.get("discovery_pages_count", 0)
 
     incoming_top_n = incoming.get("top_n")
@@ -76,6 +92,7 @@ def merge_serialized_stats(merged: Dict[str, Any], incoming: Dict[str, Any]) -> 
         current_top_n = merged.get("top_n")
         if current_top_n is None or incoming_top_n > current_top_n:
             merged["top_n"] = incoming_top_n
+    merged["run_limit"] = max(merged.get("run_limit", 0), incoming.get("run_limit", 0))
 
     incoming_hll = incoming.get("hll_registers")
     if incoming_hll:
@@ -111,6 +128,12 @@ def merge_serialized_stats(merged: Dict[str, Any], incoming: Dict[str, Any]) -> 
         "html_fingerprint_auto_counts",
     ):
         _merge_count_map(merged, incoming, field)
+    merged["html_fp_pages"] = merged.get("html_fp_pages", 0) + incoming.get(
+        "html_fp_pages", 0
+    )
+    merged["html_fp_auto_pages"] = merged.get("html_fp_auto_pages", 0) + incoming.get(
+        "html_fp_auto_pages", 0
+    )
 
     if "feed_source_fingerprints" not in merged:
         merged["feed_source_fingerprints"] = {}
@@ -158,8 +181,10 @@ def reduce_stats(values: Generator[Any, None, None]) -> Stats:
         if incoming_top_n is not None:
             if final_stats.top_n is None or incoming_top_n > final_stats.top_n:
                 final_stats.top_n = incoming_top_n
+        final_stats.run_limit = max(final_stats.run_limit, value.get("run_limit", 0))
 
         final_stats.pages_seen += value.get("pages_seen", 0)
+        final_stats.responses_processed += value.get("responses_processed", 0)
         final_stats.pages_processed += value.get("pages_processed", 0)
         final_stats.feeds_sniffed += value.get("feeds_sniffed", 0)
         final_stats.total_entries += value.get("total_entries", 0)
@@ -172,6 +197,10 @@ def reduce_stats(values: Generator[Any, None, None]) -> Stats:
         final_stats.discovery_rel_feed += value.get("discovery_rel_feed", 0)
         final_stats.discovery_rel_both_page += value.get("discovery_rel_both_page", 0)
         final_stats.discovery_multi_rel_url += value.get("discovery_multi_rel_url", 0)
+        final_stats.discovery_link_rel_both += value.get("discovery_link_rel_both", 0)
+        final_stats.discovery_link_rel_both_page += value.get(
+            "discovery_link_rel_both_page", 0
+        )
         final_stats.discovery_pages_count += value.get("discovery_pages_count", 0)
         for link_count, page_count in value.get(
             "discovery_links_per_page_counts", {}
@@ -230,6 +259,8 @@ def reduce_stats(values: Generator[Any, None, None]) -> Stats:
             final_stats.html_fingerprint_auto_counts[label] = (
                 final_stats.html_fingerprint_auto_counts.get(label, 0) + count
             )
+        final_stats.html_fp_pages += value.get("html_fp_pages", 0)
+        final_stats.html_fp_auto_pages += value.get("html_fp_auto_pages", 0)
         for feed_url, counts in value.get("feed_source_fingerprints", {}).items():
             if feed_url not in final_stats.feed_source_fingerprints:
                 final_stats.feed_source_fingerprints[feed_url] = {}
@@ -244,6 +275,7 @@ def reduce_stats(values: Generator[Any, None, None]) -> Stats:
 def summary_record(stats: Stats) -> Dict[str, Any]:
     return {
         "pages_seen": stats.pages_seen,
+        "responses_processed": stats.responses_processed,
         "max_crawl_time_str": stats.max_crawl_time_str,
         "hll_registers": stats.hll_registers,
         "content_types": stats.content_type_counts,
@@ -263,12 +295,17 @@ def summary_record(stats: Stats) -> Dict[str, Any]:
         "discovery_rel_feed": stats.discovery_rel_feed,
         "discovery_rel_both_page": stats.discovery_rel_both_page,
         "discovery_multi_rel_url": stats.discovery_multi_rel_url,
+        "discovery_link_rel_both": stats.discovery_link_rel_both,
+        "discovery_link_rel_both_page": stats.discovery_link_rel_both_page,
         "discovery_links_per_page_counts": stats.discovery_links_per_page_counts,
         "multi_feed_pages": stats.multi_feed_pages,
         "html_fingerprint_counts": stats.html_fingerprint_counts,
         "html_fingerprint_auto_counts": (stats.html_fingerprint_auto_counts),
+        "html_fp_pages": stats.html_fp_pages,
+        "html_fp_auto_pages": stats.html_fp_auto_pages,
         "feed_source_fingerprints": stats.feed_source_fingerprints,
         "top_n": stats.top_n,
+        "run_limit": stats.run_limit,
     }
 
 

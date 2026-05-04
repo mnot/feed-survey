@@ -45,6 +45,7 @@ class CCFeedsJob(MRJob):  # type: ignore[misc]
             sys.stderr.write("DEBUG: mapper_init starting\n")
 
             self.processor = WarcProcessor(top_n=self.options.topn)
+            self.processor.stats.run_limit = self.options.limit or 0
             self.count = 0
             self.processed_records = 0
             # Stagger initial S3 downloads to avoid thundering herd when all

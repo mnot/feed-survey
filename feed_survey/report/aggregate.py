@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Callable, Dict, Iterable, List, Optional, cast
 
-from feed_survey.report.formatting import format_extension
+from feed_survey.report.formatting import extension_link_parts, format_extension
 from feed_survey.report.quality import QUALITY_SPLIT_THRESHOLD, score_feed
 
 
@@ -125,7 +125,7 @@ def extension_prevalence_rows(
     quality_threshold: float = QUALITY_SPLIT_THRESHOLD,
     limit: Optional[int] = 15,
 ) -> List[Dict[str, Any]]:
-    return _quality_prevalence_rows(
+    rows = _quality_prevalence_rows(
         results,
         now,
         "extension",
@@ -133,6 +133,9 @@ def extension_prevalence_rows(
         quality_threshold=quality_threshold,
         limit=limit,
     )
+    for row in rows:
+        row.update(extension_link_parts(str(row["extension"])) or {})
+    return rows
 
 
 def content_profile_prevalence_rows(
@@ -177,7 +180,7 @@ def fingerprint_prevalence_rows(
         results,
         now,
         "fingerprint",
-        lambda result: set(result.get("fingerprints") or []),
+        lambda result: set(result.get("fingerprints") or ["unknown"]),
         quality_threshold=quality_threshold,
         limit=limit,
     )
@@ -186,6 +189,7 @@ def fingerprint_prevalence_rows(
 def html_fingerprint_rows(
     counts: Dict[str, int],
     autodiscovery_counts: Dict[str, int],
+    page_totals: Optional[Dict[str, int]] = None,
     limit: Optional[int] = 15,
 ) -> List[Dict[str, Any]]:
     rows = [
@@ -197,6 +201,26 @@ def html_fingerprint_rows(
         }
         for label, count in counts.items()
     ]
+    page_totals = page_totals or {}
+    total_html_pages = page_totals.get("html", 0)
+    if total_html_pages:
+        fingerprinted_pages = page_totals.get("fingerprinted", 0)
+        fingerprinted_auto_pages = page_totals.get("fingerprinted_auto", 0)
+        if not fingerprinted_pages and counts:
+            fingerprinted_pages = sum(counts.values())
+        if not fingerprinted_auto_pages and autodiscovery_counts:
+            fingerprinted_auto_pages = sum(autodiscovery_counts.values())
+        unknown_pages = max(0, total_html_pages - fingerprinted_pages)
+        autodiscovery_pages = page_totals.get("autodiscovery", 0)
+        unknown_auto_pages = max(0, autodiscovery_pages - fingerprinted_auto_pages)
+        rows.append(
+            {
+                "fingerprint": "unknown",
+                "html_pages": unknown_pages,
+                "autodiscovery_pages": unknown_auto_pages,
+                "autodiscovery_pct": _pct(unknown_auto_pages, unknown_pages),
+            }
+        )
     rows.sort(key=lambda row: cast(int, row["html_pages"]), reverse=True)
     if limit is None:
         return rows
@@ -216,7 +240,8 @@ def source_fingerprint_quality_rows(
         if not result.get("valid"):
             continue
         score = score_feed(result, now)
-        for fingerprint in source_fingerprints.get(feed_url, {}):
+        fingerprints = set(source_fingerprints.get(feed_url, {})) or {"unknown"}
+        for fingerprint in fingerprints:
             scores.setdefault(fingerprint, []).append(score)
 
     rows = [

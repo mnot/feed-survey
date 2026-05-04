@@ -22,6 +22,8 @@ def test_discovers_feed_links() -> None:
     assert stats.discovery_rel_feed == 1
     assert stats.discovery_rel_both_page == 1
     assert stats.discovery_multi_rel_url == 0
+    assert stats.discovery_link_rel_both == 0
+    assert stats.discovery_link_rel_both_page == 0
     assert stats.discovery_links_per_page_counts == {2: 1}
     assert stats.multi_feed_pages == {
         "https://Example.COM/articles/": [
@@ -49,6 +51,8 @@ def test_html_fingerprint_auto() -> None:
 
     assert stats.html_fingerprint_counts == {"wordpress": 1}
     assert stats.html_fingerprint_auto_counts == {"wordpress": 1}
+    assert stats.html_fp_pages == 1
+    assert stats.html_fp_auto_pages == 1
     assert stats.feed_source_fingerprints == {
         "https://example.com/feed.xml": {"wordpress": 1}
     }
@@ -64,6 +68,8 @@ def test_html_fingerprint_no_auto() -> None:
     )
 
     assert stats.html_fingerprint_counts == {"wordpress": 1}
+    assert stats.html_fp_pages == 1
+    assert stats.html_fp_auto_pages == 0
     assert not stats.html_fingerprint_auto_counts
 
 
@@ -87,6 +93,8 @@ def test_discovers_rel_tokens() -> None:
     assert stats.discovery_rel_feed == 1
     assert stats.discovery_rel_both_page == 1
     assert stats.discovery_multi_rel_url == 1
+    assert stats.discovery_link_rel_both == 1
+    assert stats.discovery_link_rel_both_page == 1
     assert stats.discovery_links_per_page_counts == {2: 1}
     assert set(stats.autodiscovery_links) == {
         "https://example.com/rss.xml",

@@ -219,6 +219,12 @@ def test_extension_quality_split() -> None:
     )
 
     assert rows[0]["extension"] == "dc:creator"
+    assert rows[0]["extension_prefix"] == "dc"
+    assert rows[0]["extension_local"] == "creator"
+    assert (
+        rows[0]["extension_href"]
+        == "https://www.dublincore.org/specifications/dublin-core/dces/"
+    )
     assert rows[0]["all_count"] == 2
     assert rows[0]["all_pct"] == 100.0
     assert rows[0]["quality_count"] == 1
@@ -297,6 +303,12 @@ def test_html_fingerprint_rows() -> None:
     rows = html_fingerprint_rows(
         {"wordpress": 10, "drupal": 5},
         {"wordpress": 4, "drupal": 1},
+        page_totals={
+            "html": 20,
+            "autodiscovery": 8,
+            "fingerprinted": 12,
+            "fingerprinted_auto": 5,
+        },
     )
 
     assert rows[0] == {
@@ -304,6 +316,12 @@ def test_html_fingerprint_rows() -> None:
         "html_pages": 10,
         "autodiscovery_pages": 4,
         "autodiscovery_pct": 40.0,
+    }
+    assert rows[1] == {
+        "fingerprint": "unknown",
+        "html_pages": 8,
+        "autodiscovery_pages": 3,
+        "autodiscovery_pct": 37.5,
     }
 
 
@@ -481,7 +499,7 @@ def test_content_types_exclude_json() -> None:
 
     assert "JSON Feed" not in collapsed
     assert collapsed["RSS"] == 1
-    assert collapsed["Other"] == 5
+    assert collapsed["Other Non-XML"] == 5
 
 
 def test_report_runtime_lang_counts() -> None:
@@ -521,6 +539,7 @@ def test_report_runtime_lang_counts() -> None:
         pages_with_duplicates=0,
         duplicate_prevalence_pct=0.0,
         multi_feed_pages_total=0,
+        duplicate_format_pairs=[],
     )
     quality = {
         "hist": {},

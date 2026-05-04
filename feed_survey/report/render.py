@@ -106,6 +106,12 @@ def generate_report(
     html_fingerprints = html_fingerprint_rows(
         stats.html_fingerprint_counts,
         stats.html_fingerprint_auto_counts,
+        page_totals={
+            "html": content_types_collapsed.get("HTML", 0),
+            "autodiscovery": stats.discovery_pages_count,
+            "fingerprinted": stats.html_fp_pages,
+            "fingerprinted_auto": stats.html_fp_auto_pages,
+        },
     )
     context = ReportContext(
         stats=stats,
@@ -167,7 +173,9 @@ def _feed_error_rows(stats: Stats) -> list[tuple[str, int]]:
             error = result.get("error")
             error_type = parse_error_label(error) if isinstance(error, str) else None
         if not error_type:
-            error_type = f"HTTP {result.get('status')}" if result.get("status") else "Error"
+            error_type = (
+                f"HTTP {result.get('status')}" if result.get("status") else "Error"
+            )
         error_counts[str(error_type)] += 1
     return _group_unknown_root_tags(error_counts)
 
@@ -185,6 +193,8 @@ def _group_unknown_root_tags(error_counts: Counter[str]) -> list[tuple[str, int]
     other_errors = [
         item for item in sorted_errors if not item[0].startswith("Unknown root tag: ")
     ]
-    rows = sorted(top_unknown_roots + other_errors, key=lambda item: item[1], reverse=True)
+    rows = sorted(
+        top_unknown_roots + other_errors, key=lambda item: item[1], reverse=True
+    )
     rows.append(("Other unknown root tags", other_unknown_count))
     return rows

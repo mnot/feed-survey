@@ -9,7 +9,7 @@ def collapse_content_types(content_type_counts: Dict[str, int]) -> Dict[str, int
         "Atom": 0,
         "RSS": 0,
         "Other XML": 0,
-        "Other": 0,
+        "Other Non-XML": 0,
     }
     for content_type, count in content_type_counts.items():
         content_type_lower = content_type.lower()
@@ -25,7 +25,7 @@ def collapse_content_types(content_type_counts: Dict[str, int]) -> Dict[str, int
         elif "xml" in content_type_lower:
             content_types["Other XML"] += count
         else:
-            content_types["Other"] += count
+            content_types["Other Non-XML"] += count
     return content_types
 
 

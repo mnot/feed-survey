@@ -72,8 +72,12 @@ def _merge_hll_registers(stats: Stats, registers: Any) -> None:
 def _merge_summary(stats: Stats, data: Dict[str, Any]) -> None:
     if data.get("top_n"):
         stats.top_n = data["top_n"]
+    stats.run_limit = max(stats.run_limit, data.get("run_limit", 0))
 
     stats.pages_seen += data.get("pages_seen", 0)
+    stats.responses_processed += data.get(
+        "responses_processed", data.get("pages_seen", 0)
+    )
     other_max_crawl = data.get("max_crawl_time_str")
     if other_max_crawl:
         if not stats.max_crawl_time_str or other_max_crawl > stats.max_crawl_time_str:
@@ -93,6 +97,10 @@ def _merge_summary(stats: Stats, data: Dict[str, Any]) -> None:
     stats.discovery_rel_feed += data.get("discovery_rel_feed", 0)
     stats.discovery_rel_both_page += data.get("discovery_rel_both_page", 0)
     stats.discovery_multi_rel_url += data.get("discovery_multi_rel_url", 0)
+    stats.discovery_link_rel_both += data.get(
+        "discovery_link_rel_both", data.get("discovery_multi_rel_url", 0)
+    )
+    stats.discovery_link_rel_both_page += data.get("discovery_link_rel_both_page", 0)
     stats.discovery_pages_count += data.get("discovery_pages_count", 0)
     _merge_int_counts(
         stats.discovery_links_per_page_counts,
@@ -107,6 +115,8 @@ def _merge_summary(stats: Stats, data: Dict[str, Any]) -> None:
         stats.html_fingerprint_auto_counts,
         data.get("html_fingerprint_auto_counts", {}),
     )
+    stats.html_fp_pages += data.get("html_fp_pages", 0)
+    stats.html_fp_auto_pages += data.get("html_fp_auto_pages", 0)
     for feed_url, counts in data.get("feed_source_fingerprints", {}).items():
         if feed_url not in stats.feed_source_fingerprints:
             stats.feed_source_fingerprints[feed_url] = {}
@@ -149,8 +159,15 @@ def _merge_feed(stats: Stats, data: Dict[str, Any]) -> None:
 def _merge_legacy_stats(stats: Stats, data: Dict[str, Any]) -> None:
     temp_stats = Stats()
     temp_stats.pages_seen = data.get("pages_seen", 0)
+    temp_stats.responses_processed = data.get("responses_processed", 0)
+    temp_stats.run_limit = data.get("run_limit", 0)
     temp_stats.sites_seen_count = data.get("sites_seen_count", 0)
     temp_stats.discovery_pages_count = data.get("discovery_pages_count", 0)
+    temp_stats.discovery_link_rel_both_page = data.get(
+        "discovery_link_rel_both_page", 0
+    )
+    temp_stats.html_fp_pages = data.get("html_fp_pages", 0)
+    temp_stats.html_fp_auto_pages = data.get("html_fp_auto_pages", 0)
     temp_stats.multi_feed_pages = data.get("multi_feed_pages", {})
     temp_stats.autodiscovery_links = data.get("autodiscovery_links", {})
 
@@ -196,7 +213,7 @@ def finalize_mr_results(results_dir: str, crawl_id: str, output_path: str) -> No
     overall_stats.sites_seen_count = overall_stats.get_unique_sites_estimate()
 
     print(
-        f"Aggregated {overall_stats.pages_seen} candidate responses. "
+        f"Aggregated {overall_stats.pages_seen} responses selected for analysis. "
         "Generating reports..."
     )
     markdown_path = default_markdown_path(output_path)
