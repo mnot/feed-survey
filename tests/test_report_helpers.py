@@ -335,6 +335,7 @@ def test_source_quality_rows() -> None:
                 "newest_entry_date": [2024, 1, 1, 0, 0, 0, 0, 0, 0],
                 "updated_date": None,
             },
+            "https://direct.example/feed.xml": _feed(fmt="rss20", days_old=0),
         },
         {
             "https://fresh.example/feed.xml": {"wordpress": 1},
@@ -346,6 +347,7 @@ def test_source_quality_rows() -> None:
     assert rows[0]["fingerprint"] == "wordpress"
     assert rows[0]["parsed_feeds"] == 2
     assert rows[0]["quality_count"] == 1
+    assert {row["fingerprint"] for row in rows} == {"wordpress"}
 
 
 def test_agg_http_feed_mismatch() -> None:

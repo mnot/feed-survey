@@ -338,9 +338,8 @@ def render_report_markdown(context: ReportContext) -> str:
                 ],
             ),
             "",
-            "Parenthetical percentages in the language table use successfully "
-            "parsed feeds as the denominator. Percentages in the quality column "
-            f"use feeds with quality > {QUALITY_SPLIT_THRESHOLD:.1f}.",
+            "Quality percentages in the format table use feeds in that format "
+            "as the denominator.",
             "",
             _markdown_table(
                 [
@@ -405,18 +404,18 @@ def render_report_markdown(context: ReportContext) -> str:
                 ],
             ),
             "",
-            "### Feed Quality by Source Fingerprint",
+            "### Autodiscovered Feed Quality by Source Platform",
             "",
-            "Parsed feeds grouped by the platform fingerprint of the HTML page that "
-            "linked to them. The unknown row is the comparison baseline for feeds "
-            "without a matched source-page fingerprint. Parenthetical percentages "
-            "use parsed feeds in that source-fingerprint row as the denominator.",
+            "Parsed feeds grouped by the recognized platform fingerprint of the HTML "
+            "page that linked to them. Feeds without a matched source-page platform "
+            "are omitted. Parenthetical percentages use parsed feeds in that "
+            "source-platform row as the denominator.",
             "",
             _markdown_table(
                 [
-                    "Source fingerprint",
+                    "Source platform",
                     "Parsed feeds",
-                    f"Quality > {QUALITY_SPLIT_THRESHOLD:.1f} within source",
+                    f"Quality > {QUALITY_SPLIT_THRESHOLD:.1f} within source platform",
                     "Mean quality",
                 ],
                 [

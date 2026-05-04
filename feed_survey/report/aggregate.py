@@ -240,7 +240,7 @@ def source_fingerprint_quality_rows(
         if not result.get("valid"):
             continue
         score = score_feed(result, now)
-        fingerprints = set(source_fingerprints.get(feed_url, {})) or {"unknown"}
+        fingerprints = set(source_fingerprints.get(feed_url, {}))
         for fingerprint in fingerprints:
             scores.setdefault(fingerprint, []).append(score)
 
