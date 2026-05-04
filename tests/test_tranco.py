@@ -14,13 +14,13 @@ def test_subdomain_cache_is_used(
     cache_dir.mkdir()
     monkeypatch.setattr(tranco, "CACHE_DIR", str(cache_dir))
     (cache_dir / tranco.TRANCO_SUBDOMAINS_CSV).write_text(
-        "1,example.com\n2,blog.example\n3,shop.example\n",
+        "1,WWW.Example.COM\n2,foo.github.io\n3,shop.example\n",
         encoding="utf-8",
     )
 
     assert tranco.get_tranco_list(2, include_subdomains=True) == {
         "example.com",
-        "blog.example",
+        "foo.github.io",
     }
 
 
@@ -48,12 +48,12 @@ def test_worker_alias_precedence(
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(tranco, "CACHE_DIR", str(tmp_path / "cache"))
     (tmp_path / tranco.TRANCO_STANDARD_CSV).write_text(
-        "1,worker-alias.example\n",
+        "1,foo.github.io\n",
         encoding="utf-8",
     )
 
     assert tranco.get_tranco_list(include_subdomains=True) == {
-        "worker-alias.example",
+        "foo.github.io",
     }
 
 

@@ -3,6 +3,7 @@ import zipfile
 from typing import Optional, Set
 
 from feed_survey.download import CACHE_DIR, download_file
+from feed_survey.url import get_site
 
 TRANCO_STANDARD_URL = "https://tranco-list.eu/top-1m.csv.zip"
 TRANCO_SUBDOMAINS_URL = "https://tranco-list.eu/top-1m-incl-subdomains.csv.zip"
@@ -55,7 +56,9 @@ def get_tranco_list(
                 break
             parts = line.strip().split(",")
             if len(parts) == 2:
-                domains.append(parts[1])
+                site = get_site(parts[1])
+                if site:
+                    domains.append(site)
     return set(domains)
 
 

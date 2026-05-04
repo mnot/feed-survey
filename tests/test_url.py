@@ -63,8 +63,14 @@ def test_get_site_uses_psl() -> None:
 
 def test_get_site_keeps_private_psl() -> None:
     assert get_site("https://foo.github.io/feed") == "foo.github.io"
+    assert get_site("https://www.foo.blogspot.com/feed") == "foo.blogspot.com"
 
 
 def test_get_site_keeps_ip_literals() -> None:
     assert get_site("http://127.0.0.1/feed") == "127.0.0.1"
     assert get_site("http://[2001:db8::1]:8080/feed") == "2001:db8::1"
+
+
+def test_get_site_matches_www() -> None:
+    assert get_site("www.Example.COM") == "example.com"
+    assert get_site("https://www.Example.COM/feed") == "example.com"
