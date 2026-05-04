@@ -399,21 +399,9 @@
                     <div class="row"><span>Parsed feeds with entries</span> <strong>{{ stats.feeds_with_entries|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.feeds_with_entries / total_parsed * 100 if total_parsed else 0) }}%)</span></strong></div>
                     <div class="row"><span>Feeds with dated entries</span> <strong>{{ stats.feeds_with_entry_dates|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.feeds_with_entry_dates / stats.feeds_with_entries * 100 if stats.feeds_with_entries else 0) }}%)</span></strong></div>
                     <div class="row"><span>Feeds with feed-level dates</span> <strong>{{ stats.feeds_with_updated_date|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.feeds_with_updated_date / total_parsed * 100 if total_parsed else 0) }}%)</span></strong></div>
-                    <div class="row divider"><span>Repeated entry titles</span> <strong>{{ stats.feeds_with_repeated_entry_titles|comma }}</strong></div>
-                    <div class="row"><span>Default-looking titles</span> <strong>{{ stats.feeds_with_default_entry_titles|comma }}</strong></div>
-                    <div class="row"><span>Repeated entry links</span> <strong>{{ stats.feeds_with_repeated_entry_links|comma }}</strong></div>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-title">Operational Quality</div>
-                <div class="card-value">{{ "%.3f"|format(stats.mean_quality) }}</div>
-                <div class="card-sub">
-                    <div class="row"><span>All parsed feeds</span> <strong>{{ "%.3f"|format(stats.mean_quality) }}</strong></div>
-                    <div class="row"><span>Active-only mean</span> <strong>{{ "%.3f"|format(stats.active_quality.mean) }}</strong></div>
-                    <div class="row"><span>Recent/datable share</span> <strong>{{ stats.active_quality.n|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.active_quality.pct) }}%)</span></strong></div>
-                    <div class="row"><span>Active with entries</span> <strong>{{ stats.active_quality.with_entries|comma }}</strong></div>
-                    <div class="row"><span>Active, zero-entry</span> <strong>{{ stats.active_quality.without_entries|comma }}</strong></div>
-                    <div class="row divider"><span>Undated or stale</span> <strong>{{ stats.inactive_quality.n|comma }}</strong></div>
+                    <div class="row divider"><span>Feeds with repeated entry titles</span> <strong>{{ stats.feeds_with_repeated_entry_titles|comma }}</strong></div>
+                    <div class="row"><span>Feeds with default-looking titles</span> <strong>{{ stats.feeds_with_default_entry_titles|comma }}</strong></div>
+                    <div class="row"><span>Feeds with repeated entry links</span> <strong>{{ stats.feeds_with_repeated_entry_links|comma }}</strong></div>
                 </div>
             </div>
         </div>
@@ -477,6 +465,18 @@
 
         <!-- Quality distribution + quality by format -->
         <div class="chart-grid" style="margin-bottom: 2rem;">
+            <div class="chart-card">
+                <div class="card-title">Operational Quality</div>
+                <div class="card-value">{{ "%.3f"|format(stats.mean_quality) }}</div>
+                <div class="card-sub">
+                    <div class="row"><span>All parsed feeds</span> <strong>{{ "%.3f"|format(stats.mean_quality) }}</strong></div>
+                    <div class="row"><span>Active-only mean</span> <strong>{{ "%.3f"|format(stats.active_quality.mean) }}</strong></div>
+                    <div class="row"><span>Recent/datable share</span> <strong>{{ stats.active_quality.n|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.active_quality.pct) }}%)</span></strong></div>
+                    <div class="row"><span>Active with entries</span> <strong>{{ stats.active_quality.with_entries|comma }}</strong></div>
+                    <div class="row"><span>Active, zero-entry</span> <strong>{{ stats.active_quality.without_entries|comma }}</strong></div>
+                    <div class="row divider"><span>Undated or stale</span> <strong>{{ stats.inactive_quality.n|comma }}</strong></div>
+                </div>
+            </div>
             <div class="chart-card">
                 <div class="chart-title">Feed Quality Distribution</div>
                 <div class="chart-sub">
