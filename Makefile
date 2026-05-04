@@ -1,4 +1,7 @@
 PROJECT = feed_survey
+CONFIG ?= feed-survey.mk
+-include $(CONFIG)
+
 PYTHON_TARGETS = feed_survey $(wildcard tests/*.py)
 
 .PHONY: help
@@ -17,10 +20,15 @@ help:
 	@echo "  make report RESULTS_DIR=results/...  Re-render saved EMR HTML/Markdown reports"
 	@echo "  make wheels        Build EMR dependency wheels"
 	@echo "  make upload-wheels Build and upload EMR dependency wheels"
-	@echo "  make clean         Remove local generated Python artifacts and venv"
+	@echo "  make clean         Remove local generated scratch artifacts and venv"
 
 .PHONY: clean
-clean: clean_py
+clean: clean_py clean-local
+
+.PHONY: clean-local
+clean-local:
+	rm -rf .pytest_cache .coverage htmlcov
+	rm -f mock_report.html mock_report.md test_report.html test_report.md
 
 .PHONY: lint
 lint: lint_py
@@ -39,22 +47,19 @@ check: test typecheck lint mock-report
 
 .PHONY: local-report
 local-report: venv
-	PYTHONPATH=$(VENV) $(VENV)/python -m $(PROJECT).main --limit=1 --topn=1000 --crawl-id=CC-MAIN-2024-18 --output=test_report.html
+	PYTHONPATH=$(VENV) $(VENV)/python -m $(PROJECT).main --limit=1 --topn=$(LOCAL_TOP_N) --crawl-id=$(LOCAL_CRAWL_ID) --output=test_report.html
 
-CRAWL_ID ?= CC-MAIN-2026-12
-OUTPUT_DIR = s3://mnot-cc-feeds/
-PATHS_PREFIX = s3://mnot-cc-feeds/paths/
 # Use := to ensure RUN_ID is fixed for the entire make execution
 RUN_ID := $(shell date +%Y%m%d-%H%M%S)
 
-MAP_TASKS ?= 800
-REDUCES ?= 20
-TEST_MAP_TASKS ?= 20
-TEST_REDUCES ?= 1
+MRJOB_BOOTSTRAP_ARGS = \
+	--bootstrap "$(MRJOB_BOOTSTRAP_INSTALL)" \
+	--bootstrap "aws s3 sync $(WHEEL_S3_PATH) /tmp/wheels/" \
+	--bootstrap "$(MRJOB_BOOTSTRAP_PIP_INSTALL)"
 
 .PHONY: tranco-cache
 tranco-cache: venv
-	$(VENV)/python -c "from feed_survey.tranco import get_tranco_list; get_tranco_list(1)"
+	FEED_SURVEY_CACHE_DIR="$(TRANCO_CACHE_DIR)" $(VENV)/python -c "from feed_survey.tranco import get_tranco_list; get_tranco_list(1)"
 
 .PHONY: emr
 emr: venv tranco-cache
@@ -62,18 +67,19 @@ emr: venv tranco-cache
 		s3://commoncrawl/crawl-data/$(CRAWL_ID)/warc.paths.gz \
 		$(PATHS_PREFIX)$(CRAWL_ID)-$(RUN_ID)/ \
 		$(MAP_TASKS)
-	$(VENV)/python -m feed_survey.emr.job -r emr -c mrjob.conf \
+	$(VENV)/python -m feed_survey.emr.job -r emr -c $(MRJOB_CONFIG) \
+		$(MRJOB_BOOTSTRAP_ARGS) \
+		--files "$(TRANCO_CACHE)#top-1m.csv" \
 		$(PATHS_PREFIX)$(CRAWL_ID)-$(RUN_ID)/ \
 		--output-dir $(OUTPUT_DIR)$(CRAWL_ID)-$(RUN_ID)/ \
 		--no-read-logs --no-cat-output \
 		--jobconf mapreduce.job.reduces=$(REDUCES) \
-		--topn 500000
+		--topn $(TOP_N)
 	mkdir -p results/$(CRAWL_ID)-$(RUN_ID)
 	aws s3 sync $(OUTPUT_DIR)$(CRAWL_ID)-$(RUN_ID)/ results/$(CRAWL_ID)-$(RUN_ID)/
 	$(VENV)/python -m feed_survey.emr.finalize results/$(CRAWL_ID)-$(RUN_ID)/ $(CRAWL_ID) results/$(CRAWL_ID)-$(RUN_ID)/report.html
 	@echo "Reports generated at results/$(CRAWL_ID)-$(RUN_ID)/report.html and results/$(CRAWL_ID)-$(RUN_ID)/report.md"
 
-WHEEL_S3_PATH = s3://mnot-cc-feeds/wheels/
 MOCK_REPORT ?= mock_report.html
 RESULTS_DIR ?=
 
@@ -102,12 +108,14 @@ test-emr: venv tranco-cache
 		$(PATHS_PREFIX)test-$(RUN_ID)/ \
 		$(TEST_MAP_TASKS) \
 		$(LIMIT)
-	$(VENV)/python -m feed_survey.emr.job -r emr -c mrjob-test.conf \
+	$(VENV)/python -m feed_survey.emr.job -r emr -c $(MRJOB_TEST_CONFIG) \
+		$(MRJOB_BOOTSTRAP_ARGS) \
+		--files "$(TRANCO_CACHE)#top-1m.csv" \
 		--no-read-logs --no-cat-output \
 		--jobconf mapreduce.job.reduces=$(TEST_REDUCES) \
 		--output-dir $(OUTPUT_DIR)test-$(RUN_ID)/ \
 		--limit $(LIMIT) \
-		--topn 500000 \
+		--topn $(TOP_N) \
 		$(PATHS_PREFIX)test-$(RUN_ID)/
 	mkdir -p results/test-$(RUN_ID)
 	aws s3 sync $(OUTPUT_DIR)test-$(RUN_ID)/ results/test-$(RUN_ID)/

@@ -65,20 +65,31 @@ make emr
 
 ## Configuration
 
+### `feed-survey.mk`
+This is the main run configuration loaded by `make`. Edit it directly for your
+environment, or pass another make fragment with `CONFIG=/path/to/config.mk`.
+
+- **`CRAWL_ID`**: The Common Crawl index to process.
+- **`TOP_N`**: Tranco domain cutoff for EMR runs.
+- **`OUTPUT_DIR` / `PATHS_PREFIX` / `WHEEL_S3_PATH`**: S3 locations for EMR results, split WARC path inputs, and dependency wheels.
+- **`MAP_TASKS` / `REDUCES`**: Full-run map chunking and reducer count.
+- **`TEST_MAP_TASKS` / `TEST_REDUCES`**: Smoke-test map chunking and reducer count.
+- **`MRJOB_CONFIG` / `MRJOB_TEST_CONFIG`**: mrjob cluster configuration files.
+- **`TRANCO_CACHE_DIR`**: Local cache directory used by `make tranco-cache`; the generated `top-1m.csv` is uploaded to EMR workers.
+- **`MOCK_REPORT` / `RESULTS_DIR`**: Local report output and re-render inputs.
+
 ### `mrjob.conf`
-Control the cluster size and instance types.
+Control EMR cluster shape and instance types. The make targets supply bootstrap
+commands, dependency-wheel location, and the Tranco upload file from
+`feed-survey.mk`.
+
 - **`TargetOnDemandCapacity`**: The default full run uses 30 core xlarge instances plus one master, leaving a little headroom below a 128 vCPU on-demand quota.
 - **`instance_fleets`**: Defines the mix of m5, r5, and c5 instances EMR can choose from.
 
 ### `Makefile`
-- **`CRAWL_ID`**: The Common Crawl index to process (e.g., `CC-MAIN-2026-12`).
-- **`MAP_TASKS`**: Number of WARC path chunks for a full run. The default is higher than the worker count so slow WARC files have less impact on overall progress.
-- **`REDUCES`**: Number of reducers for the full EMR run.
-- **`TEST_MAP_TASKS` / `TEST_REDUCES`**: Map and reduce sizing for `make test-emr`.
-- **`OUTPUT_DIR`**: The S3 bucket where results and logs will be stored.
-- **`tranco-cache`**: Downloads the Tranco list to `~/.cache/feed-survey/top-1m.csv` for EMR upload.
-- **`MOCK_REPORT`**: HTML output path for `make mock-report`; a Markdown sibling is written automatically.
-- **`RESULTS_DIR`**: Existing local result directory to re-render with `make report`, producing both `report.html` and `report.md`.
+The Makefile is the command surface. It loads `feed-survey.mk`, supports
+`CONFIG=...` overrides, and keeps generated reports under `results/` unless a
+target explicitly writes a local scratch report.
 
 Run `make help` for the local development, report, EMR, and wheel targets.
 
@@ -94,6 +105,7 @@ Run `make help` for the local development, report, EMR, and wheel targets.
 - `tests/`: Unit tests and integration tests.
 - `tests/fixtures/`: Small local fixtures and profiling helpers used by tests and smoke runs.
 - `docs/`: Research notes and plans for future analysis dimensions.
+- `feed-survey.mk`: Make-readable run configuration for crawl, S3, EMR sizing, and cache paths.
 - `mrjob.conf`: EMR orchestration settings (Python 3.12, dependencies, instance fleets).
 - `.mrjobignore`: Prevents local virtual environments and caches from being uploaded to workers.
 
