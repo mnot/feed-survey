@@ -113,6 +113,38 @@ def test_quality_summary_sets() -> None:
     assert all("quality_pct" in row for row in summary["format_rows"])
 
 
+def test_format_quality_pct() -> None:
+    now = datetime(2026, 5, 1, tzinfo=timezone.utc)
+    stale_date = [2024, 1, 1, 0, 0, 0, 0, 0, 0]
+    all_valid = {
+        "https://example.com/rss-fresh.xml": _feed(fmt="rss20", days_old=0),
+        "https://example.com/rss-stale.xml": {
+            **_feed(fmt="rss20", days_old=0),
+            "newest_entry_date": stale_date,
+            "updated_date": None,
+        },
+        "https://example.com/atom-fresh.xml": _feed(fmt="atom10", days_old=0),
+        "https://example.com/atom-stale.xml": {
+            **_feed(fmt="atom10", days_old=0),
+            "newest_entry_date": stale_date,
+            "updated_date": None,
+        },
+        "https://example.com/atom-stale-2.xml": {
+            **_feed(fmt="atom10", days_old=0),
+            "newest_entry_date": stale_date,
+            "updated_date": None,
+        },
+    }
+
+    summary = build_quality_summary(all_valid, {}, set(), now)
+    rows = {row["fmt"]: row for row in summary["format_rows"]}
+
+    assert rows["rss20"]["quality_count"] == 1
+    assert rows["rss20"]["quality_pct"] == 50.0
+    assert rows["atom10"]["quality_count"] == 1
+    assert rows["atom10"]["quality_pct"] == 33.3
+
+
 def test_recency_cdf_future_dates() -> None:
     now = datetime(2026, 5, 1, tzinfo=timezone.utc)
     cdf = build_recency_cdf(

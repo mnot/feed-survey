@@ -100,6 +100,7 @@ def render_report_markdown(context: ReportContext) -> str:
     stats = build_report_stats(context)
     total_parsed = stats["parsed_feeds"]
     quality_split_label = f"Quality > {QUALITY_SPLIT_THRESHOLD:.1f} feeds"
+    quality_prevalence_label = f"Among quality > {QUALITY_SPLIT_THRESHOLD:.1f} feeds"
     lines = [
         f"# Web Feed Survey: {context.crawl_id}",
         "",
@@ -216,7 +217,12 @@ def render_report_markdown(context: ReportContext) -> str:
         "pages. This is not all feeds on a platform.",
         "",
         _markdown_table(
-            ["Source fingerprint", "Parsed feeds", quality_split_label, "Mean quality"],
+            [
+                "Source fingerprint",
+                "Parsed feeds",
+                f"Quality > {QUALITY_SPLIT_THRESHOLD:.1f} within source",
+                "Mean quality",
+            ],
             [
                 [
                     row["fingerprint"],
@@ -313,7 +319,12 @@ def render_report_markdown(context: ReportContext) -> str:
         ),
         "",
         _markdown_table(
-            ["Format", "Count", quality_split_label, "Mean quality"],
+            [
+                "Format",
+                "Count",
+                f"Quality > {QUALITY_SPLIT_THRESHOLD:.1f} within format",
+                "Mean quality",
+            ],
             [
                 [
                     row["fmt"],
@@ -332,7 +343,7 @@ def render_report_markdown(context: ReportContext) -> str:
             [
                 "Extension",
                 "All parsed feeds",
-                quality_split_label,
+                quality_prevalence_label,
             ],
             [
                 [
@@ -351,7 +362,7 @@ def render_report_markdown(context: ReportContext) -> str:
         "Missing fingerprints mean not identified.",
         "",
         _markdown_table(
-            ["Fingerprint", "All parsed feeds", quality_split_label],
+            ["Fingerprint", "All parsed feeds", quality_prevalence_label],
             [
                 [
                     row["fingerprint"],
@@ -366,7 +377,7 @@ def render_report_markdown(context: ReportContext) -> str:
         "## Entry Content Profiles",
         "",
         _markdown_table(
-            ["Profile", "All parsed feeds", quality_split_label],
+            ["Profile", "All parsed feeds", quality_prevalence_label],
             [
                 [
                     row["profile"],
@@ -395,7 +406,7 @@ def render_report_markdown(context: ReportContext) -> str:
         ),
         "",
         _markdown_table(
-            ["Language", "All parsed feeds", quality_split_label],
+            ["Language", "All parsed feeds", quality_prevalence_label],
             [
                 [
                     row["language"],
