@@ -456,19 +456,48 @@ def render_report_markdown(context: ReportContext) -> str:
             "",
             "## Languages",
             "",
+            "Language-signal counts use successfully parsed feeds as the "
+            "denominator. Categories can overlap except the no-language row. "
+            "Multiple entry languages means entries expose more than one "
+            "language directly, or entry languages differ from the feed/HTTP "
+            "language inherited by otherwise untagged entries.",
+            "",
             _markdown_table(
-                ["Metric", "Value"],
+                ["Metric", "Feeds"],
                 [
-                    ["HTTP Content-Language", format_number(stats["lang_src_http"])],
-                    ["Feed-level language tag", format_number(stats["lang_src_feed"])],
                     [
-                        "Entry language tags, distinct",
-                        format_number(stats["lang_src_entry"]),
+                        "No language information",
+                        _count_pct(stats["lang_no_info"], total_parsed),
                     ],
-                    ["HTTP/feed mismatches", format_number(stats["lang_mismatches"])],
                     [
-                        "Multi-language feeds",
-                        format_number(stats["lang_multiple_in_feed"]),
+                        "HTTP Content-Language",
+                        _count_pct(stats["lang_src_http"], total_parsed),
+                    ],
+                    [
+                        "Feed-level language",
+                        _count_pct(stats["lang_src_feed"], total_parsed),
+                    ],
+                    [
+                        "Entry-level language",
+                        _count_pct(stats["lang_src_entry"], total_parsed),
+                    ],
+                    [
+                        "Both HTTP and feed-level language",
+                        _count_pct(stats["lang_http_feed"], total_parsed),
+                    ],
+                    [
+                        "Mismatching HTTP and feed-level language",
+                        _count_pct(stats["lang_mismatches"], total_parsed),
+                    ],
+                    [
+                        "Multiple entry languages",
+                        _count_pct(
+                            stats["lang_multiple_entry_languages"], total_parsed
+                        ),
+                    ],
+                    [
+                        "Uses hreflang",
+                        _count_pct(stats["lang_hreflang"], total_parsed),
                     ],
                 ],
             ),
@@ -601,6 +630,15 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         "run_limit": stats.run_limit,
         "feeds_sniffed": stats.feeds_sniffed,
         "total_entries": aggregate["total_entries"],
+        "lang_src_http": aggregate["lang_src_http"],
+        "lang_src_feed": aggregate["lang_src_feed"],
+        "lang_src_entry": aggregate["lang_src_entry"],
+        "lang_mismatches": aggregate["lang_mismatches"],
+        "lang_multiple_in_feed": aggregate["lang_multiple_in_feed"],
+        "lang_no_info": aggregate["lang_no_info"],
+        "lang_http_feed": aggregate["lang_http_feed"],
+        "lang_hreflang": aggregate["lang_hreflang"],
+        "lang_multiple_entry_languages": aggregate["lang_multiple_entry_languages"],
         **_runtime_counter_stats(stats),
         "discovery_link_rel_both_page_known": (
             bool(stats.discovery_link_rel_both_page)
@@ -622,11 +660,6 @@ def _runtime_counter_stats(stats: Stats) -> Dict[str, int]:
     return {
         name: getattr(stats, name)
         for name in (
-            "lang_src_http",
-            "lang_src_feed",
-            "lang_src_entry",
-            "lang_mismatches",
-            "lang_multiple_in_feed",
             "discovery_rel_alternate",
             "discovery_rel_feed",
             "discovery_rel_both_page",
@@ -639,6 +672,10 @@ def _runtime_counter_stats(stats: Stats) -> Dict[str, int]:
 
 def _format_optional_count(known: bool, value: int) -> str:
     return format_number(value) if known else "not recorded"
+
+
+def _count_pct(count: int, denominator: int) -> str:
+    return f"{format_number(count)} ({_pct(count, denominator)})"
 
 
 def _paired_error_column_rows(errors: List[Tuple[str, int]]) -> List[List[Any]]:

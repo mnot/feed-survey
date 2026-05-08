@@ -34,12 +34,13 @@ def test_sniffer_accepts_rss1() -> None:
 
 def test_parse_atom_feed() -> None:
     result = FastFeedParser.parse(b"""<?xml version="1.0"?>
-        <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
-          <title>Example Atom</title>
-          <link href="https://example.com/"/>
+          <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+            <title>Example Atom</title>
+          <link href="https://example.com/" hreflang="en"/>
           <updated>2026-01-02T03:04:05Z</updated>
           <entry xml:lang="fr">
             <title>Entry</title>
+            <link href="https://example.com/entry" hreflang="fr"/>
             <updated>2026-01-03T00:00:00Z</updated>
             <content type="html">hello</content>
           </entry>
@@ -55,6 +56,7 @@ def test_parse_atom_feed() -> None:
     assert result["content_type_profile"] == "html"
     assert result["all_languages"] == {"en", "fr"}
     assert result["entry_languages"] == {"fr"}
+    assert result["hreflang_values"] == {"en", "fr"}
     assert result["error"] is None
 
 

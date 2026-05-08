@@ -121,6 +121,26 @@ def test_feed_generator_fingerprint() -> None:
     assert result["fingerprints"] == {"wordpress"}
 
 
+def test_feed_analyzer_hreflang() -> None:
+    stats = Stats()
+    analyzer = FeedAnalyzer(stats)
+    content = b"""<?xml version="1.0"?>
+    <feed xmlns="http://www.w3.org/2005/Atom">
+      <title>Example</title>
+      <link href="https://example.com/" hreflang="en"/>
+      <updated>2026-05-01T11:00:00Z</updated>
+    </feed>"""
+
+    analyzer.process(
+        _Record(content, "application/atom+xml"), "https://example.com/feed", 200
+    )
+
+    result: dict[str, Any] = stats.feed_results["https://example.com/feed"]
+    assert result["valid"] is True
+    assert result["has_hreflang"] is True
+    assert result["hreflang_values"] == {"en"}
+
+
 def test_entry_lang_not_feed_lang() -> None:
     stats = Stats()
     analyzer = FeedAnalyzer(stats)

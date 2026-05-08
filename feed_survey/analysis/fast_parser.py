@@ -70,6 +70,7 @@ class FastFeedParser:
             "repeated_entry_link_ratio": 0.0,
             "all_languages": set(),  # language values seen inside the feed document
             "entry_languages": set(),  # language values seen inside entries/items
+            "hreflang_values": set(),
             "error": None,
             # Internal accumulator – removed before returning
             "_content_types_seen": set(),
@@ -278,6 +279,7 @@ class FastFeedParser:
         elif local == "title":
             FastFeedParser._remember_entry_title(elem.text, result)
         elif local == "link":
+            FastFeedParser._remember_hreflang(elem, result)
             FastFeedParser._remember_entry_link(elem.get("href"), result)
         elif local == "content":
             result["has_content"] = True
@@ -485,6 +487,7 @@ class FastFeedParser:
 
     @staticmethod
     def _record_atom_feed_link(elem: Any, result: Dict[str, Any]) -> None:
+        FastFeedParser._remember_hreflang(elem, result)
         href = elem.get("href", "")
         if not href:
             return
@@ -507,3 +510,9 @@ class FastFeedParser:
                 parent.remove(elem)
         except (AttributeError, TypeError):
             pass
+
+    @staticmethod
+    def _remember_hreflang(elem: Any, result: Dict[str, Any]) -> None:
+        hreflang = (elem.get("hreflang") or "").strip().lower()
+        if hreflang:
+            result["hreflang_values"].add(hreflang)

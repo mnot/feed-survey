@@ -261,6 +261,13 @@ def _build_feed_info(rng: random.Random, idx: int) -> tuple[str, dict[str, Any]]
     oldest = _random_date(rng, max(newest[2], 30), 730)
     updated = _random_date(rng, 0, 60) if rng.random() < 0.7 else None
     lang_feed, lang_http, all_langs = _choose_languages(rng)
+    entry_langs = set()
+    if lang_feed and rng.random() < 0.08:
+        entry_langs.add(lang_feed)
+    if rng.random() < 0.03:
+        entry_langs.add(rng.choice(LANGUAGES))
+    all_langs.update(entry_langs)
+    hreflang_values = {rng.choice(LANGUAGES)} if rng.random() < 0.03 else set()
 
     n_ext = rng.randint(0, 4)
     extensions = set(rng.choices(EXTENSIONS_POOL, k=n_ext)) if n_ext else set()
@@ -281,7 +288,9 @@ def _build_feed_info(rng: random.Random, idx: int) -> tuple[str, dict[str, Any]]
         "entries_count": entry_count,
         "lang_http": lang_http,
         "lang_feed": lang_feed,
-        "lang_entries": set(),
+        "lang_entries": entry_langs,
+        "hreflang_values": hreflang_values,
+        "has_hreflang": bool(hreflang_values),
         "languages": all_langs | ({lang_feed} if lang_feed else set()),
         "has_summary": has_summary,
         "has_content": has_content,

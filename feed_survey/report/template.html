@@ -712,13 +712,17 @@
             </div>
             <div class="chart-card">
                 <div class="chart-title">Language Tagging</div>
-                <div class="chart-sub">Feed-internal language signals are read from <code>xml:lang</code> attributes, RSS <code>&lt;language&gt;</code>, and Dublin Core <code>dc:language</code>; HTTP <code>Content-Language</code> is tracked separately. HTTP/feed mismatches are only counted when an HTTP language conflicts with a feed-level language, not when entries use other languages. Multi-language feeds count distinct language tags inside one feed; multi-feed pages are tracked separately in autodiscovery.</div>
+                <div class="chart-sub">Feed-internal language signals are read from <code>xml:lang</code> attributes, RSS <code>&lt;language&gt;</code>, Dublin Core <code>dc:language</code>, and Atom link <code>hreflang</code>. Counts are successfully parsed feeds; categories can overlap except the no-language row. HTTP/feed mismatches are only counted when an HTTP language conflicts with a feed-level language.</div>
                 <div class="card-sub" style="margin-top: 1.5rem;">
-                    <div class="row"><span>HTTP <code>Content-Language</code></span> <strong>{{ stats.lang_src_http|comma }}</strong></div>
-                    <div class="row"><span>Feed-level language tag</span> <strong>{{ stats.lang_src_feed|comma }}</strong></div>
-                    <div class="row"><span>Entry language tags (distinct)</span> <strong>{{ stats.lang_src_entry|comma }}</strong></div>
-                    <div class="row divider"><span style="color:var(--danger)">HTTP/feed mismatches</span> <strong style="color:var(--danger)">{{ stats.lang_mismatches|comma }}</strong></div>
-                    <div class="row"><span>Multi-language feeds</span> <strong>{{ stats.lang_multiple_in_feed|comma }}</strong></div>
+                    <div class="row"><span>No language information</span> <strong>{{ stats.lang_no_info|comma }} <span style="color:var(--text-muted);font-weight:400">({{ "%.1f"|format(stats.lang_no_info / stats.parsed_feeds * 100 if stats.parsed_feeds else 0) }}%)</span></strong></div>
+                    <div class="row"><span>HTTP <code>Content-Language</code></span> <strong>{{ stats.lang_src_http|comma }} <span style="color:var(--text-muted);font-weight:400">({{ "%.1f"|format(stats.lang_src_http / stats.parsed_feeds * 100 if stats.parsed_feeds else 0) }}%)</span></strong></div>
+                    <div class="row"><span>Feed-level language</span> <strong>{{ stats.lang_src_feed|comma }} <span style="color:var(--text-muted);font-weight:400">({{ "%.1f"|format(stats.lang_src_feed / stats.parsed_feeds * 100 if stats.parsed_feeds else 0) }}%)</span></strong></div>
+                    <div class="row"><span>Entry-level language</span> <strong>{{ stats.lang_src_entry|comma }} <span style="color:var(--text-muted);font-weight:400">({{ "%.1f"|format(stats.lang_src_entry / stats.parsed_feeds * 100 if stats.parsed_feeds else 0) }}%)</span></strong></div>
+                    <div class="row"><span>Both HTTP and feed-level language</span> <strong>{{ stats.lang_http_feed|comma }} <span style="color:var(--text-muted);font-weight:400">({{ "%.1f"|format(stats.lang_http_feed / stats.parsed_feeds * 100 if stats.parsed_feeds else 0) }}%)</span></strong></div>
+                    <div class="row divider"><span style="color:var(--danger)">Mismatching HTTP and feed-level language</span> <strong style="color:var(--danger)">{{ stats.lang_mismatches|comma }} <span style="color:var(--text-muted);font-weight:400">({{ "%.1f"|format(stats.lang_mismatches / stats.parsed_feeds * 100 if stats.parsed_feeds else 0) }}%)</span></strong></div>
+                    <div class="row"><span>Multiple entry languages</span> <strong>{{ stats.lang_multiple_entry_languages|comma }} <span style="color:var(--text-muted);font-weight:400">({{ "%.1f"|format(stats.lang_multiple_entry_languages / stats.parsed_feeds * 100 if stats.parsed_feeds else 0) }}%)</span></strong></div>
+                    <div class="row"><span>Uses <code>hreflang</code></span> <strong>{{ stats.lang_hreflang|comma }} <span style="color:var(--text-muted);font-weight:400">({{ "%.1f"|format(stats.lang_hreflang / stats.parsed_feeds * 100 if stats.parsed_feeds else 0) }}%)</span></strong></div>
+                    <div style="margin-top:0.75rem;color:var(--text-muted);">Multiple entry languages includes direct entry tags plus feed/HTTP languages that untagged entries inherit.</div>
                 </div>
             </div>
         </div>

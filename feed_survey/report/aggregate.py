@@ -23,11 +23,7 @@ def aggregate_feed_data(results: Dict[str, Any]) -> Dict[str, Any]:
     charsets_per_format: Dict[str, Dict[str, int]] = {}
 
     total_entries = 0
-    lang_src_http = 0
-    lang_src_feed = 0
-    lang_src_entry = 0
-    lang_mismatches = 0
-    lang_multiple_in_feed = 0
+    language_counts = _init_language_counts()
 
     for res in results.values():
         res = cast(Dict[str, Any], res)
@@ -78,21 +74,7 @@ def aggregate_feed_data(results: Dict[str, Any]) -> Dict[str, Any]:
         if res.get("repeated_entry_link_count"):
             feeds_with_repeated_links += 1
 
-        http_lang = res.get("lang_http")
-        feed_lang = res.get("lang_feed")
-        entry_langs = res.get("lang_entries", [])
-
-        if http_lang:
-            lang_src_http += 1
-        if feed_lang:
-            lang_src_feed += 1
-            if http_lang and http_lang != feed_lang:
-                lang_mismatches += 1
-
-        if entry_langs:
-            lang_src_entry += 1
-            if len(entry_langs) > 1:
-                lang_multiple_in_feed += 1
+        _update_language_counts(language_counts, res, entries)
 
     return {
         "formats": formats,
@@ -111,12 +93,55 @@ def aggregate_feed_data(results: Dict[str, Any]) -> Dict[str, Any]:
         "feeds_with_repeated_entry_links": feeds_with_repeated_links,
         "charsets_per_format": charsets_per_format,
         "total_entries": total_entries,
-        "lang_src_http": lang_src_http,
-        "lang_src_feed": lang_src_feed,
-        "lang_src_entry": lang_src_entry,
-        "lang_mismatches": lang_mismatches,
-        "lang_multiple_in_feed": lang_multiple_in_feed,
+        **language_counts,
     }
+
+
+def _init_language_counts() -> Dict[str, int]:
+    return {
+        "lang_src_http": 0,
+        "lang_src_feed": 0,
+        "lang_src_entry": 0,
+        "lang_mismatches": 0,
+        "lang_multiple_in_feed": 0,
+        "lang_no_info": 0,
+        "lang_http_feed": 0,
+        "lang_hreflang": 0,
+        "lang_multiple_entry_languages": 0,
+    }
+
+
+def _update_language_counts(
+    counts: Dict[str, int], res: Dict[str, Any], entries: int
+) -> None:
+    http_lang = res.get("lang_http")
+    feed_lang = res.get("lang_feed")
+    entry_langs = set(res.get("lang_entries", []))
+    has_hreflang = bool(res.get("has_hreflang") or res.get("hreflang_values"))
+
+    if http_lang:
+        counts["lang_src_http"] += 1
+    if feed_lang:
+        counts["lang_src_feed"] += 1
+        if http_lang and http_lang != feed_lang:
+            counts["lang_mismatches"] += 1
+    if http_lang and feed_lang:
+        counts["lang_http_feed"] += 1
+
+    if entry_langs:
+        counts["lang_src_entry"] += 1
+    if has_hreflang:
+        counts["lang_hreflang"] += 1
+
+    entry_context_langs = set(entry_langs)
+    if entries:
+        entry_context_langs.update(lang for lang in (feed_lang, http_lang) if lang)
+    if len(entry_context_langs) > 1:
+        counts["lang_multiple_entry_languages"] += 1
+    if len(res.get("all_languages", [])) > 1:
+        counts["lang_multiple_in_feed"] += 1
+    if not (http_lang or feed_lang or entry_langs or has_hreflang):
+        counts["lang_no_info"] += 1
 
 
 def extension_prevalence_rows(

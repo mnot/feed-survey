@@ -364,11 +364,31 @@ def test_agg_http_feed_mismatch() -> None:
             "lang_feed": "en",
             "lang_entries": {"en"},
         },
+        "https://hreflang.example/feed.xml": {
+            **_feed(fmt="atom10", days_old=0),
+            "lang_http": None,
+            "lang_feed": None,
+            "lang_entries": set(),
+            "has_hreflang": True,
+        },
+        "https://none.example/feed.xml": {
+            **_feed(fmt="rss20", days_old=0),
+            "lang_http": None,
+            "lang_feed": None,
+            "lang_entries": set(),
+        },
     }
 
     aggregate = aggregate_feed_data(all_valid)
 
+    assert aggregate["lang_src_http"] == 2
+    assert aggregate["lang_src_feed"] == 2
+    assert aggregate["lang_src_entry"] == 2
+    assert aggregate["lang_http_feed"] == 2
     assert aggregate["lang_mismatches"] == 1
+    assert aggregate["lang_multiple_entry_languages"] == 2
+    assert aggregate["lang_hreflang"] == 1
+    assert aggregate["lang_no_info"] == 1
 
 
 def test_discovery_summary_counts() -> None:
@@ -504,7 +524,7 @@ def test_content_types_exclude_json() -> None:
     assert collapsed["Other Non-XML"] == 5
 
 
-def test_report_runtime_lang_counts() -> None:
+def test_report_language_counts() -> None:
     stats = Stats()
     stats.lang_src_http = 7
     stats.lang_src_feed = 8
@@ -527,6 +547,10 @@ def test_report_runtime_lang_counts() -> None:
         "lang_src_entry": 1,
         "lang_mismatches": 1,
         "lang_multiple_in_feed": 1,
+        "lang_no_info": 2,
+        "lang_http_feed": 3,
+        "lang_hreflang": 4,
+        "lang_multiple_entry_languages": 5,
     }
     discovery = DiscoverySummary(
         page_to_feeds={},
@@ -586,11 +610,15 @@ def test_report_runtime_lang_counts() -> None:
         )
     )
 
-    assert report_stats["lang_src_http"] == 7
-    assert report_stats["lang_src_feed"] == 8
-    assert report_stats["lang_src_entry"] == 9
-    assert report_stats["lang_mismatches"] == 10
-    assert report_stats["lang_multiple_in_feed"] == 11
+    assert report_stats["lang_src_http"] == 1
+    assert report_stats["lang_src_feed"] == 1
+    assert report_stats["lang_src_entry"] == 1
+    assert report_stats["lang_mismatches"] == 1
+    assert report_stats["lang_multiple_in_feed"] == 1
+    assert report_stats["lang_no_info"] == 2
+    assert report_stats["lang_http_feed"] == 3
+    assert report_stats["lang_hreflang"] == 4
+    assert report_stats["lang_multiple_entry_languages"] == 5
     assert report_stats["active_quality"]["n"] == 0
     assert report_stats["inactive_quality"]["n"] == 0
 

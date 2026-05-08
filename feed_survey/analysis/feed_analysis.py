@@ -115,6 +115,8 @@ class FeedAnalyzer:
             "content_type_profile", "unknown"
         )
         feed_info["all_languages"] = parsed_data.get("all_languages", set())
+        feed_info["hreflang_values"] = parsed_data.get("hreflang_values", set())
+        feed_info["has_hreflang"] = bool(feed_info["hreflang_values"])
         feed_info["entry_title_count"] = parsed_data.get("entry_title_count", 0)
         feed_info["repeated_entry_title_count"] = parsed_data.get(
             "repeated_entry_title_count", 0
@@ -298,6 +300,8 @@ def _init_feed_info(
         "newest_entry_date": None,
         "oldest_entry_date": None,
         "all_languages": set(),
+        "hreflang_values": set(),
+        "has_hreflang": False,
         "entry_title_count": 0,
         "repeated_entry_title_count": 0,
         "repeated_entry_title_ratio": 0.0,
