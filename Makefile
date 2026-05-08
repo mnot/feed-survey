@@ -70,6 +70,7 @@ emr: venv tranco-cache
 	$(VENV)/python -m feed_survey.emr.job -r emr -c $(MRJOB_CONFIG) \
 		$(MRJOB_BOOTSTRAP_ARGS) \
 		--files "$(TRANCO_CACHE)#top-1m-sites.csv" \
+		--cleanup $(MRJOB_CLEANUP) \
 		$(PATHS_PREFIX)$(CRAWL_ID)-$(RUN_ID)/ \
 		--output-dir $(OUTPUT_DIR)$(CRAWL_ID)-$(RUN_ID)/ \
 		--no-read-logs --no-cat-output \
@@ -112,6 +113,7 @@ test-emr: venv tranco-cache
 	$(VENV)/python -m feed_survey.emr.job -r emr -c $(MRJOB_TEST_CONFIG) \
 		$(MRJOB_BOOTSTRAP_ARGS) \
 		--files "$(TRANCO_CACHE)#top-1m-sites.csv" \
+		--cleanup $(MRJOB_CLEANUP) \
 		--no-read-logs --no-cat-output \
 		--jobconf mapreduce.job.reduces=$(TEST_REDUCES) \
 		--output-dir $(OUTPUT_DIR)test-$(RUN_ID)/ \

@@ -24,6 +24,7 @@ MRJOB_CONFIG ?= mrjob.conf
 MRJOB_TEST_CONFIG ?= mrjob-test.conf
 MRJOB_BOOTSTRAP_INSTALL ?= sudo dnf install -y python3.12 python3.12-pip libxml2 libxslt zlib lz4 brotli
 MRJOB_BOOTSTRAP_PIP_INSTALL ?= sudo /usr/bin/python3.12 -m pip install --no-index --find-links=/tmp/wheels/ mrjob fastwarc beautifulsoup4 lxml python-dateutil requests boto3 publicsuffix2
+MRJOB_CLEANUP ?= TMP
 
 TRANCO_CACHE_DIR ?= $(HOME)/.cache/feed-survey
 TRANCO_LIST ?= subdomains
