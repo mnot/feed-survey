@@ -66,6 +66,66 @@
         .card-sub .divider {
             margin-top: 0.5rem; border-top: 1px solid var(--border); padding-top: 0.5rem;
         }
+        .discovery-overview {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: grid;
+            gap: 1.75rem;
+            grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+            margin-bottom: 2.5rem;
+            padding: 1.5rem;
+        }
+        .discovery-headline-grid {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .discovery-metric {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+        .discovery-metric-label {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .discovery-metric-value {
+            color: var(--text);
+            font-size: 2.15rem;
+            font-weight: 800;
+            margin-top: 0.35rem;
+        }
+        .discovery-metric-note, .discovery-note {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+        .discovery-relations {
+            border-left: 1px solid var(--border);
+            padding-left: 1.75rem;
+        }
+        .discovery-rel-title {
+            font-size: 1rem;
+            font-weight: 800;
+            margin-bottom: 0.7rem;
+        }
+        .discovery-row {
+            display: flex;
+            gap: 1rem;
+            justify-content: space-between;
+            padding: 0.35rem 0;
+        }
+        .discovery-row + .discovery-row {
+            border-top: 1px solid #f1f5f9;
+        }
+        @media (max-width: 820px) {
+            .discovery-overview { grid-template-columns: 1fr; }
+            .discovery-headline-grid { grid-template-columns: 1fr; }
+            .discovery-relations { border-left: 0; border-top: 1px solid var(--border); padding-left: 0; padding-top: 1.5rem; }
+        }
         .chart-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
@@ -295,32 +355,39 @@
     <!-- ══════════════════════════════════════════════════ 2. FEED AUTODISCOVERY -->
     <section id="discovery-section">
         <h2 class="main-section-title">2. Feed Autodiscovery</h2>
-        <div class="stats-grid">
-            <div class="card">
-                <div class="card-title">Pages with Feed Links</div>
-                <div class="card-value">{{ pages_with_auto_f }}</div>
-                <div class="card-sub">
-                    {{ "%.2f"|format(stats.pages_with_autodiscovery / stats.html_responses * 100 if stats.html_responses else 0) }}% of analyzed HTML responses
+        <div class="discovery-overview">
+            <div>
+                <div class="card-title">Autodiscovery Coverage</div>
+                <div class="discovery-headline-grid">
+                    <div class="discovery-metric">
+                        <div class="discovery-metric-label">Pages with feed links</div>
+                        <div class="discovery-metric-value">{{ pages_with_auto_f }}</div>
+                        <div class="discovery-metric-note">
+                            {{ "%.2f"|format(stats.pages_with_autodiscovery / stats.html_responses * 100 if stats.html_responses else 0) }}% of analyzed HTML responses
+                        </div>
+                    </div>
+                    <div class="discovery-metric">
+                        <div class="discovery-metric-label">Sites with feed links</div>
+                        <div class="discovery-metric-value">{{ sites_with_auto_f }}</div>
+                        <div class="discovery-metric-note">
+                            {{ "%.2f"|format(stats.sites_with_autodiscovery / stats.sites_seen * 100 if stats.sites_seen else 0) }}% of analyzed registrable sites
+                        </div>
+                    </div>
+                </div>
+                <div class="discovery-note" style="margin-top:0.85rem;">
+                    Site count is an estimated lower bound from sampled source sites per feed URL.
                 </div>
             </div>
-            <div class="card">
-                <div class="card-title">Sites with Feed Links</div>
-                <div class="card-value">{{ sites_with_auto_f }}</div>
-                <div class="card-sub">
-                    {{ "%.2f"|format(stats.sites_with_autodiscovery / stats.sites_seen * 100 if stats.sites_seen else 0) }}% of analyzed registrable sites (est. lower bound)
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-title">Discovery Link Relations</div>
-                <div class="card-value">{{ stats.pages_with_autodiscovery|comma }}</div>
-                <div class="card-sub">
-                    <div style="margin-bottom:0.5rem;">HTML pages with at least one RSS/Atom autodiscovery link.</div>
-                    <div class="row"><span>Pages with rel="alternate"</span> <strong>{{ stats.discovery_rel_alternate|comma }}</strong></div>
-                    <div class="row"><span>Pages with rel="feed"</span> <strong>{{ stats.discovery_rel_feed|comma }}</strong></div>
-                    <div class="row divider"><span>Pages using both relations</span> <strong>{{ stats.discovery_rel_both_page|comma }}</strong></div>
-                    <div class="row"><span>Pages with a multi-rel link</span> <strong>{% if stats.discovery_link_rel_both_page_known %}{{ stats.discovery_link_rel_both_page|comma }}{% else %}not recorded{% endif %}</strong></div>
-                    <div class="row"><span>Multi-rel links</span> <strong>{{ stats.discovery_link_rel_both|comma }}</strong></div>
-                    <div style="margin-top:0.35rem;color:var(--text-muted);">Pages using both relations includes pages with separate <code>alternate</code> and <code>feed</code> links, plus pages with a single link whose <code>rel</code> contains both. Multi-rel links counts those single link elements, so it can be larger than the page subset.</div>
+
+            <div class="discovery-relations">
+                <div class="discovery-rel-title">Discovery link relations</div>
+                <div class="discovery-row"><span>Pages with rel="alternate"</span> <strong>{{ stats.discovery_rel_alternate|comma }}</strong></div>
+                <div class="discovery-row"><span>Pages with rel="feed"</span> <strong>{{ stats.discovery_rel_feed|comma }}</strong></div>
+                <div class="discovery-row"><span>Pages using both relations</span> <strong>{{ stats.discovery_rel_both_page|comma }}</strong></div>
+                <div class="discovery-row"><span>Pages with a multi-rel link</span> <strong>{% if stats.discovery_link_rel_both_page_known %}{{ stats.discovery_link_rel_both_page|comma }}{% else %}not recorded{% endif %}</strong></div>
+                <div class="discovery-row"><span>Multi-rel links</span> <strong>{{ stats.discovery_link_rel_both|comma }}</strong></div>
+                <div class="discovery-note" style="margin-top:0.75rem;">
+                    Pages using both relations includes pages with separate <code>alternate</code> and <code>feed</code> links, plus pages with a single link whose <code>rel</code> contains both. Multi-rel links counts those single link elements.
                 </div>
             </div>
         </div>

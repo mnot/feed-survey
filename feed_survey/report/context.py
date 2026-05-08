@@ -184,8 +184,9 @@ def render_report_markdown(context: ReportContext) -> str:
             "",
             "## Autodiscovery",
             "",
-            "Parenthetical page percentages use HTML pages processed as the "
-            "denominator. Site percentages use unique analyzed registrable sites.",
+            "Autodiscovery coverage and link relation usage. Parenthetical page "
+            "percentages use HTML pages processed as the denominator. Site "
+            "percentages use unique analyzed registrable sites.",
             "",
             _markdown_table(
                 ["Metric", "Value"],
