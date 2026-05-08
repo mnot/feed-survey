@@ -17,6 +17,7 @@ help:
 	@echo "  make local-report  Run a one-WARC local analysis report"
 	@echo "  make test-emr      Run an EMR smoke test"
 	@echo "  make emr           Run the full EMR analysis"
+	@echo "  make emr-timing EMR_LOG_CLUSTER_ID=j-...  Summarize preserved EMR timing logs"
 	@echo "  make report RESULTS_DIR=results/...  Re-render saved EMR HTML/Markdown reports"
 	@echo "  make wheels        Build EMR dependency wheels"
 	@echo "  make upload-wheels Build and upload EMR dependency wheels"
@@ -136,5 +137,10 @@ report: venv
 	@test -n "$(RESULTS_DIR)" || (echo "Usage: make report RESULTS_DIR=results/test-YYYYMMDD-HHMMSS" && exit 1)
 	$(VENV)/python -m feed_survey.emr.finalize $(RESULTS_DIR) $(CRAWL_ID) $(RESULTS_DIR)/report.html
 	@echo "Reports generated at $(RESULTS_DIR)/report.html and $(RESULTS_DIR)/report.md"
+
+.PHONY: emr-timing
+emr-timing: venv
+	@test -n "$(EMR_LOG_CLUSTER_ID)" || (echo "Usage: make emr-timing EMR_LOG_CLUSTER_ID=j-..." && exit 1)
+	$(VENV)/python -m feed_survey.emr.timing --cluster-id $(EMR_LOG_CLUSTER_ID) --log-dir $(EMR_LOG_DIR)
 
 include Makefile.pyproject

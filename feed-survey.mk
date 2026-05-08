@@ -15,7 +15,7 @@ OUTPUT_DIR ?= s3://mnot-cc-feeds/
 PATHS_PREFIX ?= s3://mnot-cc-feeds/paths/
 WHEEL_S3_PATH ?= s3://mnot-cc-feeds/wheels/
 
-MAP_TASKS ?= 800
+MAP_TASKS ?= 1600
 REDUCES ?= 20
 TEST_MAP_TASKS ?= 20
 TEST_REDUCES ?= 1
@@ -25,6 +25,8 @@ MRJOB_TEST_CONFIG ?= mrjob-test.conf
 MRJOB_BOOTSTRAP_INSTALL ?= sudo dnf install -y python3.12 python3.12-pip libxml2 libxslt zlib lz4 brotli
 MRJOB_BOOTSTRAP_PIP_INSTALL ?= sudo /usr/bin/python3.12 -m pip install --no-index --find-links=/tmp/wheels/ mrjob fastwarc beautifulsoup4 lxml python-dateutil requests boto3 publicsuffix2
 MRJOB_CLEANUP ?= TMP
+EMR_LOG_DIR ?= /tmp/feed-survey-emr-logs
+EMR_LOG_CLUSTER_ID ?=
 
 TRANCO_CACHE_DIR ?= $(HOME)/.cache/feed-survey
 TRANCO_LIST ?= subdomains
