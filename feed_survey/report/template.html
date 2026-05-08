@@ -231,23 +231,23 @@
     <section id="crawl-section">
         <h2 class="main-section-title">1. The Crawl</h2>
         <div class="note-box" style="margin-bottom: 1.5rem;">
-            Percentages describe this Common Crawl result set, not the entire Web. Common Crawl reflects what its crawler fetched, what sites allowed, and the configured Tranco list/sample limits for this run. Response counters below separate all scoped responses from HTML pages and feed URL checks. Site counts and TOP_N scoping use the Tranco {{ stats.tranco_list_label }} list, normalized to registrable sites with the Public Suffix List, including private suffixes for hosted sub-sites. Recency is computed relative to each crawl record's response time where available.
+            Percentages describe this Common Crawl result set, not the entire Web. Metrics reflect what Common Crawl fetched, what sites allowed it to fetch, and the configured Tranco list/sample limits for this run. Site counts and TOP_N scoping use the Tranco {{ stats.tranco_list_label }} list, normalized to registrable sites with the Public Suffix List, including private suffixes for hosted sub-sites.
         </div>
         <div class="stats-grid">
             <div class="card">
                 <div class="card-title">Responses Processed</div>
                 <div class="card-value">{{ total_pages_f }}</div>
-                <div class="card-sub">All WARC responses after Tranco filtering; {{ stats.pages_seen|comma }} had HTML, feed, XML, or sniffable content types and were analyzed further.</div>
+                <div class="card-sub">All responses after Tranco filtering; {{ stats.pages_seen|comma }} had HTML, feed, XML, or sniffable content types and were analyzed further.</div>
             </div>
             <div class="card">
                 <div class="card-title">HTML Pages Processed</div>
                 <div class="card-value">{{ stats.html_responses|comma }}</div>
-                <div class="card-sub">HTML/XHTML responses used as the denominator for autodiscovery page rates.</div>
+                <div class="card-sub">HTML/XHTML responses; used as the denominator for autodiscovery page rates.</div>
             </div>
             <div class="card">
                 <div class="card-title">Unique Sites</div>
                 <div class="card-value">{{ total_sites_f }}</div>
-                <div class="card-sub">Distinct registrable sites among processed responses (HyperLogLog estimate)</div>
+                <div class="card-sub">Distinct registrable sites among processed responses (HyperLogLog estimate).</div>
             </div>
             <div class="card">
                 <div class="card-title">Feed URLs Checked</div>
