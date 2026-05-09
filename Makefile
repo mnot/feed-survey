@@ -108,7 +108,7 @@ tranco-cache: venv
 	FEED_SURVEY_CACHE_DIR="$(TRANCO_CACHE_DIR)" FEED_SURVEY_TRANCO_LIST="$(TRANCO_LIST)" $(VENV)/python -c "from feed_survey.tranco import ensure_tranco_cache; ensure_tranco_cache()"
 
 .PHONY: emr
-emr: venv tranco-cache check-s3-config
+emr: check-s3-config venv tranco-cache
 	$(VENV)/python -m feed_survey.emr.split_paths \
 		s3://commoncrawl/crawl-data/$(CRAWL_ID)/warc.paths.gz \
 		$(PATHS_PREFIX)$(FULL_RUN_NAME)/ \
@@ -139,13 +139,13 @@ mock-report mock_report: venv
 	@echo "Report generated at $(MOCK_REPORT) with Markdown sibling"
 
 .PHONY: upload-wheels
-upload-wheels: wheels check-s3-config
+upload-wheels: check-s3-config wheels
 	aws s3 sync wheels/ $(WHEEL_S3_PATH)
 
 LIMIT ?= 1
 
 .PHONY: test-emr
-test-emr: venv tranco-cache check-s3-config
+test-emr: check-s3-config venv tranco-cache
 	$(VENV)/python -m feed_survey.emr.split_paths \
 		tests/fixtures/warc.paths.txt \
 		$(PATHS_PREFIX)$(TEST_RUN_NAME)/ \
