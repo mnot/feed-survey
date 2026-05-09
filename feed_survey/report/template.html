@@ -623,7 +623,7 @@
                         <tr>
                             <td><span class="badge badge-primary">{{ row.fmt }}</span></td>
                             <td>{{ row.count|comma }}</td>
-                            <td>{{ row.quality_count|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.quality_pct) }}%)</span></td>
+                            <td>{{ row.quality_count|comma }}/{{ row.quality_denominator|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.quality_pct) }}%)</span></td>
                             <td>
                                 <span style="font-weight:700; color:
                                     {% if row.mean >= 0.7 %}var(--success)
@@ -663,13 +663,13 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Entry Content Profile</div>
-                <div class="chart-sub">Content type classification based on Atom <code>type</code> attribute and RSS element semantics. Parenthetical percentages in the first count column use all successfully parsed feeds as the denominator; percentages in the quality column use feeds with operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
+                <div class="chart-sub">Content type classification based on Atom <code>type</code> attribute and RSS element semantics. Parenthetical percentages in the first count column use all successfully parsed feeds as the denominator. High-quality feeds have operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
                 <div class="profile-chart-container" style="height:220px;margin-bottom:1rem;">
                     <canvas id="contentProfileChart"></canvas>
                 </div>
                 <div class="table-container">
                     <table class="data-table">
-                        <thead><tr><th>Profile</th><th>All parsed feeds</th><th>Among quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }} feeds</th></tr></thead>
+                        <thead><tr><th>Profile</th><th>All parsed feeds</th><th>Among {{ stats.quality_split_count|comma }} high-quality feeds</th></tr></thead>
                         <tbody>
                             {% for row in stats.content_profile_prevalence %}
                             <tr>
@@ -694,10 +694,10 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Feed Languages</div>
-                <div class="chart-sub">Top feed language declarations across successfully parsed feeds. Parenthetical percentages in the first count column use all successfully parsed feeds as the denominator; percentages in the quality column use feeds with operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
+                <div class="chart-sub">Top feed language declarations across successfully parsed feeds. Parenthetical percentages in the first count column use all successfully parsed feeds as the denominator. High-quality feeds have operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
                 <div class="table-container">
                     <table class="data-table">
-                        <thead><tr><th>Language</th><th>All parsed feeds</th><th>Among quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }} feeds</th></tr></thead>
+                        <thead><tr><th>Language</th><th>All parsed feeds</th><th>Among {{ stats.quality_split_count|comma }} high-quality feeds</th></tr></thead>
                         <tbody>
                             {% for row in stats.language_prevalence %}
                             <tr>
@@ -771,10 +771,10 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Top Feed Extensions</div>
-                <div class="chart-sub">Non-core namespace elements encountered across successfully parsed feeds. Parenthetical percentages in the first count column use all successfully parsed feeds as the denominator; percentages in the quality column use feeds with operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
+                <div class="chart-sub">Non-core namespace elements encountered across successfully parsed feeds. Parenthetical percentages in the first count column use all successfully parsed feeds as the denominator. High-quality feeds have operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
                 <div class="table-container">
                     <table class="data-table">
-                        <thead><tr><th>Element</th><th>All parsed feeds</th><th>Among quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }} feeds</th></tr></thead>
+                        <thead><tr><th>Element</th><th>All parsed feeds</th><th>Among {{ stats.quality_split_count|comma }} high-quality feeds</th></tr></thead>
                         <tbody>
                             {% for row in extension_prevalence %}
                             <tr>
@@ -797,10 +797,10 @@
             </div>
             <div class="chart-card">
                 <div class="chart-title">Platform Fingerprints</div>
-                <div class="chart-sub">Known feed generators or platform headers observed on parsed feeds. This is intentionally conservative; absent fingerprints mean “not identified,” not “custom-built.” Parenthetical percentages in the first count column use all successfully parsed feeds as the denominator; percentages in the quality column use feeds with operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
+                <div class="chart-sub">Known feed generators or platform headers observed on parsed feeds. This is intentionally conservative; absent fingerprints mean “not identified,” not “custom-built.” Parenthetical percentages in the first count column use all successfully parsed feeds as the denominator. High-quality feeds have operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
                 <div class="table-container">
                     <table class="data-table">
-                        <thead><tr><th>Fingerprint</th><th>All parsed feeds</th><th>Among quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }} feeds</th></tr></thead>
+                        <thead><tr><th>Fingerprint</th><th>All parsed feeds</th><th>Among {{ stats.quality_split_count|comma }} high-quality feeds</th></tr></thead>
                         <tbody>
                             {% for row in stats.fingerprint_prevalence %}
                             <tr>
@@ -827,7 +827,7 @@
                             <tr>
                                 <td>{{ row.fingerprint }}</td>
                                 <td>{{ row.parsed_feeds|comma }}</td>
-                                <td>{{ row.quality_count|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.quality_pct) }}%)</span></td>
+                                <td>{{ row.quality_count|comma }}/{{ row.quality_denominator|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.quality_pct) }}%)</span></td>
                                 <td>{{ "%.3f"|format(row.mean_quality) }}</td>
                             </tr>
                             {% endfor %}

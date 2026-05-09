@@ -276,6 +276,7 @@ def source_fingerprint_quality_rows(
             "quality_count": sum(
                 1 for score in fingerprint_scores if score > quality_threshold
             ),
+            "quality_denominator": len(fingerprint_scores),
             "quality_pct": _pct(
                 sum(1 for score in fingerprint_scores if score > quality_threshold),
                 len(fingerprint_scores),
@@ -331,6 +332,7 @@ def _quality_prevalence_rows(
             "all_count": count,
             "all_pct": _pct(count, all_feed_count),
             "quality_count": quality_counts.get(label, 0),
+            "quality_denominator": quality_feed_count,
             "quality_pct": _pct(quality_counts.get(label, 0), quality_feed_count),
         }
         for label, count in all_counts.items()

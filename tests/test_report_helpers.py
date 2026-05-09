@@ -110,6 +110,7 @@ def test_quality_summary_sets() -> None:
     assert summary["no_autodiscovery"]["n"] == 3
     assert [row["fmt"] for row in summary["format_rows"]] == ["atom10", "rss20"]
     assert all("quality_count" in row for row in summary["format_rows"])
+    assert all("quality_denominator" in row for row in summary["format_rows"])
     assert all("quality_pct" in row for row in summary["format_rows"])
 
 
@@ -140,8 +141,10 @@ def test_format_quality_pct() -> None:
     rows = {row["fmt"]: row for row in summary["format_rows"]}
 
     assert rows["rss20"]["quality_count"] == 1
+    assert rows["rss20"]["quality_denominator"] == 2
     assert rows["rss20"]["quality_pct"] == 50.0
     assert rows["atom10"]["quality_count"] == 1
+    assert rows["atom10"]["quality_denominator"] == 3
     assert rows["atom10"]["quality_pct"] == 33.3
 
 
@@ -228,6 +231,7 @@ def test_extension_quality_split() -> None:
     assert rows[0]["all_count"] == 2
     assert rows[0]["all_pct"] == 100.0
     assert rows[0]["quality_count"] == 1
+    assert rows[0]["quality_denominator"] == 1
     assert rows[0]["quality_pct"] == 100.0
 
 
@@ -249,6 +253,7 @@ def test_profile_quality_split() -> None:
 
     assert by_profile["html"]["all_count"] == 1
     assert by_profile["html"]["quality_count"] == 1
+    assert by_profile["html"]["quality_denominator"] == 1
     assert by_profile["plain"]["all_count"] == 1
     assert by_profile["plain"]["quality_count"] == 0
 
@@ -273,6 +278,7 @@ def test_language_quality_split() -> None:
 
     assert by_language["en"]["all_count"] == 1
     assert by_language["en"]["quality_count"] == 1
+    assert by_language["en"]["quality_denominator"] == 1
     assert by_language["fr"]["all_count"] == 1
     assert by_language["fr"]["quality_count"] == 0
 
@@ -297,6 +303,7 @@ def test_fingerprint_quality_split() -> None:
     assert rows[0]["fingerprint"] == "wordpress"
     assert rows[0]["all_count"] == 2
     assert rows[0]["quality_count"] == 1
+    assert rows[0]["quality_denominator"] == 1
 
 
 def test_html_fingerprint_rows() -> None:
@@ -347,6 +354,7 @@ def test_source_quality_rows() -> None:
     assert rows[0]["fingerprint"] == "wordpress"
     assert rows[0]["parsed_feeds"] == 2
     assert rows[0]["quality_count"] == 1
+    assert rows[0]["quality_denominator"] == 2
     assert {row["fingerprint"] for row in rows} == {"wordpress"}
 
 
@@ -570,6 +578,7 @@ def test_report_language_counts() -> None:
     quality = {
         "hist": {},
         "mean": 0.0,
+        "split_count": 0,
         "active": {
             "mean": 0.0,
             "n": 0,

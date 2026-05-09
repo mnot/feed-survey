@@ -64,6 +64,7 @@ def build_quality_summary(
     return {
         "hist": quality_hist,
         "mean": _mean(quality_scores),
+        "split_count": mid_quality_count,
         "active": {
             "mean": round(_mean(active_scores), 3),
             "n": len(active_scores),
@@ -119,6 +120,7 @@ def _format_quality_rows(format_scores: Dict[str, List[float]]) -> List[Dict[str
                 "fmt": feed_format,
                 "count": count,
                 "quality_count": format_mid_quality_count,
+                "quality_denominator": count,
                 "quality_pct": round(format_mid_quality_count / count * 100, 1),
                 "mean": round(_mean(scores), 3),
                 "high_pct": round(

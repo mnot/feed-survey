@@ -101,8 +101,10 @@ def render_report_html(context: ReportContext) -> str:
 def render_report_markdown(context: ReportContext) -> str:
     stats = build_report_stats(context)
     total_parsed = stats["parsed_feeds"]
-    quality_split_label = f"Quality > {QUALITY_SPLIT_THRESHOLD:.1f} feeds"
-    quality_prevalence_label = f"Among quality > {QUALITY_SPLIT_THRESHOLD:.1f} feeds"
+    quality_split_label = "High-quality feeds"
+    quality_prevalence_label = (
+        f"Among {format_number(stats['quality_split_count'])} high-quality feeds"
+    )
     lines = [
         f"# Web Feed Survey: {context.crawl_id}",
         "",
@@ -146,11 +148,12 @@ def render_report_markdown(context: ReportContext) -> str:
                     ],
                     [
                         quality_split_label,
-                        "Parsed feeds with operational quality above the reporting "
-                        "threshold. This is not an editorial score; it separates feeds "
-                        "that look recent and usable from abandoned, sparse, or "
-                        "low-metadata feeds while keeping both groups visible. Severe "
-                        "repeated/default-looking entry metadata can cap the score.",
+                        "Parsed feeds with operational quality "
+                        f"> {QUALITY_SPLIT_THRESHOLD:.1f}. This is not an editorial "
+                        "score; it separates feeds that look recent and usable from "
+                        "abandoned, sparse, or low-metadata feeds while keeping both "
+                        "groups visible. Severe repeated/default-looking entry metadata "
+                        "can cap the score.",
                     ],
                 ],
             ),
@@ -357,8 +360,7 @@ def render_report_markdown(context: ReportContext) -> str:
                     [
                         row["fmt"],
                         format_number(row["count"]),
-                        f"{format_number(row['quality_count'])} "
-                        f"({row['quality_pct']:.1f}%)",
+                        _quality_fraction(row),
                         f"{row['mean']:.3f}",
                     ]
                     for row in context.quality["format_rows"][:20]
@@ -368,8 +370,8 @@ def render_report_markdown(context: ReportContext) -> str:
             "## Extensions",
             "",
             "Parenthetical percentages in the all-feeds column use successfully "
-            "parsed feeds as the denominator. Percentages in the quality column "
-            f"use feeds with quality > {QUALITY_SPLIT_THRESHOLD:.1f}.",
+            "parsed feeds as the denominator. The quality column shows prevalence "
+            f"among {format_number(stats['quality_split_count'])} high-quality feeds.",
             "",
             _markdown_table(
                 [
@@ -381,8 +383,7 @@ def render_report_markdown(context: ReportContext) -> str:
                     [
                         _markdown_extension(row),
                         f"{format_number(row['all_count'])} ({row['all_pct']:.1f}%)",
-                        f"{format_number(row['quality_count'])} "
-                        f"({row['quality_pct']:.1f}%)",
+                        _quality_count_pct(row),
                     ]
                     for row in context.extension_prevalence[:20]
                 ],
@@ -393,8 +394,8 @@ def render_report_markdown(context: ReportContext) -> str:
             "Rows count known feed generators or platform headers on parsed feeds. "
             "Missing fingerprints mean not identified. Parenthetical percentages "
             "in the all-feeds column use successfully parsed feeds as the "
-            "denominator. Percentages in the quality column use feeds with "
-            f"quality > {QUALITY_SPLIT_THRESHOLD:.1f}.",
+            "denominator. The quality column shows prevalence among "
+            f"{format_number(stats['quality_split_count'])} high-quality feeds.",
             "",
             _markdown_table(
                 ["Fingerprint", "All parsed feeds", quality_prevalence_label],
@@ -402,8 +403,7 @@ def render_report_markdown(context: ReportContext) -> str:
                     [
                         row["fingerprint"],
                         f"{format_number(row['all_count'])} ({row['all_pct']:.1f}%)",
-                        f"{format_number(row['quality_count'])} "
-                        f"({row['quality_pct']:.1f}%)",
+                        _quality_count_pct(row),
                     ]
                     for row in context.fingerprint_prevalence
                 ],
@@ -427,8 +427,7 @@ def render_report_markdown(context: ReportContext) -> str:
                     [
                         row["fingerprint"],
                         format_number(row["parsed_feeds"]),
-                        f"{format_number(row['quality_count'])} "
-                        f"({row['quality_pct']:.1f}%)",
+                        _quality_fraction(row),
                         f"{row['mean_quality']:.3f}",
                     ]
                     for row in context.source_fingerprint_quality
@@ -438,8 +437,8 @@ def render_report_markdown(context: ReportContext) -> str:
             "## Entry Content Profiles",
             "",
             "Parenthetical percentages in the all-feeds column use successfully "
-            "parsed feeds as the denominator. Percentages in the quality column "
-            f"use feeds with quality > {QUALITY_SPLIT_THRESHOLD:.1f}.",
+            "parsed feeds as the denominator. The quality column shows prevalence "
+            f"among {format_number(stats['quality_split_count'])} high-quality feeds.",
             "",
             _markdown_table(
                 ["Profile", "All parsed feeds", quality_prevalence_label],
@@ -447,8 +446,7 @@ def render_report_markdown(context: ReportContext) -> str:
                     [
                         row["profile"],
                         f"{format_number(row['all_count'])} ({row['all_pct']:.1f}%)",
-                        f"{format_number(row['quality_count'])} "
-                        f"({row['quality_pct']:.1f}%)",
+                        _quality_count_pct(row),
                     ]
                     for row in context.content_profile_prevalence
                 ],
@@ -508,8 +506,7 @@ def render_report_markdown(context: ReportContext) -> str:
                     [
                         row["language"],
                         f"{format_number(row['all_count'])} ({row['all_pct']:.1f}%)",
-                        f"{format_number(row['quality_count'])} "
-                        f"({row['quality_pct']:.1f}%)",
+                        _quality_count_pct(row),
                     ]
                     for row in context.language_prevalence
                 ],
@@ -650,6 +647,7 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         "lang_count_hist": context.lang_count_hist,
         "quality_hist": quality["hist"],
         "quality_split_threshold": QUALITY_SPLIT_THRESHOLD,
+        "quality_split_count": quality["split_count"],
         "mean_quality": round(quality["mean"], 3),
         "active_quality": quality["active"],
         "inactive_quality": quality["inactive"],
@@ -676,6 +674,18 @@ def _format_optional_count(known: bool, value: int) -> str:
 
 def _count_pct(count: int, denominator: int) -> str:
     return f"{format_number(count)} ({_pct(count, denominator)})"
+
+
+def _quality_fraction(row: Dict[str, Any]) -> str:
+    return (
+        f"{format_number(row['quality_count'])}/"
+        f"{format_number(row['quality_denominator'])} "
+        f"({row['quality_pct']:.1f}%)"
+    )
+
+
+def _quality_count_pct(row: Dict[str, Any]) -> str:
+    return f"{format_number(row['quality_count'])} ({row['quality_pct']:.1f}%)"
 
 
 def _paired_error_column_rows(errors: List[Tuple[str, int]]) -> List[List[Any]]:
