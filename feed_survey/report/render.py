@@ -136,7 +136,7 @@ def generate_report(
         fingerprint_prevalence=fingerprint_prevalence,
         html_fingerprints=html_fingerprints,
         source_fingerprint_quality=source_fingerprint_quality_rows(
-            all_valid_results,
+            discovered_results,
             stats.feed_source_fingerprints,
             now,
         ),

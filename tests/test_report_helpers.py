@@ -355,7 +355,31 @@ def test_source_quality_rows() -> None:
     assert rows[0]["parsed_feeds"] == 2
     assert rows[0]["quality_count"] == 1
     assert rows[0]["quality_denominator"] == 2
-    assert {row["fingerprint"] for row in rows} == {"wordpress"}
+    assert rows[1]["fingerprint"] == "unknown"
+    assert rows[1]["parsed_feeds"] == 1
+    assert rows[1]["quality_count"] == 1
+    assert rows[1]["quality_denominator"] == 1
+    assert {row["fingerprint"] for row in rows} == {"wordpress", "unknown"}
+
+
+def test_src_quality_limit_unknown() -> None:
+    now = datetime(2026, 5, 1, tzinfo=timezone.utc)
+    rows = source_fingerprint_quality_rows(
+        {
+            "https://one.example/feed.xml": _feed(fmt="rss20", days_old=0),
+            "https://two.example/feed.xml": _feed(fmt="rss20", days_old=0),
+            "https://three.example/feed.xml": _feed(fmt="rss20", days_old=0),
+        },
+        {
+            "https://one.example/feed.xml": {"wordpress": 1},
+            "https://two.example/feed.xml": {"drupal": 1},
+        },
+        now,
+        limit=2,
+    )
+
+    assert len(rows) == 2
+    assert {row["fingerprint"] for row in rows} == {"wordpress", "unknown"}
 
 
 def test_agg_http_feed_mismatch() -> None:

@@ -265,7 +265,7 @@ def source_fingerprint_quality_rows(
         if not result.get("valid"):
             continue
         score = score_feed(result, now)
-        fingerprints = set(source_fingerprints.get(feed_url, {}))
+        fingerprints = set(source_fingerprints.get(feed_url, {})) or {"unknown"}
         for fingerprint in fingerprints:
             scores.setdefault(fingerprint, []).append(score)
 
@@ -289,7 +289,13 @@ def source_fingerprint_quality_rows(
     rows.sort(key=lambda row: cast(int, row["parsed_feeds"]), reverse=True)
     if limit is None:
         return rows
-    return rows[:limit]
+    limited = rows[:limit]
+    if any(row["fingerprint"] == "unknown" for row in limited):
+        return limited
+    unknown_row = next((row for row in rows if row["fingerprint"] == "unknown"), None)
+    if unknown_row is None or not limited:
+        return limited
+    return [*limited[:-1], unknown_row]
 
 
 def _quality_prevalence_rows(

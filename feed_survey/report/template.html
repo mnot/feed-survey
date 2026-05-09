@@ -818,10 +818,10 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Autodiscovered Feed Quality by Source Platform</div>
-                <div class="chart-sub">Quality of parsed feeds discovered from HTML pages with a recognized platform fingerprint. Feeds without a matched source-page platform are omitted. Parenthetical percentages use parsed feeds in that source-platform row as the denominator.</div>
+                <div class="chart-sub">Quality of successfully parsed feeds found through HTML autodiscovery, grouped by recognized platform hints on the source page. The unknown row covers autodiscovered feeds whose source page had no recognized platform fingerprint. Parenthetical percentages use parsed feeds in that source-platform row as the denominator.</div>
                 <div class="table-container">
                     <table class="data-table">
-                        <thead><tr><th>Source platform</th><th>Parsed feeds</th><th>Quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }} within source platform</th><th>Mean quality</th></tr></thead>
+                        <thead><tr><th>Source platform</th><th>Autodiscovered parsed feeds</th><th>Quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}</th><th>Mean quality</th></tr></thead>
                         <tbody>
                             {% for row in stats.source_fingerprint_quality %}
                             <tr>
