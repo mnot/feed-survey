@@ -675,6 +675,11 @@ def test_generate_report_writes_md(tmp_path: Path) -> None:
     markdown = markdown_path.read_text(encoding="utf-8")
     assert "# Web Feed Survey: CC-MAIN-2026-12" in markdown
     assert "## Feed Availability and Freshness" in markdown
+    assert "No successfully parsed autodiscovered feeds were found" in markdown
+    assert "source-page platform are omitted" not in markdown
+    assert "No successfully parsed autodiscovered feeds were found" in (
+        html_path.read_text(encoding="utf-8")
+    )
 
 
 def test_groups_unknown_roots() -> None:

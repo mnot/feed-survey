@@ -819,6 +819,7 @@
             <div class="chart-card">
                 <div class="chart-title">Autodiscovered Feed Quality by Source Platform</div>
                 <div class="chart-sub">Quality of successfully parsed feeds found through HTML autodiscovery, grouped by recognized platform hints on the source page. The unknown row covers autodiscovered feeds whose source page had no recognized platform fingerprint. Parenthetical percentages use parsed feeds in that source-platform row as the denominator.</div>
+                {% if stats.source_fingerprint_quality %}
                 <div class="table-container">
                     <table class="data-table">
                         <thead><tr><th>Source platform</th><th>Autodiscovered parsed feeds</th><th>Quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}</th><th>Mean quality</th></tr></thead>
@@ -834,6 +835,9 @@
                         </tbody>
                     </table>
                 </div>
+                {% else %}
+                <p class="chart-sub">No successfully parsed autodiscovered feeds were found in this run.</p>
+                {% endif %}
             </div>
         </div>
     </section>

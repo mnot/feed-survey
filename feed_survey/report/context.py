@@ -411,27 +411,15 @@ def render_report_markdown(context: ReportContext) -> str:
             "",
             "### Autodiscovered Feed Quality by Source Platform",
             "",
-            "Parsed feeds grouped by the recognized platform fingerprint of the HTML "
-            "page that linked to them. Feeds without a matched source-page platform "
-            "are omitted. Parenthetical percentages use parsed feeds in that "
-            "source-platform row as the denominator.",
+            "Quality of successfully parsed feeds found through HTML autodiscovery, "
+            "grouped by recognized platform hints on the source page. The unknown "
+            "row covers autodiscovered feeds whose source page had no recognized "
+            "platform fingerprint. Parenthetical percentages use parsed feeds in "
+            "that source-platform row as the denominator.",
             "",
-            _markdown_table(
-                [
-                    "Source platform",
-                    "Parsed feeds",
-                    f"Quality > {QUALITY_SPLIT_THRESHOLD:.1f} within source platform",
-                    "Mean quality",
-                ],
-                [
-                    [
-                        row["fingerprint"],
-                        format_number(row["parsed_feeds"]),
-                        _quality_fraction(row),
-                        f"{row['mean_quality']:.3f}",
-                    ]
-                    for row in context.source_fingerprint_quality
-                ],
+            _src_quality_markdown(
+                context.source_fingerprint_quality,
+                QUALITY_SPLIT_THRESHOLD,
             ),
             "",
             "## Entry Content Profiles",
@@ -551,6 +539,30 @@ def _markdown_extension(row: Dict[str, Any]) -> str:
         href = row["extension_href"]
         return f"[{prefix}]({href}):{local}"
     return str(row["extension"])
+
+
+def _src_quality_markdown(
+    rows: List[Dict[str, Any]], quality_threshold: float
+) -> str:
+    if not rows:
+        return "No successfully parsed autodiscovered feeds were found in this run."
+    return _markdown_table(
+        [
+            "Source platform",
+            "Autodiscovered parsed feeds",
+            f"Quality > {quality_threshold:.1f}",
+            "Mean quality",
+        ],
+        [
+            [
+                row["fingerprint"],
+                format_number(row["parsed_feeds"]),
+                _quality_fraction(row),
+                f"{row['mean_quality']:.3f}",
+            ]
+            for row in rows
+        ],
+    )
 
 
 def build_report_stats(context: ReportContext) -> Dict[str, Any]:
