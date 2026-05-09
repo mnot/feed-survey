@@ -100,6 +100,9 @@ cp feed-survey.example.mk feed-survey.mk
 Edit `feed-survey.mk`, or pass another make fragment with
 `CONFIG=/path/to/config.mk`.
 
+Run `make show-config` to print the effective settings before starting an EMR
+run.
+
 - **`CRAWL_ID`**: The Common Crawl index to process.
 - **`TOP_N`**: Tranco cutoff for EMR runs, applied to registrable sites after Public Suffix List normalization. Private suffixes such as `blogspot.com` and `github.io` make hosted sub-sites count independently.
 - **`TRANCO_LIST`**: Tranco ranking flavor for `TOP_N` scoping. Defaults to `subdomains`, which uses Tranco's list with subdomains included before normalizing to registrable sites. Set `TRANCO_LIST=standard` to use Tranco's domain-only Top-1M.

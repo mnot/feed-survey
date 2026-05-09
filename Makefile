@@ -22,6 +22,7 @@ help:
 	@echo "  make report RESULTS_DIR=results/...  Re-render saved EMR HTML/Markdown reports"
 	@echo "  make wheels        Build EMR dependency wheels"
 	@echo "  make upload-wheels Build and upload EMR dependency wheels"
+	@echo "  make show-config   Print effective make configuration"
 	@echo "  make clean         Remove local generated scratch artifacts and venv"
 	@echo ""
 	@echo "Configuration:"
@@ -57,11 +58,43 @@ local-report: venv
 
 # Use := to ensure RUN_ID is fixed for the entire make execution
 RUN_ID := $(shell date +%Y%m%d-%H%M%S)
+FULL_RUN_NAME = $(CRAWL_ID)-$(RUN_ID)
+TEST_RUN_NAME = test-$(RUN_ID)
 
 MRJOB_BOOTSTRAP_ARGS = \
 	--bootstrap "$(MRJOB_BOOTSTRAP_INSTALL)" \
 	--bootstrap "aws s3 sync $(WHEEL_S3_PATH) /tmp/wheels/" \
 	--bootstrap "$(MRJOB_BOOTSTRAP_PIP_INSTALL)"
+
+MRJOB_COMMON_ARGS = \
+	-r emr \
+	$(MRJOB_BOOTSTRAP_ARGS) \
+	--files "$(TRANCO_CACHE)\#top-1m-sites.csv" \
+	--cleanup $(MRJOB_CLEANUP) \
+	--no-read-logs --no-cat-output \
+	--topn $(TOP_N) \
+	--tranco-list $(TRANCO_LIST)
+
+.PHONY: show-config
+show-config:
+	@echo "CONFIG=$(CONFIG)"
+	@echo "CRAWL_ID=$(CRAWL_ID)"
+	@echo "LOCAL_CRAWL_ID=$(LOCAL_CRAWL_ID)"
+	@echo "TOP_N=$(TOP_N)"
+	@echo "LOCAL_TOP_N=$(LOCAL_TOP_N)"
+	@echo "TRANCO_LIST=$(TRANCO_LIST)"
+	@echo "TRANCO_CACHE=$(TRANCO_CACHE)"
+	@echo "OUTPUT_DIR=$(OUTPUT_DIR)"
+	@echo "PATHS_PREFIX=$(PATHS_PREFIX)"
+	@echo "WHEEL_S3_PATH=$(WHEEL_S3_PATH)"
+	@echo "MAP_TASKS=$(MAP_TASKS)"
+	@echo "REDUCES=$(REDUCES)"
+	@echo "TEST_MAP_TASKS=$(TEST_MAP_TASKS)"
+	@echo "TEST_REDUCES=$(TEST_REDUCES)"
+	@echo "MRJOB_CONFIG=$(MRJOB_CONFIG)"
+	@echo "MRJOB_TEST_CONFIG=$(MRJOB_TEST_CONFIG)"
+	@echo "MRJOB_CLEANUP=$(MRJOB_CLEANUP)"
+	@echo "EMR_LOG_DIR=$(EMR_LOG_DIR)"
 
 .PHONY: check-s3-config
 check-s3-config:
@@ -78,22 +111,17 @@ tranco-cache: venv
 emr: venv tranco-cache check-s3-config
 	$(VENV)/python -m feed_survey.emr.split_paths \
 		s3://commoncrawl/crawl-data/$(CRAWL_ID)/warc.paths.gz \
-		$(PATHS_PREFIX)$(CRAWL_ID)-$(RUN_ID)/ \
+		$(PATHS_PREFIX)$(FULL_RUN_NAME)/ \
 		$(MAP_TASKS)
-	$(VENV)/python -m feed_survey.emr.job -r emr -c $(MRJOB_CONFIG) \
-		$(MRJOB_BOOTSTRAP_ARGS) \
-		--files "$(TRANCO_CACHE)#top-1m-sites.csv" \
-		--cleanup $(MRJOB_CLEANUP) \
-		$(PATHS_PREFIX)$(CRAWL_ID)-$(RUN_ID)/ \
-		--output-dir $(OUTPUT_DIR)$(CRAWL_ID)-$(RUN_ID)/ \
-		--no-read-logs --no-cat-output \
+	$(VENV)/python -m feed_survey.emr.job -c $(MRJOB_CONFIG) \
+		$(MRJOB_COMMON_ARGS) \
 		--jobconf mapreduce.job.reduces=$(REDUCES) \
-		--topn $(TOP_N) \
-		--tranco-list $(TRANCO_LIST)
-	mkdir -p results/$(CRAWL_ID)-$(RUN_ID)
-	aws s3 sync $(OUTPUT_DIR)$(CRAWL_ID)-$(RUN_ID)/ results/$(CRAWL_ID)-$(RUN_ID)/
-	$(VENV)/python -m feed_survey.emr.finalize results/$(CRAWL_ID)-$(RUN_ID)/ $(CRAWL_ID) results/$(CRAWL_ID)-$(RUN_ID)/report.html
-	@echo "Reports generated at results/$(CRAWL_ID)-$(RUN_ID)/report.html and results/$(CRAWL_ID)-$(RUN_ID)/report.md"
+		--output-dir $(OUTPUT_DIR)$(FULL_RUN_NAME)/ \
+		$(PATHS_PREFIX)$(FULL_RUN_NAME)/
+	mkdir -p results/$(FULL_RUN_NAME)
+	aws s3 sync $(OUTPUT_DIR)$(FULL_RUN_NAME)/ results/$(FULL_RUN_NAME)/
+	$(VENV)/python -m feed_survey.emr.finalize results/$(FULL_RUN_NAME)/ $(CRAWL_ID) results/$(FULL_RUN_NAME)/report.html
+	@echo "Reports generated at results/$(FULL_RUN_NAME)/report.html and results/$(FULL_RUN_NAME)/report.md"
 
 MOCK_REPORT ?= mock_report.html
 RESULTS_DIR ?=
@@ -120,24 +148,19 @@ LIMIT ?= 1
 test-emr: venv tranco-cache check-s3-config
 	$(VENV)/python -m feed_survey.emr.split_paths \
 		tests/fixtures/warc.paths.txt \
-		$(PATHS_PREFIX)test-$(RUN_ID)/ \
+		$(PATHS_PREFIX)$(TEST_RUN_NAME)/ \
 		$(TEST_MAP_TASKS) \
 		$(LIMIT)
-	$(VENV)/python -m feed_survey.emr.job -r emr -c $(MRJOB_TEST_CONFIG) \
-		$(MRJOB_BOOTSTRAP_ARGS) \
-		--files "$(TRANCO_CACHE)#top-1m-sites.csv" \
-		--cleanup $(MRJOB_CLEANUP) \
-		--no-read-logs --no-cat-output \
+	$(VENV)/python -m feed_survey.emr.job -c $(MRJOB_TEST_CONFIG) \
+		$(MRJOB_COMMON_ARGS) \
 		--jobconf mapreduce.job.reduces=$(TEST_REDUCES) \
-		--output-dir $(OUTPUT_DIR)test-$(RUN_ID)/ \
+		--output-dir $(OUTPUT_DIR)$(TEST_RUN_NAME)/ \
 		--limit $(LIMIT) \
-		--topn $(TOP_N) \
-		--tranco-list $(TRANCO_LIST) \
-		$(PATHS_PREFIX)test-$(RUN_ID)/
-	mkdir -p results/test-$(RUN_ID)
-	aws s3 sync $(OUTPUT_DIR)test-$(RUN_ID)/ results/test-$(RUN_ID)/
-	$(VENV)/python -m feed_survey.emr.finalize results/test-$(RUN_ID)/ $(CRAWL_ID) results/test-$(RUN_ID)/report.html
-	@echo "Reports generated at results/test-$(RUN_ID)/report.html and results/test-$(RUN_ID)/report.md"
+		$(PATHS_PREFIX)$(TEST_RUN_NAME)/
+	mkdir -p results/$(TEST_RUN_NAME)
+	aws s3 sync $(OUTPUT_DIR)$(TEST_RUN_NAME)/ results/$(TEST_RUN_NAME)/
+	$(VENV)/python -m feed_survey.emr.finalize results/$(TEST_RUN_NAME)/ $(CRAWL_ID) results/$(TEST_RUN_NAME)/report.html
+	@echo "Reports generated at results/$(TEST_RUN_NAME)/report.html and results/$(TEST_RUN_NAME)/report.md"
 
 # Update a specific report: make results/test-xxx/report.html
 .PHONY: results/%/report.html
