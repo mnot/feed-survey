@@ -1,5 +1,6 @@
 PROJECT = feed_survey
 CONFIG ?= feed-survey.mk
+include feed-survey.defaults.mk
 -include $(CONFIG)
 
 PYTHON_TARGETS = feed_survey $(wildcard tests/*.py)
@@ -22,6 +23,10 @@ help:
 	@echo "  make wheels        Build EMR dependency wheels"
 	@echo "  make upload-wheels Build and upload EMR dependency wheels"
 	@echo "  make clean         Remove local generated scratch artifacts and venv"
+	@echo ""
+	@echo "Configuration:"
+	@echo "  cp feed-survey.example.mk feed-survey.mk"
+	@echo "  make CONFIG=/path/to/config.mk test-emr"
 
 .PHONY: clean
 clean: clean_py clean-local
@@ -58,12 +63,19 @@ MRJOB_BOOTSTRAP_ARGS = \
 	--bootstrap "aws s3 sync $(WHEEL_S3_PATH) /tmp/wheels/" \
 	--bootstrap "$(MRJOB_BOOTSTRAP_PIP_INSTALL)"
 
+.PHONY: check-s3-config
+check-s3-config:
+	@test -n "$(OUTPUT_DIR)" || (echo "Set OUTPUT_DIR in $(CONFIG) or pass CONFIG=/path/to/config.mk"; exit 1)
+	@test -n "$(PATHS_PREFIX)" || (echo "Set PATHS_PREFIX in $(CONFIG) or pass CONFIG=/path/to/config.mk"; exit 1)
+	@test -n "$(WHEEL_S3_PATH)" || (echo "Set WHEEL_S3_PATH in $(CONFIG) or pass CONFIG=/path/to/config.mk"; exit 1)
+	@case "$(OUTPUT_DIR) $(PATHS_PREFIX) $(WHEEL_S3_PATH)" in *YOUR-BUCKET*) echo "Replace YOUR-BUCKET in $(CONFIG) before running EMR targets"; exit 1;; esac
+
 .PHONY: tranco-cache
 tranco-cache: venv
 	FEED_SURVEY_CACHE_DIR="$(TRANCO_CACHE_DIR)" FEED_SURVEY_TRANCO_LIST="$(TRANCO_LIST)" $(VENV)/python -c "from feed_survey.tranco import ensure_tranco_cache; ensure_tranco_cache()"
 
 .PHONY: emr
-emr: venv tranco-cache
+emr: venv tranco-cache check-s3-config
 	$(VENV)/python -m feed_survey.emr.split_paths \
 		s3://commoncrawl/crawl-data/$(CRAWL_ID)/warc.paths.gz \
 		$(PATHS_PREFIX)$(CRAWL_ID)-$(RUN_ID)/ \
@@ -99,13 +111,13 @@ mock-report mock_report: venv
 	@echo "Report generated at $(MOCK_REPORT) with Markdown sibling"
 
 .PHONY: upload-wheels
-upload-wheels: wheels
+upload-wheels: wheels check-s3-config
 	aws s3 sync wheels/ $(WHEEL_S3_PATH)
 
 LIMIT ?= 1
 
 .PHONY: test-emr
-test-emr: venv tranco-cache
+test-emr: venv tranco-cache check-s3-config
 	$(VENV)/python -m feed_survey.emr.split_paths \
 		tests/fixtures/warc.paths.txt \
 		$(PATHS_PREFIX)test-$(RUN_ID)/ \

@@ -1,7 +1,7 @@
-# Local run configuration for Web Feed Survey.
+# Default run configuration for Web Feed Survey.
 #
-# Edit these values, or run make with CONFIG=/path/to/another.mk, to use
-# different AWS buckets, sizing, crawl ids, or local cache paths.
+# Keep local credentials, buckets, and account-specific settings in
+# feed-survey.mk or another CONFIG=... file. See feed-survey.example.mk.
 
 CRAWL_ID ?= CC-MAIN-2026-12
 LOCAL_CRAWL_ID ?= CC-MAIN-2024-18
@@ -10,10 +10,6 @@ LOCAL_TOP_N ?= 1000
 # TOP_N is applied to registrable sites after Public Suffix List normalization.
 # Hosted sub-sites on private suffixes, such as *.blogspot.com or *.github.io,
 # are scoped independently when the Public Suffix List says they are sites.
-
-OUTPUT_DIR ?= s3://mnot-cc-feeds/
-PATHS_PREFIX ?= s3://mnot-cc-feeds/paths/
-WHEEL_S3_PATH ?= s3://mnot-cc-feeds/wheels/
 
 MAP_TASKS ?= 1600
 REDUCES ?= 20

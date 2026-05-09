@@ -39,6 +39,9 @@ cd feed-survey
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
+
+# Create your local run configuration before using EMR targets.
+cp feed-survey.example.mk feed-survey.mk
 ```
 
 ### Local Usage
@@ -85,9 +88,17 @@ make emr
 
 ## Configuration
 
-### `feed-survey.mk`
-This is the main run configuration loaded by `make`. Edit it directly for your
-environment, or pass another make fragment with `CONFIG=/path/to/config.mk`.
+### Make Configuration
+`feed-survey.defaults.mk` contains safe defaults for local development and
+non-secret tuning. `feed-survey.mk` is your local, ignored configuration file
+for AWS buckets and account-specific choices. Create it from the example:
+
+```bash
+cp feed-survey.example.mk feed-survey.mk
+```
+
+Edit `feed-survey.mk`, or pass another make fragment with
+`CONFIG=/path/to/config.mk`.
 
 - **`CRAWL_ID`**: The Common Crawl index to process.
 - **`TOP_N`**: Tranco cutoff for EMR runs, applied to registrable sites after Public Suffix List normalization. Private suffixes such as `blogspot.com` and `github.io` make hosted sub-sites count independently.
@@ -103,16 +114,17 @@ environment, or pass another make fragment with `CONFIG=/path/to/config.mk`.
 
 ### `mrjob.conf`
 Control EMR cluster shape and instance types. The make targets supply bootstrap
-commands, dependency-wheel location, and the Tranco upload file from
-`feed-survey.mk`.
+commands, dependency-wheel location, and the Tranco upload file from the make
+configuration.
 
 - **`TargetOnDemandCapacity`**: The default full run uses 30 core xlarge instances plus one master, leaving a little headroom below a 128 vCPU on-demand quota.
 - **`instance_fleets`**: Defines the mix of m5, r5, and c5 instances EMR can choose from.
 
 ### `Makefile`
-The Makefile is the command surface. It loads `feed-survey.mk`, supports
-`CONFIG=...` overrides, and keeps generated reports under `results/` unless a
-target explicitly writes a local scratch report.
+The Makefile is the command surface. It loads `feed-survey.defaults.mk`, then
+optionally loads `feed-survey.mk` or the file named by `CONFIG=...`. Generated
+reports stay under `results/` unless a target explicitly writes a local scratch
+report.
 
 Run `make help` for the local development, report, EMR, and wheel targets.
 
@@ -129,7 +141,8 @@ Run `make help` for the local development, report, EMR, and wheel targets.
 - `tests/`: Unit tests and integration tests.
 - `tests/fixtures/`: Small local fixtures and profiling helpers used by tests and smoke runs.
 - `docs/`: Research notes and plans for future analysis dimensions.
-- `feed-survey.mk`: Make-readable run configuration for crawl, S3, EMR sizing, and cache paths.
+- `feed-survey.defaults.mk`: Tracked make defaults for crawl, EMR sizing, and cache paths.
+- `feed-survey.example.mk`: Example local configuration with placeholder S3 paths.
 - `mrjob.conf`: EMR orchestration settings (Python 3.12, dependencies, instance fleets).
 - `.mrjobignore`: Prevents local virtual environments and caches from being uploaded to workers.
 
