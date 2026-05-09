@@ -59,6 +59,16 @@ HTML responses report RSS/Atom autodiscovery links. Feed responses report
 parser output, language/date/content signals, extensions, fingerprints, and the
 same operational quality score used by the generated reports.
 
+To fetch an HTML page and then inspect the feeds it advertises:
+
+```bash
+feed-survey-probe --recursive https://example.com/
+```
+
+Recursive probing follows only the RSS/Atom URLs found in the page's
+autodiscovery links, and checks at most 10 unique feed URLs by default. Use
+`--max-feeds N` to change that cap.
+
 ### 3. Run a Smoke Test (EMR)
 The `test-emr` target runs a single WARC file through a small EMR cluster to verify your AWS environment is ready.
 ```bash

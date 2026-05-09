@@ -94,7 +94,48 @@ def test_probe_html_autodiscovery(monkeypatch: MonkeyPatch) -> None:
     assert "## HTML Autodiscovery" in output
     assert "https://example.com/feed.xml" in output
     assert "https://example.com/atom.xml" in output
-    assert "| Multi-rel feed URLs | 1 |" in output
+    assert "| Links with both relations | 1 |" in output
+
+
+def test_probe_html_recursive(monkeypatch: MonkeyPatch) -> None:
+    html = b"""
+    <html><head>
+      <link rel="alternate" type="application/rss+xml" href="/feed.xml" title="RSS">
+    </head><body></body></html>
+    """
+    feed = b"""
+    <rss version="2.0"><channel>
+      <title>Example Feed</title>
+      <link>https://example.com/</link>
+    </channel></rss>
+    """
+    calls: list[str] = []
+
+    def fake_fetch(url: str, *_args: object, **_kwargs: object) -> SimpleNamespace:
+        calls.append(url)
+        if url.endswith("/feed.xml"):
+            return SimpleNamespace(
+                content=feed,
+                headers={"Content-Type": "application/rss+xml"},
+                status_code=200,
+                url="https://example.com/feed.xml",
+            )
+        return SimpleNamespace(
+            content=html,
+            headers={"Content-Type": "text/html; charset=utf-8"},
+            status_code=200,
+            url="https://example.com/page",
+        )
+
+    monkeypatch.setattr("feed_survey.probe._fetch", fake_fetch)
+
+    output = probe.probe_url("https://example.com/page", recursive=True)
+
+    assert calls == ["https://example.com/page", "https://example.com/feed.xml"]
+    assert "## Recursive Feed Checks" in output
+    assert "### Feed 1: https://example.com/feed.xml" in output
+    assert "#### Feed Summary" in output
+    assert "| Format | rss2.0 |" in output
 
 
 def test_probe_feed(monkeypatch: MonkeyPatch) -> None:
@@ -125,6 +166,8 @@ def test_probe_feed(monkeypatch: MonkeyPatch) -> None:
     output = probe.probe_url("https://example.com/feed.xml")
 
     assert "## Feed" in output
+    assert "## Language Signals" in output
+    assert "## Entry Metadata" in output
     assert "| Valid RSS/Atom | yes |" in output
     assert "| Format | rss2.0 |" in output
     assert "| Entries | 1 |" in output

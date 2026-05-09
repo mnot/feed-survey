@@ -1,7 +1,7 @@
 import argparse
 from datetime import datetime, timezone
 from io import BytesIO
-from typing import Any, Dict, List, Mapping, Optional, cast
+from typing import Any, Dict, Iterable, List, Mapping, Optional, cast
 from urllib.parse import urljoin
 
 import lxml.html
@@ -50,13 +50,38 @@ def main() -> None:
         description="Fetch one URL and report feed/autodiscovery diagnostics as Markdown."
     )
     parser.add_argument("url", help="URL to fetch and inspect")
+    parser.add_argument(
+        "-r",
+        "--recursive",
+        action="store_true",
+        help="For HTML pages, also fetch and inspect autodiscovered feed URLs.",
+    )
+    parser.add_argument(
+        "--max-feeds",
+        type=int,
+        default=10,
+        help="Maximum autodiscovered feeds to fetch with --recursive.",
+    )
     parser.add_argument("--timeout", type=float, default=20.0)
     args = parser.parse_args()
 
-    print(probe_url(args.url, timeout=args.timeout))
+    print(
+        probe_url(
+            args.url,
+            timeout=args.timeout,
+            recursive=args.recursive,
+            max_feeds=args.max_feeds,
+        )
+    )
 
 
-def probe_url(url: str, timeout: float = 20.0) -> str:
+def probe_url(
+    url: str,
+    timeout: float = 20.0,
+    *,
+    recursive: bool = False,
+    max_feeds: int = 10,
+) -> str:
     response = _fetch(url, timeout)
     content = response.content
     content_type_header = response.headers.get("Content-Type", "")
@@ -76,14 +101,21 @@ def probe_url(url: str, timeout: float = 20.0) -> str:
                 ["Content-Type", content_type_header or "unknown"],
                 ["Normalized Content-Type", content_type or "unknown"],
                 ["Bytes fetched", str(len(content))],
-                ["Sniffed feed format", sniffed_format],
+                ["Sniffed RSS/Atom format", sniffed_format],
+                [
+                    "Classification",
+                    _classification(content_type, sniffed_format, response.status_code),
+                ],
             ],
         ),
         "",
     ]
 
     if _is_html(content_type):
-        lines.extend(_html_report(response.url, content))
+        links = _autodiscovery_links(response.url, content)
+        lines.extend(_html_report(response.url, content, links))
+        if recursive:
+            lines.extend(_recursive_feed_reports(links, timeout, max_feeds))
     elif _should_parse_as_feed(content_type, sniffed_format, response.status_code):
         lines.extend(
             _feed_report(
@@ -104,22 +136,24 @@ def probe_url(url: str, timeout: float = 20.0) -> str:
     return "\n".join(lines)
 
 
-def _html_report(url: str, content: bytes) -> List[str]:
+def _html_report(url: str, content: bytes, links: List[Dict[str, str]]) -> List[str]:
     stats = Stats()
     HtmlDiscovery(stats).process(url, content)
-    links = _autodiscovery_links(url, content)
     return [
         "## HTML Autodiscovery",
+        "",
+        "RSS/Atom autodiscovery links are taken from `<link>` elements with "
+        "`rel=alternate`, `rel=feed`, or both, and an RSS/Atom media type.",
         "",
         _table(
             ["Metric", "Value"],
             [
                 ["Feed links found", str(len(links))],
-                ["Pages with feed links", str(stats.discovery_pages_count)],
-                ["rel=alternate page", _yes_no(stats.discovery_rel_alternate)],
-                ["rel=feed page", _yes_no(stats.discovery_rel_feed)],
-                ["Page has both rels", _yes_no(stats.discovery_rel_both_page)],
-                ["Multi-rel feed URLs", str(stats.discovery_multi_rel_url)],
+                ["Page has feed links", _yes_no(stats.discovery_pages_count)],
+                ["Page uses rel=alternate", _yes_no(stats.discovery_rel_alternate)],
+                ["Page uses rel=feed", _yes_no(stats.discovery_rel_feed)],
+                ["Page uses both relations", _yes_no(stats.discovery_rel_both_page)],
+                ["Links with both relations", str(stats.discovery_multi_rel_url)],
             ],
         ),
         "",
@@ -152,60 +186,152 @@ def _fetch(url: str, timeout: float) -> requests.Response:
     )
 
 
+def _recursive_feed_reports(
+    links: List[Dict[str, str]], timeout: float, max_feeds: int
+) -> List[str]:
+    feed_urls = list(_unique_link_urls(links))[: max(0, max_feeds)]
+    lines = [
+        "## Recursive Feed Checks",
+        "",
+    ]
+    if not feed_urls:
+        lines.extend(["No autodiscovered feed URLs to check.", ""])
+        return lines
+
+    if len(feed_urls) < len(set(link["href"] for link in links)):
+        lines.extend(
+            [
+                f"Checking the first {len(feed_urls)} unique autodiscovered feed URLs.",
+                "",
+            ]
+        )
+
+    for idx, feed_url in enumerate(feed_urls, 1):
+        lines.extend([f"### Feed {idx}: {feed_url}", ""])
+        try:
+            response = _fetch(feed_url, timeout)
+        except requests.RequestException as exc:
+            lines.extend([f"Fetch failed: `{_escape(exc)}`", ""])
+            continue
+        lines.extend(
+            _feed_report(
+                response.url,
+                response.content,
+                dict(response.headers),
+                response.status_code,
+                heading_level=4,
+            )
+        )
+    return lines
+
+
 def _feed_report(
-    url: str, content: bytes, headers: Mapping[str, str], status_code: int
+    url: str,
+    content: bytes,
+    headers: Mapping[str, str],
+    status_code: int,
+    *,
+    heading_level: int = 2,
 ) -> List[str]:
     stats = Stats()
     record = _ProbeRecord(url, content, headers, status_code)
     FeedAnalyzer(stats).process(record, normalize_url(url), status_code)
     result = next(iter(stats.feed_results.values()), {})
     score = score_feed(result)
-    rows = [
+    heading = "#" * heading_level
+    return [
+        f"{heading} Feed Summary",
+        "",
+        _table(["Field", "Value"], _feed_summary_rows(result, score)),
+        "",
+        f"{heading} Language Signals",
+        "",
+        _table(["Signal", "Value"], _feed_language_rows(result)),
+        "",
+        f"{heading} Entry Metadata",
+        "",
+        _table(["Signal", "Value"], _feed_entry_rows(result)),
+        "",
+        f"{heading} Feed Extensions",
+        "",
+        _bullet_list(
+            f"`{extension}`"
+            for extension in sorted(
+                format_extension(ext) for ext in result.get("extensions", [])
+            )
+        )
+        or "No non-core feed extensions were found.",
+        "",
+        f"{heading} Fingerprints",
+        "",
+        _bullet_list(sorted(result.get("fingerprints") or []))
+        or "No known feed fingerprints were detected.",
+        "",
+    ]
+
+
+def _feed_summary_rows(result: Dict[str, Any], score: float) -> List[List[str]]:
+    return [
         ["Valid RSS/Atom", _yes_no(bool(result.get("valid")))],
         ["Format", str(result.get("format") or "unknown")],
         ["Parse error", _parse_error(result)],
+        ["HTTP Content-Type", str(result.get("content_type") or "unknown")],
         ["Title", str(result.get("title") or "")],
         ["Link", str(result.get("link") or "")],
         ["Generator", str(result.get("feed_generator") or "")],
         ["Entries", str(result.get("entries_count") or 0)],
-        ["Languages", ", ".join(sorted(result.get("languages") or [])) or "unknown"],
         ["Newest entry date", _date_value(result.get("newest_entry_date"))],
         ["Feed updated date", _date_value(result.get("updated_date"))],
         ["Content profile", str(result.get("content_type_profile") or "unknown")],
-        ["Has full content", _yes_no(bool(result.get("has_content")))],
-        ["Has summary", _yes_no(bool(result.get("has_summary")))],
-        ["Repeated entry titles", str(result.get("repeated_entry_title_count") or 0)],
-        ["Default-looking titles", str(result.get("default_entry_title_count") or 0)],
-        ["Repeated entry links", str(result.get("repeated_entry_link_count") or 0)],
         ["Operational quality", f"{score:.3f}"],
         [
-            f"Quality > {QUALITY_SPLIT_THRESHOLD:.1f}",
+            f"High quality (> {QUALITY_SPLIT_THRESHOLD:.1f})",
             _yes_no(score > QUALITY_SPLIT_THRESHOLD),
         ],
     ]
-    extensions = sorted(format_extension(ext) for ext in result.get("extensions", []))
-    fingerprints = sorted(result.get("fingerprints") or [])
+
+
+def _feed_language_rows(result: Dict[str, Any]) -> List[List[str]]:
     return [
-        "## Feed",
-        "",
-        _table(["Field", "Value"], rows),
-        "",
-        "## Feed Extensions",
-        "",
-        (
-            "\n".join(f"- `{extension}`" for extension in extensions)
-            if extensions
-            else "No non-core feed extensions were found."
-        ),
-        "",
-        "## Fingerprints",
-        "",
-        (
-            "\n".join(f"- {fingerprint}" for fingerprint in fingerprints)
-            if fingerprints
-            else "No known feed fingerprints were detected."
-        ),
-        "",
+        [
+            "All languages",
+            ", ".join(sorted(result.get("languages") or [])) or "unknown",
+        ],
+        ["HTTP Content-Language", str(result.get("lang_http") or "")],
+        ["Feed-level language", str(result.get("lang_feed") or "")],
+        [
+            "Entry-level languages",
+            ", ".join(sorted(result.get("lang_entries") or [])) or "",
+        ],
+        [
+            "Atom hreflang values",
+            ", ".join(sorted(result.get("hreflang_values") or [])) or "",
+        ],
+        [
+            "HTTP/feed language mismatch",
+            _yes_no(
+                bool(
+                    result.get("lang_http")
+                    and result.get("lang_feed")
+                    and result.get("lang_http") != result.get("lang_feed")
+                )
+            ),
+        ],
+    ]
+
+
+def _feed_entry_rows(result: Dict[str, Any]) -> List[List[str]]:
+    return [
+        ["Has full content", _yes_no(bool(result.get("has_content")))],
+        ["Has summary", _yes_no(bool(result.get("has_summary")))],
+        ["Entry title count", str(result.get("entry_title_count") or 0)],
+        ["Repeated entry titles", str(result.get("repeated_entry_title_count") or 0)],
+        [
+            "Default-looking entry titles",
+            str(result.get("default_entry_title_count") or 0),
+        ],
+        ["Entry link count", str(result.get("entry_link_count") or 0)],
+        ["Repeated entry links", str(result.get("repeated_entry_link_count") or 0)],
     ]
 
 
@@ -251,6 +377,16 @@ def _autodiscovery_links(url: str, content: bytes) -> List[Dict[str, str]]:
     return rows
 
 
+def _unique_link_urls(links: Iterable[Dict[str, str]]) -> Iterable[str]:
+    seen = set()
+    for link in links:
+        href = link["href"]
+        if href in seen:
+            continue
+        seen.add(href)
+        yield href
+
+
 def _should_parse_as_feed(
     content_type: str, sniffed_format: str, status_code: int
 ) -> bool:
@@ -263,6 +399,16 @@ def _should_parse_as_feed(
 
 def _is_html(content_type: str) -> bool:
     return "text/html" in content_type
+
+
+def _classification(content_type: str, sniffed_format: str, status_code: int) -> str:
+    if _is_html(content_type):
+        return "HTML page"
+    if _should_parse_as_feed(content_type, sniffed_format, status_code):
+        if _feed_content_type(content_type):
+            return "RSS/Atom feed media type"
+        return "sniffed RSS/Atom feed"
+    return "not feed-like"
 
 
 def _parse_error(result: Dict[str, Any]) -> str:
@@ -280,6 +426,10 @@ def _date_value(value: Optional[List[int]]) -> str:
 
 def _yes_no(value: object) -> str:
     return "yes" if value else "no"
+
+
+def _bullet_list(items: Iterable[str]) -> str:
+    return "\n".join(f"- {item}" for item in items)
 
 
 def _table(headers: List[str], rows: List[List[str]]) -> str:
