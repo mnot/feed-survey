@@ -27,6 +27,8 @@ class FeedAnalyzer:
         url: str,
         status_code: int,
         request_time_str: Optional[str] = None,
+        *,
+        candidate_source: str = "feed_media_type",
     ) -> None:
         request_time = _parse_request_time(
             request_time_str or record.headers.get("WARC-Date")
@@ -39,6 +41,7 @@ class FeedAnalyzer:
         feed_info = _init_feed_info(
             status_code, request_time, url, content_type, charset
         )
+        feed_info["candidate_sources"].add(candidate_source)
         feed_info["fingerprints"].update(fingerprint_http_headers(record.http_headers))
         if not 200 <= status_code < 400:
             self.stats.feed_results[url] = feed_info
@@ -109,6 +112,9 @@ class FeedAnalyzer:
         feed_info["format"] = parsed_data.get("version") or guess_feed_format(content)
         entries_count = parsed_data.get("entries_count", 0)
         feed_info["extensions"] = parsed_data.get("extensions", set())
+        feed_info["feed_links"] = parsed_data.get("feed_links", {})
+        feed_info["feed_link_rels"] = set(feed_info["feed_links"])
+        _record_feed_link_signals(feed_info)
         feed_info["has_content"] = parsed_data.get("has_content", False)
         feed_info["has_summary"] = parsed_data.get("has_summary", False)
         feed_info["content_type_profile"] = parsed_data.get(
@@ -227,6 +233,7 @@ class FeedAnalyzer:
 
         feed_info["newest_entry_date"] = newest_date
         feed_info["oldest_entry_date"] = oldest_date
+        _record_update_cadence(feed_info, newest_date, oldest_date)
         feed_info["content_lengths"] = content_lengths
         for length in content_lengths:
             binned = (length // 100) * 100
@@ -314,4 +321,65 @@ def _init_feed_info(
         "link": None,
         "feed_generator": None,
         "fingerprints": set(),
+        "candidate_sources": set(),
+        "feed_links": {},
+        "feed_link_rels": set(),
+        "has_self_link": False,
+        "has_hub_link": False,
+        "has_paging_link": False,
+        "has_archive_link": False,
+        "update_cadence_days": None,
+        "update_cadence_bucket": "unknown",
     }
+
+
+def _record_feed_link_signals(feed_info: Dict[str, Any]) -> None:
+    rels = set(feed_info.get("feed_link_rels") or [])
+    feed_info["has_self_link"] = "self" in rels
+    feed_info["has_hub_link"] = "hub" in rels
+    feed_info["has_paging_link"] = bool(rels & {"first", "last", "next", "prev", "previous"})
+    feed_info["has_archive_link"] = bool(
+        rels & {"current", "next-archive", "prev-archive"}
+    )
+
+
+def _record_update_cadence(
+    feed_info: Dict[str, Any], newest_date: Any, oldest_date: Any
+) -> None:
+    entries_count = int(feed_info.get("entries_count") or 0)
+    if entries_count < 2 or not newest_date or not oldest_date:
+        return
+    newest_dt = _date_list_to_datetime(newest_date)
+    oldest_dt = _date_list_to_datetime(oldest_date)
+    if not newest_dt or not oldest_dt or newest_dt <= oldest_dt:
+        return
+    cadence = (newest_dt - oldest_dt).total_seconds() / 86400 / (entries_count - 1)
+    feed_info["update_cadence_days"] = round(cadence, 2)
+    feed_info["update_cadence_bucket"] = _cadence_bucket(cadence)
+
+
+def _date_list_to_datetime(value: Any) -> Optional[datetime]:
+    try:
+        return datetime(
+            value[0],
+            value[1],
+            value[2],
+            value[3],
+            value[4],
+            value[5],
+            tzinfo=timezone.utc,
+        )
+    except (ValueError, TypeError, IndexError):
+        return None
+
+
+def _cadence_bucket(days: float) -> str:
+    if days < 1:
+        return "sub-daily"
+    if days < 2:
+        return "daily"
+    if days < 8:
+        return "weekly"
+    if days < 32:
+        return "monthly"
+    return "slower"

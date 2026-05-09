@@ -275,16 +275,28 @@ def _build_feed_info(rng: random.Random, idx: int) -> tuple[str, dict[str, Any]]
     has_content = rng.random() < 0.4
     has_summary = not has_content and rng.random() < 0.8
     feed_platform = _choose_platform(rng)
+    feed_link_rels = _choose_feed_link_rels(rng)
+    cadence_bucket = rng.choices(
+        ["sub-daily", "daily", "weekly", "monthly", "slower", "unknown"],
+        weights=[8, 30, 34, 14, 6, 8],
+        k=1,
+    )[0]
+    cadence_days = _cadence_days(rng, cadence_bucket)
+    sniffed = rng.random() < 0.06
+    content_type = (
+        "text/plain"
+        if sniffed
+        else ("application/atom+xml" if "atom" in feed_format else "application/rss+xml")
+    )
 
     return feed_url, {
         "url": feed_url,
         "status": 200,
-        "content_type": (
-            "application/atom+xml" if "atom" in feed_format else "application/rss+xml"
-        ),
+        "content_type": content_type,
         "charset": rng.choice(CHARSETS),
         "valid": True,
         "format": feed_format,
+        "candidate_sources": {"sniffed"} if sniffed else {"feed_media_type"},
         "entries_count": entry_count,
         "lang_http": lang_http,
         "lang_feed": lang_feed,
@@ -297,6 +309,16 @@ def _build_feed_info(rng: random.Random, idx: int) -> tuple[str, dict[str, Any]]
         "content_type_profile": "html" if has_content or has_summary else "unknown",
         "all_languages": all_langs,
         "extensions": extensions,
+        "feed_links": {rel: 1 for rel in feed_link_rels},
+        "feed_link_rels": feed_link_rels,
+        "has_self_link": "self" in feed_link_rels,
+        "has_hub_link": "hub" in feed_link_rels,
+        "has_paging_link": bool(feed_link_rels & {"first", "last", "next", "prev"}),
+        "has_archive_link": bool(
+            feed_link_rels & {"current", "next-archive", "prev-archive"}
+        ),
+        "update_cadence_days": cadence_days,
+        "update_cadence_bucket": cadence_bucket,
         "fingerprints": {feed_platform} if feed_platform else set(),
         "feed_generator": feed_platform.title() if feed_platform else None,
         "request_time": CRAWL_DATE,
@@ -308,6 +330,33 @@ def _build_feed_info(rng: random.Random, idx: int) -> tuple[str, dict[str, Any]]
         "link": page_url,
         "error": None,
     }
+
+
+def _choose_feed_link_rels(rng: random.Random) -> set[str]:
+    rels = set()
+    if rng.random() < 0.46:
+        rels.add("self")
+    if rng.random() < 0.08:
+        rels.add("hub")
+    if rng.random() < 0.05:
+        rels.update({"next", "prev"})
+    if rng.random() < 0.02:
+        rels.add(rng.choice(["current", "next-archive", "prev-archive"]))
+    return rels
+
+
+def _cadence_days(rng: random.Random, bucket: str) -> float | None:
+    if bucket == "sub-daily":
+        return round(rng.uniform(0.1, 0.9), 2)
+    if bucket == "daily":
+        return round(rng.uniform(1.0, 1.9), 2)
+    if bucket == "weekly":
+        return round(rng.uniform(2.0, 7.0), 2)
+    if bucket == "monthly":
+        return round(rng.uniform(8.0, 30.0), 2)
+    if bucket == "slower":
+        return round(rng.uniform(31.0, 365.0), 2)
+    return None
 
 
 def _populate_feed_results(stats: Stats, rng: random.Random) -> None:
@@ -338,6 +387,7 @@ def _add_default_feed(
         "status": 200,
         "valid": True,
         "format": "atom10",
+        "candidate_sources": {"feed_media_type"},
         "entries_count": 5,
         "lang_http": None,
         "lang_feed": "en",
@@ -348,6 +398,14 @@ def _add_default_feed(
         "content_type_profile": "html",
         "all_languages": {"en"},
         "extensions": set(),
+        "feed_links": {"self": 1},
+        "feed_link_rels": {"self"},
+        "has_self_link": True,
+        "has_hub_link": False,
+        "has_paging_link": False,
+        "has_archive_link": False,
+        "update_cadence_days": 7.0,
+        "update_cadence_bucket": "weekly",
         "request_time": CRAWL_DATE,
         "updated_recently": False,
         "updated_date": None,

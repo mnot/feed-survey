@@ -53,6 +53,7 @@ class FastFeedParser:
                 "language": None,
                 "generator": "",
             },
+            "feed_links": {},
             "entries_count": 0,
             "newest_entry_date": None,
             "oldest_entry_date": None,
@@ -323,6 +324,8 @@ class FastFeedParser:
                 elem.text,
                 preferred_source="lastBuildDate",
             )
+        elif ns == ATOM_NS and local == "link":
+            FastFeedParser._record_atom_feed_link(elem, result)
 
     @staticmethod
     def _handle_rss2_item_end(
@@ -493,6 +496,9 @@ class FastFeedParser:
             return
 
         rel = (elem.get("rel") or "alternate").strip().lower()
+        for token in rel.split():
+            feed_links = result["feed_links"]
+            feed_links[token] = feed_links.get(token, 0) + 1
         if rel in ("", "alternate") and not result["feed"]["link"]:
             result["feed"]["link"] = href
         elif not result["feed"]["link_fallback"] and rel != "self":

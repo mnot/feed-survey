@@ -99,7 +99,37 @@ def test_feed_analyzer_valid_feed() -> None:
     assert result["entries_count"] == 1
     assert result["updated_recently"] is True
     assert result["entry_recently"] is True
+    assert result["candidate_sources"] == {"feed_media_type"}
     assert stats.total_entries == 1
+
+
+def test_feed_cadence_and_links() -> None:
+    stats = Stats()
+    analyzer = FeedAnalyzer(stats)
+    content = b"""<?xml version="1.0"?>
+    <feed xmlns="http://www.w3.org/2005/Atom">
+      <title>Example</title>
+      <link rel="self" href="https://example.com/feed.xml"/>
+      <link rel="hub" href="https://hub.example/"/>
+      <updated>2026-05-01T00:00:00Z</updated>
+      <entry><title>One</title><updated>2026-05-01T00:00:00Z</updated></entry>
+      <entry><title>Two</title><updated>2026-04-30T00:00:00Z</updated></entry>
+      <entry><title>Three</title><updated>2026-04-29T00:00:00Z</updated></entry>
+    </feed>"""
+
+    analyzer.process(
+        _Record(content, "text/plain"),
+        "https://example.com/feed",
+        200,
+        candidate_source="sniffed",
+    )
+
+    result: dict[str, Any] = stats.feed_results["https://example.com/feed"]
+    assert result["candidate_sources"] == {"sniffed"}
+    assert result["has_self_link"] is True
+    assert result["has_hub_link"] is True
+    assert result["update_cadence_days"] == 1.0
+    assert result["update_cadence_bucket"] == "daily"
 
 
 def test_feed_generator_fingerprint() -> None:

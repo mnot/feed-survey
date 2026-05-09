@@ -140,12 +140,11 @@ class HtmlDiscovery:
     def _record_source_fingerprints(
         self, page_discoveries: Dict[str, Set[str]], fingerprints: Set[str]
     ) -> None:
-        if not fingerprints:
-            return
+        source_fingerprints = fingerprints or {"unknown"}
         for feed_url in page_discoveries:
             if feed_url not in self.stats.feed_source_fingerprints:
                 self.stats.feed_source_fingerprints[feed_url] = {}
-            for fingerprint in fingerprints:
+            for fingerprint in source_fingerprints:
                 self.stats.feed_source_fingerprints[feed_url][fingerprint] = (
                     self.stats.feed_source_fingerprints[feed_url].get(fingerprint, 0)
                     + 1

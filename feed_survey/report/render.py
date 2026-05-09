@@ -11,10 +11,12 @@ from feed_survey.report.aggregate import (
     aggregate_feed_data,
     content_profile_prevalence_rows,
     extension_prevalence_rows,
+    feed_link_signal_rows,
     fingerprint_prevalence_rows,
     html_fingerprint_rows,
     language_prevalence_rows,
     source_fingerprint_quality_rows,
+    update_cadence_cdf,
 )
 from feed_survey.report.context import (
     ReportContext,
@@ -134,6 +136,8 @@ def generate_report(
         languages=languages,
         language_prevalence=language_prevalence,
         fingerprint_prevalence=fingerprint_prevalence,
+        feed_link_signals=feed_link_signal_rows(all_valid_results, now),
+        update_cadence_cdf=update_cadence_cdf(all_valid_results),
         html_fingerprints=html_fingerprints,
         source_fingerprint_quality=source_fingerprint_quality_rows(
             discovered_results,

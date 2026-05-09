@@ -59,7 +59,11 @@ class WarcProcessor:
             if _feed_content_type(content_type):
                 normalized_url = normalize_url(url)
                 self._process_feed(
-                    record, normalized_url, status_code, request_time_str
+                    record,
+                    normalized_url,
+                    status_code,
+                    request_time_str,
+                    candidate_source="feed_media_type",
                 )
             elif _sniffable_content_type(content_type):
                 self._process_sniffed_feed(record, url, status_code, request_time_str)
@@ -88,7 +92,11 @@ class WarcProcessor:
             ):
                 self.stats.feeds_sniffed += 1
                 self._process_feed(
-                    record, normalize_url(url), status_code, request_time_str
+                    record,
+                    normalize_url(url),
+                    status_code,
+                    request_time_str,
+                    candidate_source="sniffed",
                 )
         except (AttributeError, OSError, RuntimeError, TypeError, ValueError):
             pass
@@ -121,8 +129,16 @@ class WarcProcessor:
         url: str,
         status_code: int,
         request_time_str: Optional[str] = None,
+        *,
+        candidate_source: str = "feed_media_type",
     ) -> None:
-        self.feed_analyzer.process(record, url, status_code, request_time_str)
+        self.feed_analyzer.process(
+            record,
+            url,
+            status_code,
+            request_time_str,
+            candidate_source=candidate_source,
+        )
 
 
 def _interesting_warc_content_type(record: Any) -> bool:

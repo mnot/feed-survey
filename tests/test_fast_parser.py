@@ -71,6 +71,22 @@ def test_atom_link_prefers_alt() -> None:
 
     assert result["valid"] is True
     assert result["feed"]["link"] == "https://example.com/"
+    assert result["feed_links"] == {"self": 1, "alternate": 1}
+
+
+def test_rss_atom_link_signals() -> None:
+    result = FastFeedParser.parse(b"""<?xml version="1.0"?>
+        <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+          <channel>
+            <title>Example</title>
+            <link>https://example.com/</link>
+            <atom:link rel="self" href="https://example.com/feed.xml"/>
+            <atom:link rel="hub" href="https://hub.example/"/>
+          </channel>
+        </rss>""")
+
+    assert result["valid"] is True
+    assert result["feed_links"] == {"self": 1, "hub": 1}
 
 
 def test_atom_xhtml_text_len() -> None:

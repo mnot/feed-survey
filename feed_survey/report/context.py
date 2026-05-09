@@ -36,6 +36,8 @@ class ReportContext:
     languages: List[Tuple[str, int]]
     language_prevalence: List[Dict[str, Any]]
     fingerprint_prevalence: List[Dict[str, Any]]
+    feed_link_signals: List[Dict[str, Any]]
+    update_cadence_cdf: Dict[str, Any]
     html_fingerprints: List[Dict[str, Any]]
     source_fingerprint_quality: List[Dict[str, Any]]
     extension_prevalence: List[Dict[str, Any]]
@@ -60,6 +62,8 @@ def render_report_html(context: ReportContext) -> str:
         formats=context.formats,
         languages=context.languages,
         extension_prevalence=context.extension_prevalence,
+        feed_link_signals=context.feed_link_signals,
+        update_cadence_cdf=json.dumps(context.update_cadence_cdf),
         errors=context.errors,
         discovery_per_page_hist=discovery.per_page_hist,
         discovery_per_site_hist=discovery.per_site_hist,
@@ -389,6 +393,44 @@ def render_report_markdown(context: ReportContext) -> str:
                 ],
             ),
             "",
+            "## Feed History and Syndication Signals",
+            "",
+            "Update cadence is inferred from the span between oldest and newest "
+            "entry dates divided by entry count, when a feed has at least two "
+            "dated entries. Percentages use feeds with an inferred cadence as "
+            "the denominator.",
+            "",
+            _markdown_table(
+                ["Inferred cadence within", "Feeds"],
+                [
+                    [label, f"{pct:.1f}%"]
+                    for label, pct in zip(
+                        context.update_cadence_cdf.get("labels", []),
+                        context.update_cadence_cdf.get("data", []),
+                    )
+                ],
+            ),
+            "",
+            f"{format_number(context.update_cadence_cdf.get('no_cadence', 0))} "
+            "feeds lack enough dated entries to infer cadence.",
+            "",
+            "Feed link relation signals are taken from feed-level Atom links, "
+            "including Atom links embedded in RSS channels. Self/canonical means "
+            "rel=self; hub means WebSub/PubSubHubbub discovery; paging/archive "
+            "cover RFC-style feed paging and archived-feed links.",
+            "",
+            _markdown_table(
+                ["Signal", "All parsed feeds", quality_prevalence_label],
+                [
+                    [
+                        row["signal"],
+                        f"{format_number(row['all_count'])} ({row['all_pct']:.1f}%)",
+                        _quality_count_pct(row),
+                    ]
+                    for row in context.feed_link_signals
+                ],
+            ),
+            "",
             "## Platform Fingerprints",
             "",
             "Rows count known feed generators or platform headers on parsed feeds. "
@@ -612,6 +654,8 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         "languages": context.languages,
         "language_prevalence": context.language_prevalence,
         "fingerprint_prevalence": context.fingerprint_prevalence,
+        "feed_link_signals": context.feed_link_signals,
+        "update_cadence_cdf": context.update_cadence_cdf,
         "html_fingerprints": context.html_fingerprints,
         "source_fingerprint_quality": context.source_fingerprint_quality,
         "extension_prevalence": context.extension_prevalence,

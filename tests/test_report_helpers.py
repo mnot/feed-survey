@@ -6,10 +6,12 @@ from feed_survey.report.aggregate import (
     aggregate_feed_data,
     content_profile_prevalence_rows,
     extension_prevalence_rows,
+    feed_link_signal_rows,
     fingerprint_prevalence_rows,
     html_fingerprint_rows,
     language_prevalence_rows,
     source_fingerprint_quality_rows,
+    update_cadence_cdf,
 )
 from feed_survey.report.context import ReportContext, build_report_stats
 from feed_survey.report.discovery import DiscoverySummary, build_discovery_summary
@@ -304,6 +306,29 @@ def test_fingerprint_quality_split() -> None:
     assert rows[0]["all_count"] == 2
     assert rows[0]["quality_count"] == 1
     assert rows[0]["quality_denominator"] == 1
+
+
+def test_signal_and_cadence_rows() -> None:
+    now = datetime(2026, 5, 1, tzinfo=timezone.utc)
+    with_signals = _feed(fmt="atom10", days_old=0)
+    with_signals.update(
+        {
+            "has_self_link": True,
+            "has_hub_link": True,
+            "update_cadence_days": 1.0,
+            "update_cadence_bucket": "daily",
+        }
+    )
+    unknown_cadence = _feed(fmt="rss20", days_old=0)
+
+    signals = feed_link_signal_rows({"a": with_signals, "b": unknown_cadence}, now)
+    cadence = update_cadence_cdf({"a": with_signals, "b": unknown_cadence})
+
+    by_signal = {row["signal"]: row for row in signals}
+    assert by_signal["self/canonical URL"]["all_count"] == 1
+    assert by_signal["WebSub/PubSubHubbub hub"]["all_count"] == 1
+    assert cadence["data"][1] == 100.0
+    assert cadence["no_cadence"] == 1
 
 
 def test_html_fingerprint_rows() -> None:
@@ -636,6 +661,8 @@ def test_report_language_counts() -> None:
             languages=[],
             language_prevalence=[],
             fingerprint_prevalence=[],
+            feed_link_signals=[],
+            update_cadence_cdf={},
             html_fingerprints=[],
             source_fingerprint_quality=[],
             extension_prevalence=[],

@@ -759,10 +759,42 @@
                 </div>
             </div>
             <div class="chart-card">
+                <div class="chart-title">Inferred Update Cadence (CDF)</div>
+                <div class="chart-sub">
+                    % of feeds <em>with enough dated entries</em> whose average interval between entries is at most the given time.
+                    Cadence is inferred from the span between oldest and newest entry dates divided by entry count.
+                    {% if stats.update_cadence_cdf.no_cadence %}{{ stats.update_cadence_cdf.no_cadence|comma }} feeds lack enough dated entries to infer cadence.{% endif %}
+                </div>
+                <div class="chart-container">
+                    <canvas id="updateCadenceCdf"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-grid">
+            <div class="chart-card">
                 <div class="chart-title">Entry Content Length</div>
                 <div class="chart-sub">Distribution of entry body or summary text lengths, measured after parsing successfully parsed feeds. This helps distinguish feeds that carry full content from feeds that mostly expose short summaries, links, or empty entries.</div>
                 <div class="chart-container">
                     <canvas id="contentLengthHistogram"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Feed Link Relations</div>
+                <div class="chart-sub">Feed-level Atom link relations, including Atom links embedded in RSS channels. Self/canonical means <code>rel=self</code>; hub covers WebSub/PubSubHubbub discovery; paging and archive cover feed navigation and archived-feed links. Parenthetical percentages use all successfully parsed feeds as the denominator.</div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead><tr><th>Signal</th><th>All parsed feeds</th><th>Among {{ stats.quality_split_count|comma }} high-quality feeds</th></tr></thead>
+                        <tbody>
+                            {% for row in stats.feed_link_signals %}
+                            <tr>
+                                <td>{{ row.signal }}</td>
+                                <td>{{ row.all_count|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.all_pct) }}%)</span></td>
+                                <td>{{ row.quality_count|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.quality_pct) }}%)</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -1041,6 +1073,7 @@
     const feedRecencyData   = {{ feed_recency_cdf|safe }};
     const entryRecencyData  = {{ entry_recency_cdf|safe }};
     const oldestEntryData   = {{ oldest_entry_cdf|safe }};
+    const updateCadenceData = {{ update_cadence_cdf|safe }};
 
     function makeCdfDataset(d, color) {
         return {
@@ -1053,6 +1086,7 @@
     new Chart(document.getElementById('feedRecencyCdf'),   { type:'line', data: makeCdfDataset(feedRecencyData,  '#6366f1'), options: cdfOpts });
     new Chart(document.getElementById('entryRecencyCdf'),  { type:'line', data: makeCdfDataset(entryRecencyData, '#10b981'), options: cdfOpts });
     new Chart(document.getElementById('oldestEntryCdf'),   { type:'line', data: makeCdfDataset(oldestEntryData,  '#f59e0b'), options: cdfOpts });
+    new Chart(document.getElementById('updateCadenceCdf'), { type:'line', data: makeCdfDataset(updateCadenceData, '#6366f1'), options: cdfOpts });
 
     // ── Quality by format (horizontal stacked % bar + mean dot) ──────────────
     const qByFmt = {{ format_quality_json|safe }};

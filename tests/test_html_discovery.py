@@ -91,6 +91,22 @@ def test_html_fingerprint_no_auto() -> None:
     assert not stats.html_fingerprint_auto_counts
 
 
+def test_records_unknown_source_fp() -> None:
+    stats = Stats()
+    discovery = HtmlDiscovery(stats)
+
+    discovery.process(
+        "https://example.com/",
+        b"""<html><head>
+          <link rel="alternate" type="application/rss+xml" href="/feed.xml">
+        </head></html>""",
+    )
+
+    assert stats.feed_source_fingerprints == {
+        "https://example.com/feed.xml": {"unknown": 1}
+    }
+
+
 def test_discovers_rel_tokens() -> None:
     stats = Stats()
     discovery = HtmlDiscovery(stats)

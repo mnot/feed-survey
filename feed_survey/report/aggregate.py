@@ -211,6 +211,58 @@ def fingerprint_prevalence_rows(
     )
 
 
+def feed_link_signal_rows(
+    results: Dict[str, Any],
+    now: datetime,
+    quality_threshold: float = QUALITY_SPLIT_THRESHOLD,
+) -> List[Dict[str, Any]]:
+    return _quality_prevalence_rows(
+        results,
+        now,
+        "signal",
+        _feed_link_signals,
+        quality_threshold=quality_threshold,
+        initial_labels=[
+            "self/canonical URL",
+            "WebSub/PubSubHubbub hub",
+            "paging links",
+            "archive links",
+        ],
+    )
+
+
+def update_cadence_cdf(results: Dict[str, Any]) -> Dict[str, Any]:
+    breakpoints = [
+        (0.5, "12 hours"),
+        (1, "1 day"),
+        (2, "2 days"),
+        (7, "1 week"),
+        (14, "2 weeks"),
+        (30, "1 month"),
+        (90, "3 months"),
+        (365, "1 year"),
+        (10000, "All"),
+    ]
+    cadences: List[float] = []
+    total = len(results)
+    for result in results.values():
+        result = cast(Dict[str, Any], result)
+        if not result.get("valid"):
+            continue
+        cadence = result.get("update_cadence_days")
+        if isinstance(cadence, (int, float)) and cadence >= 0:
+            cadences.append(float(cadence))
+
+    cadences.sort()
+    labels: List[str] = []
+    data: List[float] = []
+    for days, label in breakpoints:
+        count = sum(1 for cadence in cadences if cadence <= days)
+        data.append(round(count / len(cadences) * 100, 1) if cadences else 0.0)
+        labels.append(label)
+    return {"labels": labels, "data": data, "no_cadence": total - len(cadences)}
+
+
 def html_fingerprint_rows(
     counts: Dict[str, int],
     autodiscovery_counts: Dict[str, int],
@@ -296,6 +348,19 @@ def source_fingerprint_quality_rows(
     if unknown_row is None or not limited:
         return limited
     return [*limited[:-1], unknown_row]
+
+
+def _feed_link_signals(result: Dict[str, Any]) -> List[str]:
+    labels = []
+    if result.get("has_self_link"):
+        labels.append("self/canonical URL")
+    if result.get("has_hub_link"):
+        labels.append("WebSub/PubSubHubbub hub")
+    if result.get("has_paging_link"):
+        labels.append("paging links")
+    if result.get("has_archive_link"):
+        labels.append("archive links")
+    return labels
 
 
 def _quality_prevalence_rows(
