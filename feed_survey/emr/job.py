@@ -221,7 +221,7 @@ class CCFeedsJob(MRJob):  # type: ignore[misc]
             yield key, merge_source_samples(values)
 
         elif key.startswith("discoverycount:"):
-            yield feed_discovery_count_record(key, values)[1]["count"]
+            yield key, feed_discovery_count_record(key, values)[1]["count"]
 
         elif key.startswith("feedfp:"):
             yield key, merge_count_values(values)

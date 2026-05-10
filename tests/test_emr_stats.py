@@ -1,4 +1,5 @@
 from feed_survey.analysis.stats import Stats
+from feed_survey.emr.job import CCFeedsJob
 from feed_survey.emr.finalize import _merge_summary
 from feed_survey.emr.stats_wire import (
     feed_discovery_count_record,
@@ -258,3 +259,16 @@ def test_feed_discovery_count() -> None:
         "feed_url": "https://example.com/feed.xml",
         "count": 9,
     }
+
+
+def test_combiner_count() -> None:
+    job = CCFeedsJob()
+
+    combined = list(
+        job.combiner(
+            "discoverycount:https://example.com/feed.xml",
+            (value for value in [2, 3, 4]),
+        )
+    )
+
+    assert combined == [("discoverycount:https://example.com/feed.xml", 9)]
