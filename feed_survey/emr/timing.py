@@ -13,6 +13,10 @@ _FINISHED_RE = re.compile(
     r"process_ms=(?P<process_ms>\d+) "
     r"iterator_download_ms=(?P<iterator_ms>\d+)"
 )
+_FAILED_RE = re.compile(
+    r"ERROR: failed WARC (?P<warc_num>\d+): (?P<path>.+?) \| "
+    r"exit_code=(?P<exit_code>[^ ]+)(?: signal=(?P<signal>\d+))?"
+)
 _INIT_RE = re.compile(r"mapper_init finished successfully in (?P<ms>\d+)ms")
 _JITTER_RE = re.compile(r"jitter sleep (?P<seconds>[0-9.]+)s")
 
@@ -23,6 +27,13 @@ class WarcTiming(NamedTuple):
     total_ms: int
     process_ms: int
     iterator_ms: int
+
+
+class WarcFailure(NamedTuple):
+    path: str
+    exit_code: str
+    signal: str
+    container: str
 
 
 class MapperTiming(NamedTuple):
@@ -67,13 +78,16 @@ def main() -> None:
     if args.cluster_id:
         log_dir = _download_cluster_logs(args.cluster_id, log_dir, args.region)
 
-    warcs, mappers = summarize_logs(log_dir)
-    _print_summary(warcs, mappers, args.top)
+    warcs, failures, mappers = summarize_logs(log_dir)
+    _print_summary(warcs, failures, mappers, args.top)
 
 
-def summarize_logs(log_dir: Path) -> tuple[List[WarcTiming], List[MapperTiming]]:
+def summarize_logs(
+    log_dir: Path,
+) -> tuple[List[WarcTiming], List[WarcFailure], List[MapperTiming]]:
     stderr_paths = sorted(log_dir.rglob("stderr.gz"))
     warcs: List[WarcTiming] = []
+    failures: List[WarcFailure] = []
     mappers: List[MapperTiming] = []
 
     for stderr_path in stderr_paths:
@@ -101,6 +115,17 @@ def summarize_logs(log_dir: Path) -> tuple[List[WarcTiming], List[MapperTiming]]
                 mapper_warcs.append(timing)
                 warcs.append(timing)
 
+            failed_match = _FAILED_RE.search(line)
+            if failed_match:
+                failures.append(
+                    WarcFailure(
+                        path=failed_match.group("path"),
+                        exit_code=failed_match.group("exit_code"),
+                        signal=failed_match.group("signal") or "",
+                        container=stderr_path.parent.name,
+                    )
+                )
+
         if mapper_warcs:
             mappers.append(
                 MapperTiming(
@@ -115,7 +140,7 @@ def summarize_logs(log_dir: Path) -> tuple[List[WarcTiming], List[MapperTiming]]
                 )
             )
 
-    return warcs, mappers
+    return warcs, failures, mappers
 
 
 def _download_cluster_logs(cluster_id: str, base_log_dir: Path, region: str) -> Path:
@@ -178,7 +203,10 @@ def _read_gzip_lines(path: Path) -> Iterable[str]:
 
 
 def _print_summary(
-    warcs: List[WarcTiming], mappers: List[MapperTiming], top_count: int
+    warcs: List[WarcTiming],
+    failures: List[WarcFailure],
+    mappers: List[MapperTiming],
+    top_count: int,
 ) -> None:
     if not warcs:
         raise SystemExit("No feed-survey timing lines found in stderr.gz logs.")
@@ -187,8 +215,24 @@ def _print_summary(
     print()
     print(f"Mapper chunks: {len(mappers):,}")
     print(f"WARCs completed: {len(warcs):,}")
+    print(f"WARCs failed: {len(failures):,}")
     print(f"Records seen: {sum(timing.records for timing in warcs):,}")
     print()
+
+    if failures:
+        print("## Failed WARCs")
+        print()
+        print("| Exit | Signal | Container | Path |")
+        print("| --- | --- | --- | --- |")
+        for failure in failures:
+            print(
+                "| "
+                f"{failure.exit_code} | "
+                f"{failure.signal or '-'} | "
+                f"`{failure.container}` | "
+                f"`{failure.path}` |"
+            )
+        print()
 
     _print_metric_table(
         "WARC timings",

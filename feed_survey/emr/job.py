@@ -2,6 +2,8 @@ import random
 import sys
 import time
 import traceback
+import tempfile
+from multiprocessing import get_context
 from typing import Any, Generator, Iterator, Tuple
 
 from feed_survey.emr.compat import install_mrjob_pipes_compat
@@ -22,7 +24,11 @@ from feed_survey.emr.stats_wire import (
     serialize_stats,
     summary_record,
 )
-from feed_survey.emr.warc_source import create_s3_client, iter_response_records
+from feed_survey.emr.warc_worker import (
+    WarcWorkerResult,
+    load_warc_worker_result,
+    process_warc_to_file,
+)
 
 # ABSOLUTE FIRST LINE LOGGING
 sys.stderr.write("DEBUG: Python interpreter started successfully\n")
@@ -61,7 +67,6 @@ class CCFeedsJob(MRJob):  # type: ignore[misc]
             # Stagger initial S3 downloads to avoid thundering herd when all
             # mappers start simultaneously and hit the same S3 partition.
             self._s3_jitter = random.uniform(0, 30)
-            self.s3 = create_s3_client()
             init_ms = int((time.perf_counter() - init_start) * 1000)
             self.increment_counter("timing", "mapper_init_ms", init_ms)
             sys.stderr.write(
@@ -85,8 +90,6 @@ class CCFeedsJob(MRJob):  # type: ignore[misc]
         try:
             sys.stderr.write(f"INFO: starting WARC {self.count}: {raw_path}\n")
             sys.stderr.flush()
-            warc_start = time.perf_counter()
-            processing_time = 0.0
             records_before = self.processed_records
             if self.count == 1 and self._s3_jitter > 0:
                 sys.stderr.write(f"INFO: jitter sleep {self._s3_jitter:.1f}s\n")
@@ -96,26 +99,17 @@ class CCFeedsJob(MRJob):  # type: ignore[misc]
                     "timing", "jitter_ms", int(self._s3_jitter * 1000)
                 )
             self.set_status(f"Downloading WARC {self.count}: {raw_path}")
-            for record in iter_response_records(
-                raw_path, self.s3, self._download_heartbeat
-            ):
-                self.processed_records += 1
-                process_start = time.perf_counter()
-                self.processor.process_record(record)
-                processing_time += time.perf_counter() - process_start
+            result = self._process_warc_in_child(raw_path)
+            if result is None:
+                return
 
-                if self.processed_records % 1000 == 0:
-                    self.increment_counter("status", "records_processed", 1000)
-                    sites_count = len(self.processor.stats.sites_seen)
-                    self.set_status(
-                        f"File {self.count}: {raw_path} | "
-                        f"{self.processed_records} recs | {sites_count} sites"
-                    )
-            warc_elapsed = time.perf_counter() - warc_start
-            warc_ms = int(warc_elapsed * 1000)
-            process_ms = int(processing_time * 1000)
-            iterator_ms = max(0, warc_ms - process_ms)
+            self.processed_records += result.records_seen
+            self.processor.stats.merge(result.stats)
+            warc_ms = result.total_ms
+            process_ms = result.process_ms
+            iterator_ms = result.iterator_ms
             records_in_warc = self.processed_records - records_before
+            self.increment_counter("status", "records_processed", records_in_warc)
             self.increment_counter("timing", "warc_total_ms", warc_ms)
             self.increment_counter("timing", "record_process_ms", process_ms)
             self.increment_counter("timing", "iterator_download_ms", iterator_ms)
@@ -138,6 +132,58 @@ class CCFeedsJob(MRJob):  # type: ignore[misc]
     def _download_heartbeat(self, raw_path: str) -> None:
         self.set_status(f"Downloading WARC {self.count}: {raw_path}")
         sys.stderr.write(f"INFO: still downloading WARC {self.count}: {raw_path}\n")
+        sys.stderr.flush()
+
+    def _process_warc_in_child(self, raw_path: str) -> WarcWorkerResult | None:
+        with tempfile.NamedTemporaryFile(delete=True) as result_file:
+            context = get_context("fork")
+            process = context.Process(
+                target=process_warc_to_file,
+                args=(
+                    raw_path,
+                    result_file.name,
+                    self.options.topn,
+                    self.options.tranco_list == "subdomains",
+                    self.options.limit or 0,
+                ),
+            )
+            process.start()
+            while process.is_alive():
+                process.join(timeout=30)
+                if process.is_alive():
+                    self._download_heartbeat(raw_path)
+
+            if process.exitcode != 0:
+                self._record_warc_failure(raw_path, process.exitcode)
+                return None
+
+            try:
+                return load_warc_worker_result(result_file.name)
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                sys.stderr.write(
+                    "ERROR: failed WARC "
+                    f"{self.count}: {raw_path} | result_read_error={exc}\n"
+                )
+                sys.stderr.write(traceback.format_exc())
+                sys.stderr.flush()
+                self.increment_counter("status", "warcs_failed", 1)
+                self.increment_counter("status", "warc_result_read_error", 1)
+                return None
+
+    def _record_warc_failure(self, raw_path: str, exit_code: int | None) -> None:
+        exit_label = "unknown" if exit_code is None else str(exit_code)
+        signal_label = ""
+        if exit_code is not None and exit_code < 0:
+            signal_label = f" signal={-exit_code}"
+            self.increment_counter("status", f"warc_signal_{-exit_code}", 1)
+        elif exit_code is not None:
+            self.increment_counter("status", f"warc_exit_{exit_code}", 1)
+        self.increment_counter("status", "warcs_failed", 1)
+        sys.stderr.write(
+            "ERROR: failed WARC "
+            f"{self.count}: {raw_path} | exit_code={exit_label}{signal_label} "
+            "child process did not produce results\n"
+        )
         sys.stderr.flush()
 
     def mapper_final(self) -> Generator[Tuple[str, Any], None, None]:
