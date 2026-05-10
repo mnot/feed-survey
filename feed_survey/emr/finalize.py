@@ -138,6 +138,27 @@ def _merge_summary(stats: Stats, data: Dict[str, Any]) -> None:
     stats.pages_processed += data.get("pages_processed", 0)
 
 
+def _merge_feed_source_fingerprint(stats: Stats, data: Dict[str, Any]) -> None:
+    feed_url = data.get("feed_url")
+    if not feed_url:
+        return
+    if feed_url not in stats.feed_source_fingerprints:
+        stats.feed_source_fingerprints[feed_url] = {}
+    _merge_counts(
+        stats.feed_source_fingerprints[feed_url],
+        data.get("fingerprints", {}),
+    )
+
+
+def _merge_feed_discovery_count(stats: Stats, data: Dict[str, Any]) -> None:
+    feed_url = data.get("feed_url")
+    if not feed_url:
+        return
+    stats.discovery_domain_counts[feed_url] = (
+        stats.discovery_domain_counts.get(feed_url, 0) + int(data.get("count", 0))
+    )
+
+
 def _merge_discovery(stats: Stats, data: Dict[str, Any]) -> None:
     feed_url = data.get("feed_url")
     if not feed_url:
@@ -188,6 +209,10 @@ def _merge_legacy_stats(stats: Stats, data: Dict[str, Any]) -> None:
 def _merge_record(stats: Stats, label: str, data: Any) -> None:
     if label in ("summary", "pages_processed"):
         _merge_summary(stats, data)
+    elif label == "feed_discovery_count":
+        _merge_feed_discovery_count(stats, data)
+    elif label == "feed_source_fingerprint":
+        _merge_feed_source_fingerprint(stats, data)
     elif label == "discovery":
         _merge_discovery(stats, data)
     elif label in ("feed", "status"):

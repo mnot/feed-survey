@@ -51,9 +51,7 @@ def serialize_stats(stats: Stats) -> Dict[str, Any]:
                 "html_fingerprint_auto_counts": (stats.html_fingerprint_auto_counts),
                 "html_fp_pages": stats.html_fp_pages,
                 "html_fp_auto_pages": (stats.html_fp_auto_pages),
-                "feed_source_fingerprints": stats.feed_source_fingerprints,
                 "content_length_counts": stats.content_length_counts,
-                "discovery_domain_counts": stats.discovery_domain_counts,
                 "top_n": stats.top_n,
                 "tranco_include_subdomains": stats.tranco_include_subdomains,
                 "run_limit": stats.run_limit,
@@ -119,7 +117,6 @@ def merge_serialized_stats(merged: Dict[str, Any], incoming: Dict[str, Any]) -> 
             merged["max_crawl_time_str"] = other_time
 
     _merge_count_map(merged, incoming, "content_length_counts")
-    _merge_count_map(merged, incoming, "discovery_domain_counts")
     _merge_count_map(merged, incoming, "discovery_links_per_page_counts")
 
     if "multi_feed_pages" not in merged:
@@ -140,16 +137,6 @@ def merge_serialized_stats(merged: Dict[str, Any], incoming: Dict[str, Any]) -> 
     merged["html_fp_auto_pages"] = merged.get("html_fp_auto_pages", 0) + incoming.get(
         "html_fp_auto_pages", 0
     )
-
-    if "feed_source_fingerprints" not in merged:
-        merged["feed_source_fingerprints"] = {}
-    for feed_url, counts in incoming.get("feed_source_fingerprints", {}).items():
-        if feed_url not in merged["feed_source_fingerprints"]:
-            merged["feed_source_fingerprints"][feed_url] = {}
-        for label, count in counts.items():
-            merged["feed_source_fingerprints"][feed_url][label] = (
-                merged["feed_source_fingerprints"][feed_url].get(label, 0) + count
-            )
 
 
 def merge_stats_values(values: Generator[Any, None, None]) -> Dict[str, Any]:
@@ -178,6 +165,14 @@ def merge_source_samples(values: Generator[Any, None, None]) -> list[Any]:
         if len(sources) >= 100:
             break
     return list(sources)[:100]
+
+
+def merge_count_values(values: Generator[Any, None, None]) -> Dict[str, int]:
+    counts: Dict[str, int] = {}
+    for value in values:
+        for label, count in value.items():
+            counts[label] = counts.get(label, 0) + count
+    return counts
 
 
 def reduce_stats(values: Generator[Any, None, None]) -> Stats:
@@ -252,11 +247,6 @@ def reduce_stats(values: Generator[Any, None, None]) -> Stats:
                 final_stats.content_length_counts.get(length_int, 0) + count
             )
 
-        for url, count in value.get("discovery_domain_counts", {}).items():
-            final_stats.discovery_domain_counts[url] = (
-                final_stats.discovery_domain_counts.get(url, 0) + count
-            )
-
         if len(final_stats.multi_feed_pages) < 10000:
             for page_url, feed_urls in value.get("multi_feed_pages", {}).items():
                 if page_url not in final_stats.multi_feed_pages:
@@ -272,14 +262,6 @@ def reduce_stats(values: Generator[Any, None, None]) -> Stats:
             )
         final_stats.html_fp_pages += value.get("html_fp_pages", 0)
         final_stats.html_fp_auto_pages += value.get("html_fp_auto_pages", 0)
-        for feed_url, counts in value.get("feed_source_fingerprints", {}).items():
-            if feed_url not in final_stats.feed_source_fingerprints:
-                final_stats.feed_source_fingerprints[feed_url] = {}
-            for label, count in counts.items():
-                final_stats.feed_source_fingerprints[feed_url][label] = (
-                    final_stats.feed_source_fingerprints[feed_url].get(label, 0) + count
-                )
-
     return final_stats
 
 
@@ -292,7 +274,6 @@ def summary_record(stats: Stats) -> Dict[str, Any]:
         "content_types": stats.content_type_counts,
         "error_types": stats.error_types,
         "content_length_counts": stats.content_length_counts,
-        "discovery_domain_counts": stats.discovery_domain_counts,
         "feeds_sniffed": stats.feeds_sniffed,
         "pages_processed": stats.pages_processed,
         "total_entries": stats.total_entries,
@@ -314,7 +295,6 @@ def summary_record(stats: Stats) -> Dict[str, Any]:
         "html_fingerprint_auto_counts": (stats.html_fingerprint_auto_counts),
         "html_fp_pages": stats.html_fp_pages,
         "html_fp_auto_pages": stats.html_fp_auto_pages,
-        "feed_source_fingerprints": stats.feed_source_fingerprints,
         "top_n": stats.top_n,
         "tranco_include_subdomains": stats.tranco_include_subdomains,
         "run_limit": stats.run_limit,
@@ -328,3 +308,23 @@ def feed_record(
     for result in values:
         return "feed", {"feed_url": feed_url, "result": result}
     return "feed", {"feed_url": feed_url, "result": None}
+
+
+def feed_source_fingerprint_record(
+    key: str, values: Generator[Any, None, None]
+) -> Tuple[str, Dict[str, Any]]:
+    feed_url = key.split(":", 1)[1]
+    return "feed_source_fingerprint", {
+        "feed_url": feed_url,
+        "fingerprints": merge_count_values(values),
+    }
+
+
+def feed_discovery_count_record(
+    key: str, values: Generator[Any, None, None]
+) -> Tuple[str, Dict[str, Any]]:
+    feed_url = key.split(":", 1)[1]
+    return "feed_discovery_count", {
+        "feed_url": feed_url,
+        "count": sum(int(value) for value in values),
+    }

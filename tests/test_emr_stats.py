@@ -1,6 +1,9 @@
 from feed_survey.analysis.stats import Stats
 from feed_survey.emr.finalize import _merge_summary
 from feed_survey.emr.stats_wire import (
+    feed_discovery_count_record,
+    feed_source_fingerprint_record,
+    merge_count_values,
     merge_stats_values,
     reduce_stats,
     serialize_stats,
@@ -25,7 +28,7 @@ def test_summary_record_counts() -> None:
     stats.html_fingerprint_auto_counts = {"wordpress": 8}
     stats.html_fp_pages = 12
     stats.html_fp_auto_pages = 9
-    stats.feed_source_fingerprints = {"https://example.com/feed.xml": {"wordpress": 7}}
+    stats.discovery_domain_counts = {"https://example.com/feed.xml": 7}
     stats.top_n = 500000
     stats.tranco_include_subdomains = False
 
@@ -46,9 +49,8 @@ def test_summary_record_counts() -> None:
     assert record["html_fingerprint_auto_counts"] == {"wordpress": 8}
     assert record["html_fp_pages"] == 12
     assert record["html_fp_auto_pages"] == 9
-    assert record["feed_source_fingerprints"] == {
-        "https://example.com/feed.xml": {"wordpress": 7}
-    }
+    assert "feed_source_fingerprints" not in record
+    assert "discovery_domain_counts" not in record
     assert record["top_n"] == 500000
     assert record["tranco_include_subdomains"] is False
 
@@ -77,6 +79,7 @@ def test_merge_summary_counts_once() -> None:
             "feed_source_fingerprints": {
                 "https://example.com/feed.xml": {"wordpress": 7}
             },
+            "discovery_domain_counts": {"https://example.com/feed.xml": 8},
             "top_n": 500000,
             "tranco_include_subdomains": False,
         },
@@ -100,6 +103,7 @@ def test_merge_summary_counts_once() -> None:
     assert stats.feed_source_fingerprints == {
         "https://example.com/feed.xml": {"wordpress": 7}
     }
+    assert stats.discovery_domain_counts == {"https://example.com/feed.xml": 8}
     assert stats.top_n == 500000
     assert stats.tranco_include_subdomains is False
 
@@ -124,12 +128,12 @@ def test_combiner_merges_summary() -> None:
     first.discovery_pages_count = 15
     first.discovery_links_per_page_counts = {1: 16}
     first.error_types = {"ParseError": 17}
+    first.discovery_domain_counts = {"https://example.com/feed.xml": 18}
     first.multi_feed_pages = {"https://example.com/": ["https://example.com/a.xml"]}
     first.html_fingerprint_counts = {"wordpress": 18}
     first.html_fingerprint_auto_counts = {"wordpress": 18}
     first.html_fp_pages = 20
     first.html_fp_auto_pages = 12
-    first.feed_source_fingerprints = {"https://example.com/feed.xml": {"wordpress": 19}}
     first.top_n = 100000
 
     second = Stats()
@@ -151,14 +155,12 @@ def test_combiner_merges_summary() -> None:
     second.discovery_pages_count = 30
     second.discovery_links_per_page_counts = {1: 31, 2: 32}
     second.error_types = {"ParseError": 33, "XMLSyntaxError": 34}
+    second.discovery_domain_counts = {"https://example.org/feed.xml": 35}
     second.multi_feed_pages = {"https://example.org/": ["https://example.org/a.xml"]}
     second.html_fingerprint_counts = {"wordpress": 33, "drupal": 34}
     second.html_fingerprint_auto_counts = {"wordpress": 35, "drupal": 36}
     second.html_fp_pages = 40
     second.html_fp_auto_pages = 22
-    second.feed_source_fingerprints = {
-        "https://example.com/feed.xml": {"wordpress": 37, "drupal": 38}
-    }
     second.top_n = 500000
     second.tranco_include_subdomains = False
 
@@ -184,6 +186,7 @@ def test_combiner_merges_summary() -> None:
     assert merged["discovery_pages_count"] == 45
     assert merged["discovery_links_per_page_counts"] == {"1": 47, "2": 32}
     assert merged["error_types"] == {"ParseError": 50, "XMLSyntaxError": 34}
+    assert "discovery_domain_counts" not in merged
     assert merged["multi_feed_pages"] == {
         "https://example.com/": ["https://example.com/a.xml"],
         "https://example.org/": ["https://example.org/a.xml"],
@@ -195,9 +198,7 @@ def test_combiner_merges_summary() -> None:
     }
     assert merged["html_fp_pages"] == 60
     assert merged["html_fp_auto_pages"] == 34
-    assert merged["feed_source_fingerprints"] == {
-        "https://example.com/feed.xml": {"wordpress": 56, "drupal": 38}
-    }
+    assert "feed_source_fingerprints" not in merged
     assert merged["top_n"] == 500000
     assert merged["tranco_include_subdomains"] is False
 
@@ -215,3 +216,45 @@ def test_reducer_preserves_top_n() -> None:
 
     assert reduced.top_n == 500000
     assert reduced.tranco_include_subdomains is False
+
+
+def test_feed_source_fp_per_feed() -> None:
+    merged = merge_count_values(
+        value
+        for value in [
+            {"wordpress": 2},
+            {"wordpress": 3, "drupal": 4},
+        ]
+    )
+
+    assert merged == {"wordpress": 5, "drupal": 4}
+
+    label, record = feed_source_fingerprint_record(
+        "feedfp:https://example.com/feed.xml",
+        (
+            value
+            for value in [
+                {"wordpress": 2},
+                {"wordpress": 3, "drupal": 4},
+            ]
+        ),
+    )
+
+    assert label == "feed_source_fingerprint"
+    assert record == {
+        "feed_url": "https://example.com/feed.xml",
+        "fingerprints": {"wordpress": 5, "drupal": 4},
+    }
+
+
+def test_feed_discovery_count() -> None:
+    label, record = feed_discovery_count_record(
+        "discoverycount:https://example.com/feed.xml",
+        (value for value in [2, 3, 4]),
+    )
+
+    assert label == "feed_discovery_count"
+    assert record == {
+        "feed_url": "https://example.com/feed.xml",
+        "count": 9,
+    }

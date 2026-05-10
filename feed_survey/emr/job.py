@@ -16,8 +16,11 @@ from mrjob.protocol import JSONProtocol
 
 from feed_survey.analysis import WarcProcessor
 from feed_survey.emr.stats_wire import (
+    feed_discovery_count_record,
+    feed_source_fingerprint_record,
     feed_record,
     json_safe,
+    merge_count_values,
     merge_source_samples,
     merge_stats_values,
     reduce_stats,
@@ -198,6 +201,16 @@ class CCFeedsJob(MRJob):  # type: ignore[misc]
         for feed_url, sites in self.processor.stats.autodiscovery_links.items():
             yield f"discovery:{feed_url}", sites
 
+        # Yield per-feed discovery link counts separately so the summary reducer
+        # stays bounded at full-crawl scale.
+        for feed_url, count in self.processor.stats.discovery_domain_counts.items():
+            yield f"discoverycount:{feed_url}", count
+
+        # Yield feed-source fingerprints separately to avoid one giant summary
+        # reducer carrying a feed-url keyed map for the whole crawl.
+        for feed_url, counts in self.processor.stats.feed_source_fingerprints.items():
+            yield f"feedfp:{feed_url}", counts
+
     def combiner(
         self, key: str, values: Generator[Any, None, None]
     ) -> Generator[Tuple[str, Any], None, None]:
@@ -206,6 +219,12 @@ class CCFeedsJob(MRJob):  # type: ignore[misc]
 
         elif key.startswith("discovery:"):
             yield key, merge_source_samples(values)
+
+        elif key.startswith("discoverycount:"):
+            yield feed_discovery_count_record(key, values)[1]["count"]
+
+        elif key.startswith("feedfp:"):
+            yield key, merge_count_values(values)
 
         elif key.startswith("feed:"):
             # Just take the first one; they should be identical
@@ -226,6 +245,12 @@ class CCFeedsJob(MRJob):  # type: ignore[misc]
                     "feed_url": feed_url,
                     "found_on": merge_source_samples(values),
                 }
+
+            elif key.startswith("discoverycount:"):
+                yield feed_discovery_count_record(key, values)
+
+            elif key.startswith("feedfp:"):
+                yield feed_source_fingerprint_record(key, values)
 
             elif key.startswith("feed:"):
                 yield feed_record(key, values)
