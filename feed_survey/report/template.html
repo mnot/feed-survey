@@ -381,13 +381,13 @@
 
             <div class="discovery-relations">
                 <div class="discovery-rel-title">Discovery link relations</div>
-                <div class="discovery-row"><span>Pages with rel="alternate"</span> <strong>{{ stats.discovery_rel_alternate|comma }}</strong></div>
-                <div class="discovery-row"><span>Pages with rel="feed"</span> <strong>{{ stats.discovery_rel_feed|comma }}</strong></div>
+                <div class="discovery-row"><span>Pages with feed rel="alternate"</span> <strong>{{ stats.discovery_rel_alternate|comma }}</strong></div>
+                <div class="discovery-row"><span>Pages with feed rel="feed"</span> <strong>{{ stats.discovery_rel_feed|comma }}</strong></div>
                 <div class="discovery-row"><span>Pages using both relations</span> <strong>{{ stats.discovery_rel_both_page|comma }}</strong></div>
                 <div class="discovery-row"><span>Pages with a multi-rel link</span> <strong>{% if stats.discovery_link_rel_both_page_known %}{{ stats.discovery_link_rel_both_page|comma }}{% else %}not recorded{% endif %}</strong></div>
                 <div class="discovery-row"><span>Multi-rel links</span> <strong>{{ stats.discovery_link_rel_both|comma }}</strong></div>
                 <div class="discovery-note" style="margin-top:0.75rem;">
-                    Pages using both relations includes pages with separate <code>alternate</code> and <code>feed</code> links, plus pages with a single link whose <code>rel</code> contains both. Multi-rel links counts those single link elements.
+                    These counts include only RSS/Atom autodiscovery links: HTML <code>&lt;link&gt;</code> elements whose <code>type</code> is RSS, Atom, or RDF feed XML. Other uses of <code>rel="alternate"</code> are not counted. Pages using both relations includes pages with separate <code>alternate</code> and <code>feed</code> links, plus pages with a single link whose <code>rel</code> contains both. Multi-rel links counts those single link elements.
                 </div>
             </div>
         </div>

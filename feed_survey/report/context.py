@@ -191,9 +191,11 @@ def render_report_markdown(context: ReportContext) -> str:
             "",
             "## Autodiscovery",
             "",
-            "Autodiscovery coverage and link relation usage. Parenthetical page "
-            "percentages use HTML pages processed as the denominator. Site "
-            "percentages use unique analyzed registrable sites.",
+            "Autodiscovery coverage and link relation usage. Link relation counts "
+            "include only HTML `<link>` elements with an RSS, Atom, or RDF feed "
+            "XML media type; unrelated uses of `rel=alternate` are not counted. "
+            "Parenthetical page percentages use HTML pages processed as the "
+            "denominator. Site percentages use unique analyzed registrable sites.",
             "",
             _markdown_table(
                 ["Metric", "Value"],
@@ -209,10 +211,13 @@ def render_report_markdown(context: ReportContext) -> str:
                         f"({_pct(stats['sites_with_autodiscovery'], stats['sites_seen'], 2)})",
                     ],
                     [
-                        "rel=alternate pages",
+                        "Feed rel=alternate pages",
                         format_number(stats["discovery_rel_alternate"]),
                     ],
-                    ["rel=feed pages", format_number(stats["discovery_rel_feed"])],
+                    [
+                        "Feed rel=feed pages",
+                        format_number(stats["discovery_rel_feed"]),
+                    ],
                     [
                         "Pages using both relations",
                         format_number(stats["discovery_rel_both_page"]),
