@@ -3,6 +3,8 @@ from types import SimpleNamespace
 
 from _pytest.capture import CaptureFixture
 from _pytest.monkeypatch import MonkeyPatch
+from requests import PreparedRequest
+from requests.exceptions import ConnectionError as RequestsConnectionError
 
 from feed_survey import probe
 from feed_survey.emr import finalize, split_paths
@@ -171,3 +173,23 @@ def test_probe_feed(monkeypatch: MonkeyPatch) -> None:
     assert "| Valid RSS/Atom | yes |" in output
     assert "| Format | rss2.0 |" in output
     assert "| Entries | 1 |" in output
+
+
+def test_probe_fetch_failure(monkeypatch: MonkeyPatch) -> None:
+    request = PreparedRequest()
+    request.prepare(method="GET", url="https://www.example.com/feed.xml")
+    error = RequestsConnectionError("Failed to resolve host")
+    error.request = request
+
+    def fake_fetch(*_args: object, **_kwargs: object) -> None:
+        raise error
+
+    monkeypatch.setattr("feed_survey.probe._fetch", fake_fetch)
+
+    output = probe.probe_url("https://example.com/feed.xml")
+
+    assert "## Fetch Failed" in output
+    assert "- Requested URL: `https://example.com/feed.xml`" in output
+    assert "- Attempted URL: `https://www.example.com/feed.xml`" in output
+    assert "- Error type: `ConnectionError`" in output
+    assert "Traceback" not in output

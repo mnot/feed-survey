@@ -6,6 +6,7 @@ from urllib.parse import urljoin
 
 import lxml.html
 import requests
+from requests.exceptions import RequestException
 
 from feed_survey.analysis.feed_analysis import FeedAnalyzer, parse_error_label
 from feed_survey.analysis.formats import guess_feed_format
@@ -82,7 +83,11 @@ def probe_url(
     recursive: bool = False,
     max_feeds: int = 10,
 ) -> str:
-    response = _fetch(url, timeout)
+    try:
+        response = _fetch(url, timeout)
+    except RequestException as exc:
+        return "\n".join(_fetch_failure_report(url, exc))
+
     content = response.content
     content_type_header = response.headers.get("Content-Type", "")
     content_type = _normalized_content_type(content_type_header)
@@ -210,8 +215,8 @@ def _recursive_feed_reports(
         lines.extend([f"### Feed {idx}: {feed_url}", ""])
         try:
             response = _fetch(feed_url, timeout)
-        except requests.RequestException as exc:
-            lines.extend([f"Fetch failed: `{_escape(exc)}`", ""])
+        except RequestException as exc:
+            lines.extend(_fetch_failure_section(feed_url, exc, heading_level=4))
             continue
         lines.extend(
             _feed_report(
@@ -223,6 +228,39 @@ def _recursive_feed_reports(
             )
         )
     return lines
+
+
+def _fetch_failure_report(url: str, exc: RequestException) -> List[str]:
+    return [
+        f"# Feed Survey URL Probe: {url}",
+        "",
+        *_fetch_failure_section(url, exc, heading_level=2),
+    ]
+
+
+def _fetch_failure_section(
+    url: str, exc: RequestException, *, heading_level: int
+) -> List[str]:
+    heading = "#" * heading_level
+    return [
+        f"{heading} Fetch Failed",
+        "",
+        f"- Requested URL: `{_escape(url)}`",
+        f"- Attempted URL: `{_escape(_attempted_url(exc))}`",
+        f"- Error type: `{type(exc).__name__}`",
+        f"- Error: {_escape(_compact_error(exc))}",
+        "",
+    ]
+
+
+def _attempted_url(exc: RequestException) -> str:
+    if exc.request is not None:
+        return str(exc.request.url)
+    return ""
+
+
+def _compact_error(exc: RequestException) -> str:
+    return " ".join(str(exc).split())
 
 
 def _feed_report(
