@@ -11,12 +11,13 @@ from feed_survey.url import normalize_url_for_grouping
 @dataclass(frozen=True)
 class DiscoverySummary:
     page_to_feeds: Dict[str, Set[str]]
-    site_to_feeds: Dict[str, Set[str]]
     per_page_hist: Dict[str, int]
     per_site_hist: Dict[str, int]
     total_sites: int
     zero_pages: int
     zero_sites: int
+    sites_with_discovery: int
+    site_names: Set[str]
     stacked_page: Dict[str, Any]
     site_chart: Dict[str, Any]
     pages_with_duplicates: int
@@ -27,7 +28,6 @@ class DiscoverySummary:
 
 def build_discovery_summary(stats: Stats) -> DiscoverySummary:
     page_to_feeds = build_page_map(stats)
-    site_to_feeds = build_site_map(stats)
 
     total_pages = _html_response_count(stats) or stats.pages_seen
     pages_with_discovery = getattr(stats, "discovery_pages_count", 0) or len(
@@ -43,10 +43,19 @@ def build_discovery_summary(stats: Stats) -> DiscoverySummary:
     per_page_hist.pop("0", None)
 
     total_sites = getattr(stats, "sites_seen_count", len(stats.sites_seen))
-    zero_sites = max(0, total_sites - len(site_to_feeds))
-    discovery_site_counts = [len(feeds) for feeds in site_to_feeds.values()]
-    per_site_hist = make_histogram(discovery_site_counts, bins="discovery")
+    site_count_hist = getattr(stats, "discovery_feeds_per_site_counts", {})
+    if site_count_hist:
+        per_site_hist = make_histogram(site_count_hist, bins="discovery")
+        sites_with_discovery = sum(site_count_hist.values())
+        site_names = set(getattr(stats, "site_discovered_feeds", {}))
+    else:
+        site_to_feeds = build_site_map(stats)
+        site_counts = [len(feeds) for feeds in site_to_feeds.values()]
+        per_site_hist = make_histogram(site_counts, bins="discovery")
+        sites_with_discovery = len(site_to_feeds)
+        site_names = set(site_to_feeds)
     per_site_hist.pop("0", None)
+    zero_sites = max(0, total_sites - sites_with_discovery)
 
     duplicate_counts = detect_duplicates(stats.multi_feed_pages, stats.feed_results)
     duplicate_format_pairs = detect_duplicate_format_pairs(
@@ -65,12 +74,13 @@ def build_discovery_summary(stats: Stats) -> DiscoverySummary:
 
     return DiscoverySummary(
         page_to_feeds=page_to_feeds,
-        site_to_feeds=site_to_feeds,
         per_page_hist=per_page_hist,
         per_site_hist=per_site_hist,
         total_sites=total_sites,
         zero_pages=zero_pages,
         zero_sites=zero_sites,
+        sites_with_discovery=sites_with_discovery,
+        site_names=site_names,
         stacked_page=stacked_page,
         site_chart=site_chart,
         pages_with_duplicates=pages_with_duplicates,

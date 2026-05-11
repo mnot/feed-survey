@@ -109,6 +109,10 @@ def _merge_summary(stats: Stats, data: Dict[str, Any]) -> None:
         stats.discovery_links_per_page_counts,
         data.get("discovery_links_per_page_counts", {}),
     )
+    _merge_int_counts(
+        stats.discovery_feeds_per_site_counts,
+        data.get("discovery_feeds_per_site_counts", {}),
+    )
 
     _merge_multi_feed_pages(stats, data.get("multi_feed_pages", {}))
     _merge_counts(
@@ -127,6 +131,7 @@ def _merge_summary(stats: Stats, data: Dict[str, Any]) -> None:
     _merge_counts(
         stats.discovery_domain_counts, data.get("discovery_domain_counts", {})
     )
+    _merge_counts(stats.discovery_site_counts, data.get("discovery_site_counts", {}))
     _merge_hll_registers(stats, data.get("hll_registers"))
 
     for site in data.get("sites_seen", []):
@@ -157,6 +162,23 @@ def _merge_feed_discovery_count(stats: Stats, data: Dict[str, Any]) -> None:
     stats.discovery_domain_counts[feed_url] = (
         stats.discovery_domain_counts.get(feed_url, 0) + int(data.get("count", 0))
     )
+
+
+def _merge_feed_auto_sites(stats: Stats, data: Dict[str, Any]) -> None:
+    feed_url = data.get("feed_url")
+    if not feed_url:
+        return
+    stats.discovery_site_counts[feed_url] = max(
+        stats.discovery_site_counts.get(feed_url, 0), int(data.get("count", 0))
+    )
+
+
+def _merge_site_auto_feeds(stats: Stats, data: Dict[str, Any]) -> None:
+    count = int(data.get("count", 0))
+    if count:
+        stats.discovery_feeds_per_site_counts[count] = (
+            stats.discovery_feeds_per_site_counts.get(count, 0) + 1
+        )
 
 
 def _merge_discovery(stats: Stats, data: Dict[str, Any]) -> None:
@@ -211,6 +233,10 @@ def _merge_record(stats: Stats, label: str, data: Any) -> None:
         _merge_summary(stats, data)
     elif label == "feed_discovery_count":
         _merge_feed_discovery_count(stats, data)
+    elif label == "feed_discovery_site_count":
+        _merge_feed_auto_sites(stats, data)
+    elif label == "site_discovery_feed_count":
+        _merge_site_auto_feeds(stats, data)
     elif label == "feed_source_fingerprint":
         _merge_feed_source_fingerprint(stats, data)
     elif label == "discovery":

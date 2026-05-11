@@ -31,13 +31,14 @@ from feed_survey.report.distributions import (
 )
 from feed_survey.report.histograms import build_recency_cdf
 from feed_survey.report.quality_summary import build_quality_summary
+from feed_survey.url import get_site
 
 
 def generate_report(
     stats: Stats, crawl_id: str, output_path: str, markdown_path: Optional[str] = None
 ) -> None:
     # --- Feed result sets ---
-    discovered_urls = set(stats.autodiscovery_links.keys())
+    discovered_urls = _discovered_feed_urls(stats)
 
     # All successfully parsed feeds (used for feed analysis section)
     all_valid_results: Dict[str, Any] = {
@@ -53,7 +54,12 @@ def generate_report(
 
     # Inject discovery count for display
     for url, res in all_valid_results.items():
-        res["total_discovery_count"] = stats.discovery_domain_counts.get(url, 0)
+        res["total_discovery_count"] = getattr(
+            stats, "discovery_domain_counts", {}
+        ).get(url, 0)
+        res["total_discovery_site_count"] = getattr(
+            stats, "discovery_site_counts", {}
+        ).get(url, 0)
 
     # --- Aggregate over ALL valid feeds ---
     agg = aggregate_feed_data(all_valid_results)
@@ -146,6 +152,7 @@ def generate_report(
         ),
         extension_prevalence=extension_prevalence,
         errors=errors,
+        sites_with_feeds_found=_sites_with_feeds_found(all_valid_results),
     )
 
     html = render_report_html(context)
@@ -163,6 +170,25 @@ def default_markdown_path(output_path: str) -> str:
     if not root:
         return f"{output_path}.md"
     return f"{root}.md"
+
+
+def _discovered_feed_urls(stats: Stats) -> set[str]:
+    discovery_site_counts = getattr(stats, "discovery_site_counts", {})
+    if discovery_site_counts:
+        return set(discovery_site_counts)
+    discovery_sites = getattr(stats, "discovery_sites", {})
+    if discovery_sites:
+        return set(discovery_sites)
+    return set(getattr(stats, "autodiscovery_links", {}))
+
+
+def _sites_with_feeds_found(all_valid_results: Dict[str, Any]) -> int:
+    sites = set()
+    for url in all_valid_results:
+        site = get_site(url)
+        if site:
+            sites.add(site)
+    return len(sites)
 
 
 def _feed_error_rows(stats: Stats) -> list[tuple[str, int]]:

@@ -33,6 +33,12 @@ def test_discovers_feed_links() -> None:
     }
     assert stats.autodiscovery_links["https://example.com/feed.xml"] == ["example.com"]
     assert stats.discovery_domain_counts["https://example.com/feed.xml"] == 1
+    assert stats.discovery_site_counts["https://example.com/feed.xml"] == 1
+    assert stats.discovery_sites["https://example.com/feed.xml"] == {"example.com"}
+    assert stats.site_discovered_feeds["example.com"] == {
+        "https://example.com/feed.xml",
+        "https://feeds.example.com/a",
+    }
 
 
 def test_records_source_site() -> None:

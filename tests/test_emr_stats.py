@@ -3,8 +3,11 @@ from feed_survey.emr.job import CCFeedsJob
 from feed_survey.emr.finalize import _merge_summary
 from feed_survey.emr.stats_wire import (
     feed_discovery_count_record,
+    feed_auto_site_record,
     feed_source_fingerprint_record,
+    site_auto_feed_record,
     merge_count_values,
+    merge_unique_values,
     merge_stats_values,
     reduce_stats,
     serialize_stats,
@@ -24,6 +27,7 @@ def test_summary_record_counts() -> None:
     stats.lang_mismatches = 9
     stats.lang_multiple_in_feed = 10
     stats.discovery_links_per_page_counts = {1: 12, 2: 3}
+    stats.discovery_feeds_per_site_counts = {1: 4, 2: 5}
     stats.error_types = {"ParseError": 13}
     stats.html_fingerprint_counts = {"wordpress": 11}
     stats.html_fingerprint_auto_counts = {"wordpress": 8}
@@ -45,6 +49,7 @@ def test_summary_record_counts() -> None:
     assert record["lang_mismatches"] == 9
     assert record["lang_multiple_in_feed"] == 10
     assert record["discovery_links_per_page_counts"] == {1: 12, 2: 3}
+    assert record["discovery_feeds_per_site_counts"] == {1: 4, 2: 5}
     assert record["error_types"] == {"ParseError": 13}
     assert record["html_fingerprint_counts"] == {"wordpress": 11}
     assert record["html_fingerprint_auto_counts"] == {"wordpress": 8}
@@ -72,6 +77,7 @@ def test_merge_summary_counts_once() -> None:
             "lang_mismatches": 9,
             "lang_multiple_in_feed": 10,
             "discovery_links_per_page_counts": {"1": 12, "2": 3},
+            "discovery_feeds_per_site_counts": {"1": 4, "2": 5},
             "error_types": {"ParseError": 13},
             "html_fingerprint_counts": {"wordpress": 11},
             "html_fingerprint_auto_counts": {"wordpress": 8},
@@ -96,6 +102,7 @@ def test_merge_summary_counts_once() -> None:
     assert stats.lang_mismatches == 9
     assert stats.lang_multiple_in_feed == 10
     assert stats.discovery_links_per_page_counts == {1: 12, 2: 3}
+    assert stats.discovery_feeds_per_site_counts == {1: 4, 2: 5}
     assert stats.error_types == {"ParseError": 13}
     assert stats.html_fingerprint_counts == {"wordpress": 11}
     assert stats.html_fingerprint_auto_counts == {"wordpress": 8}
@@ -128,6 +135,7 @@ def test_combiner_merges_summary() -> None:
     first.discovery_link_rel_both_page = 16
     first.discovery_pages_count = 15
     first.discovery_links_per_page_counts = {1: 16}
+    first.discovery_feeds_per_site_counts = {1: 17}
     first.error_types = {"ParseError": 17}
     first.discovery_domain_counts = {"https://example.com/feed.xml": 18}
     first.multi_feed_pages = {"https://example.com/": ["https://example.com/a.xml"]}
@@ -155,6 +163,7 @@ def test_combiner_merges_summary() -> None:
     second.discovery_link_rel_both_page = 31
     second.discovery_pages_count = 30
     second.discovery_links_per_page_counts = {1: 31, 2: 32}
+    second.discovery_feeds_per_site_counts = {1: 33, 2: 34}
     second.error_types = {"ParseError": 33, "XMLSyntaxError": 34}
     second.discovery_domain_counts = {"https://example.org/feed.xml": 35}
     second.multi_feed_pages = {"https://example.org/": ["https://example.org/a.xml"]}
@@ -186,6 +195,7 @@ def test_combiner_merges_summary() -> None:
     assert merged["discovery_link_rel_both_page"] == 47
     assert merged["discovery_pages_count"] == 45
     assert merged["discovery_links_per_page_counts"] == {"1": 47, "2": 32}
+    assert merged["discovery_feeds_per_site_counts"] == {"1": 50, "2": 34}
     assert merged["error_types"] == {"ParseError": 50, "XMLSyntaxError": 34}
     assert "discovery_domain_counts" not in merged
     assert merged["multi_feed_pages"] == {
@@ -261,6 +271,43 @@ def test_feed_discovery_count() -> None:
     }
 
 
+def test_feed_discovery_site_count() -> None:
+    label, record = feed_auto_site_record(
+        "discoverysites:https://example.com/feed.xml",
+        (value for value in [["example.com", "example.org"], ["example.com"]]),
+    )
+
+    assert label == "feed_discovery_site_count"
+    assert record == {
+        "feed_url": "https://example.com/feed.xml",
+        "count": 2,
+    }
+
+
+def test_site_discovery_feed_count() -> None:
+    label, record = site_auto_feed_record(
+        "sitefeeds:example.com",
+        (
+            value
+            for value in [
+                ["https://example.com/feed.xml"],
+                ["https://example.com/feed.xml", "https://example.com/atom.xml"],
+            ]
+        ),
+    )
+
+    assert label == "site_discovery_feed_count"
+    assert record == {"count": 2}
+
+
+def test_merge_unique_values() -> None:
+    assert set(merge_unique_values(value for value in [["a", "b"], ["b", "c"]])) == {
+        "a",
+        "b",
+        "c",
+    }
+
+
 def test_combiner_count() -> None:
     job = CCFeedsJob()
 
@@ -272,3 +319,18 @@ def test_combiner_count() -> None:
     )
 
     assert combined == [("discoverycount:https://example.com/feed.xml", 9)]
+
+
+def test_combiner_unique_sites() -> None:
+    job = CCFeedsJob()
+
+    combined = list(
+        job.combiner(
+            "discoverysites:https://example.com/feed.xml",
+            (value for value in [["example.com"], ["example.org", "example.com"]]),
+        )
+    )
+
+    assert len(combined) == 1
+    assert combined[0][0] == "discoverysites:https://example.com/feed.xml"
+    assert set(combined[0][1]) == {"example.com", "example.org"}

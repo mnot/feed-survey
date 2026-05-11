@@ -42,6 +42,7 @@ class ReportContext:
     source_fingerprint_quality: List[Dict[str, Any]]
     extension_prevalence: List[Dict[str, Any]]
     errors: List[Tuple[str, int]]
+    sites_with_feeds_found: int
 
 
 def render_report_html(context: ReportContext) -> str:
@@ -93,7 +94,8 @@ def render_report_html(context: ReportContext) -> str:
         ),
         zero_pages_f=format_number(discovery.zero_pages),
         total_sites_f=format_number(discovery.total_sites),
-        sites_with_auto_f=format_number(len(discovery.site_to_feeds)),
+        sites_with_feeds_f=format_number(context.sites_with_feeds_found),
+        sites_with_auto_f=format_number(discovery.sites_with_discovery),
         zero_sites_f=format_number(discovery.zero_sites),
         pages_with_duplicates=discovery.pages_with_duplicates,
         duplicate_prevalence_pct=discovery.duplicate_prevalence_pct,
@@ -194,6 +196,14 @@ def render_report_markdown(context: ReportContext) -> str:
                     ["HTML pages processed", format_number(stats["html_responses"])],
                     ["Unique analyzed sites", format_number(stats["sites_seen"])],
                     ["Feed URLs checked", format_number(stats["feed_results_count"])],
+                    [
+                        "Sniffed feeds",
+                        (
+                            f"{format_number(stats['feeds_sniffed'])} "
+                            f"(RSS {format_number(stats['sniffed_format_counts']['rss'])}; "
+                            f"Atom {format_number(stats['sniffed_format_counts']['atom'])})"
+                        ),
+                    ],
                     ["Successfully parsed feeds", format_number(total_parsed)],
                     [
                         "Broken/unparseable checks",
@@ -294,30 +304,57 @@ def render_report_markdown(context: ReportContext) -> str:
             "",
             "## Feed Availability and Freshness",
             "",
+            "Sites with feeds found counts unique registrable sites that host at "
+            "least one successfully parsed feed URL.",
+            "",
             _markdown_table(
-                ["Stage", "Count", "Share of feed URLs checked"],
+                ["Stage", "Count", "Share"],
                 [
+                    [
+                        "Sites with feeds found",
+                        format_number(stats["sites_with_feeds_found"]),
+                        (
+                            _pct(
+                                stats["sites_with_feeds_found"],
+                                stats["sites_seen"],
+                                2,
+                            )
+                            + " of analyzed sites"
+                        ),
+                    ],
                     [
                         "Feed URLs checked",
                         format_number(stats["feed_results_count"]),
-                        "100.0%",
+                        "100.0% of feed URLs checked",
                     ],
                     [
                         "Parsed RSS/Atom",
                         format_number(stats["parsed_feeds"]),
-                        _pct(stats["parsed_feeds"], stats["feed_results_count"]),
+                        (
+                            _pct(stats["parsed_feeds"], stats["feed_results_count"])
+                            + " of feed URLs checked"
+                        ),
                     ],
                     [
                         "Freshness signal within cutoff",
                         format_number(stats["active_quality"]["n"]),
-                        _pct(stats["active_quality"]["n"], stats["feed_results_count"]),
+                        (
+                            _pct(
+                                stats["active_quality"]["n"],
+                                stats["feed_results_count"],
+                            )
+                            + " of feed URLs checked"
+                        ),
                     ],
                     [
                         "Active with entries",
                         format_number(stats["active_quality"]["with_entries"]),
-                        _pct(
-                            stats["active_quality"]["with_entries"],
-                            stats["feed_results_count"],
+                        (
+                            _pct(
+                                stats["active_quality"]["with_entries"],
+                                stats["feed_results_count"],
+                            )
+                            + " of feed URLs checked"
                         ),
                     ],
                 ],
@@ -683,6 +720,7 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         "atom_count": atom_count,
         "feeds_with_autodiscovery": context.discovered_count,
         "feeds_without_autodiscovery": feeds_without_autodiscovery,
+        "sniffed_format_counts": _sniffed_format_counts(stats.feed_results),
         "formats": context.formats,
         "languages": context.languages,
         "language_prevalence": context.language_prevalence,
@@ -709,7 +747,8 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         "pages_with_autodiscovery": getattr(
             stats, "discovery_pages_count", len(discovery.page_to_feeds)
         ),
-        "sites_with_autodiscovery": len(discovery.site_to_feeds),
+        "sites_with_feeds_found": context.sites_with_feeds_found,
+        "sites_with_autodiscovery": discovery.sites_with_discovery,
         "top_n": stats.top_n,
         "tranco_include_subdomains": stats.tranco_include_subdomains,
         "tranco_list_label": tranco_list_label(stats.tranco_include_subdomains),
@@ -759,6 +798,23 @@ def _runtime_counter_stats(stats: Stats) -> Dict[str, int]:
 
 def _format_optional_count(known: bool, value: int) -> str:
     return format_number(value) if known else "not recorded"
+
+
+def _sniffed_format_counts(feed_results: Dict[str, Dict[str, Any]]) -> Dict[str, int]:
+    counts = {"rss": 0, "atom": 0, "other": 0}
+    for result in feed_results.values():
+        if not result.get("valid") or "sniffed" not in (
+            result.get("candidate_sources") or []
+        ):
+            continue
+        feed_format = str(result.get("format") or "").lower()
+        if feed_format.startswith("atom"):
+            counts["atom"] += 1
+        elif feed_format.startswith("rss") or feed_format == "rdf":
+            counts["rss"] += 1
+        else:
+            counts["other"] += 1
+    return counts
 
 
 def _count_pct(count: int, denominator: int) -> str:

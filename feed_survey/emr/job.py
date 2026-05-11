@@ -17,14 +17,16 @@ from mrjob.protocol import JSONProtocol
 from feed_survey.analysis import WarcProcessor
 from feed_survey.emr.stats_wire import (
     feed_discovery_count_record,
+    feed_auto_site_record,
     feed_source_fingerprint_record,
     feed_record,
     json_safe,
     merge_count_values,
-    merge_source_samples,
+    merge_unique_values,
     merge_stats_values,
     reduce_stats,
     serialize_stats,
+    site_auto_feed_record,
     summary_record,
 )
 from feed_survey.emr.warc_worker import (
@@ -197,14 +199,17 @@ class CCFeedsJob(MRJob):  # type: ignore[misc]
         for feed_url, result in self.processor.stats.feed_results.items():
             yield f"feed:{feed_url}", json_safe(result)
 
-        # Yield discovery links
-        for feed_url, sites in self.processor.stats.autodiscovery_links.items():
-            yield f"discovery:{feed_url}", sites
-
         # Yield per-feed discovery link counts separately so the summary reducer
         # stays bounded at full-crawl scale.
         for feed_url, count in self.processor.stats.discovery_domain_counts.items():
             yield f"discoverycount:{feed_url}", count
+
+        # Yield exact unique-site counts separately from page/link occurrences.
+        for feed_url, sites in self.processor.stats.discovery_sites.items():
+            yield f"discoverysites:{feed_url}", list(sites)
+
+        for site, feed_urls in self.processor.stats.site_discovered_feeds.items():
+            yield f"sitefeeds:{site}", list(feed_urls)
 
         # Yield feed-source fingerprints separately to avoid one giant summary
         # reducer carrying a feed-url keyed map for the whole crawl.
@@ -217,11 +222,14 @@ class CCFeedsJob(MRJob):  # type: ignore[misc]
         if key == "stats":
             yield key, merge_stats_values(values)
 
-        elif key.startswith("discovery:"):
-            yield key, merge_source_samples(values)
-
         elif key.startswith("discoverycount:"):
             yield key, feed_discovery_count_record(key, values)[1]["count"]
+
+        elif key.startswith("discoverysites:"):
+            yield key, merge_unique_values(values)
+
+        elif key.startswith("sitefeeds:"):
+            yield key, merge_unique_values(values)
 
         elif key.startswith("feedfp:"):
             yield key, merge_count_values(values)
@@ -239,15 +247,14 @@ class CCFeedsJob(MRJob):  # type: ignore[misc]
             if key == "stats":
                 yield "summary", summary_record(reduce_stats(values))
 
-            elif key.startswith("discovery:"):
-                feed_url = key.split(":", 1)[1]
-                yield "discovery", {
-                    "feed_url": feed_url,
-                    "found_on": merge_source_samples(values),
-                }
-
             elif key.startswith("discoverycount:"):
                 yield feed_discovery_count_record(key, values)
+
+            elif key.startswith("discoverysites:"):
+                yield feed_auto_site_record(key, values)
+
+            elif key.startswith("sitefeeds:"):
+                yield site_auto_feed_record(key, values)
 
             elif key.startswith("feedfp:"):
                 yield feed_source_fingerprint_record(key, values)

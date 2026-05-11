@@ -206,7 +206,7 @@
             background: #fffbeb; border-color: #fcd34d; color: #92400e;
         }
 
-        /* Inline bar for collapsed content-type */
+        /* Inline bar for collapsed Content-Type buckets */
         .ct-bar-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
         .ct-bar-label { width: 9rem; font-size: 0.85rem; font-weight: 600; flex-shrink: 0; }
         .ct-bar-track {
@@ -310,7 +310,7 @@
                 {% if stats.is_opml %}
                 <div class="card-sub">Fetched OPML feed URLs and, when available, associated HTML pages checked for autodiscovery.</div>
                 {% else %}
-                <div class="card-sub">All responses after Tranco filtering; {{ stats.pages_seen|comma }} had HTML, feed, XML, or sniffable content types and were analyzed further.</div>
+                <div class="card-sub">All responses after Tranco filtering; {{ stats.pages_seen|comma }} had HTML, feed, XML, or sniffable Content-Type values and were analyzed further.</div>
                 {% endif %}
             </div>
             <div class="card">
@@ -341,12 +341,13 @@
         <!-- Content-Type distribution (collapsed) -->
         <div class="chart-card" style="margin-bottom: 2rem;">
             <div class="chart-title">Analyzed Response Content-Type Distribution</div>
-            <div class="chart-sub">HTTP <code>Content-Type</code> header values among responses that passed the analysis prefilter. “Other XML” is XML content without an exact RSS/Atom media type, such as <code>application/xml</code> or <code>text/xml</code>. “Other Non-XML” is sniffable non-XML content such as <code>text/plain</code> or <code>application/octet-stream</code>. Either is only counted as a feed URL if sniffing finds RSS/Atom. Parenthetical percentages use all analyzed responses as the denominator.</div>
+            <div class="chart-sub">HTTP <code>Content-Type</code> header values among responses that passed the analysis prefilter. “Other XML” is XML content without an exact RSS/Atom media type, such as <code>application/xml</code> or <code>text/xml</code>. “Other Non-XML” is sniffable non-XML content such as <code>text/plain</code> or <code>application/octet-stream</code>. Either is only counted as a feed URL if sniffing finds RSS/Atom. Parenthetical Content-Type percentages use all analyzed responses as the denominator; sniffed outcome percentages use sniffed feeds as the denominator.</div>
             {% set total_ct = stats.content_types_collapsed.values()|sum %}
             {% set html_count = stats.content_types_collapsed.get("HTML", 0) %}
             {% set html_pct = (html_count / total_ct * 100) if total_ct else 0 %}
             {% set non_html_total = total_ct - html_count %}
-            {% set ct_colors = {"HTML": "#94a3b8", "Atom": "#6366f1", "RSS": "#10b981", "Other XML": "#8b5cf6", "Other Non-XML": "#64748b"} %}
+            {% set sniffed_total = stats.sniffed_format_counts.values()|sum %}
+            {% set ct_colors = {"HTML": "#94a3b8", "Atom": "#6366f1", "RSS": "#10b981", "Other XML": "#8b5cf6", "Other Non-XML": "#64748b", "Atom (sniffed)": "#818cf8", "RSS (sniffed)": "#34d399", "Other parsed (sniffed)": "#94a3b8"} %}
 
             <!-- HTML callout -->
             <div style="display:flex; align-items:center; gap:1.5rem; margin-bottom:1.25rem; padding:0.75rem 1rem; background:#f1f5f9; border-radius:10px;">
@@ -371,6 +372,19 @@
             </div>
             {% endif %}
             {% endfor %}
+            {% if sniffed_total %}
+            <div class="chart-sub" style="margin:1rem 0 0.75rem;">Sniffed feed outcomes (bars scaled relative to sniffed feeds):</div>
+            {% for label, count in [("RSS (sniffed)", stats.sniffed_format_counts.rss), ("Atom (sniffed)", stats.sniffed_format_counts.atom), ("Other parsed (sniffed)", stats.sniffed_format_counts.other)] %}
+            {% set pct_of_sniffed = (count / sniffed_total * 100) if sniffed_total else 0 %}
+            <div class="ct-bar-row">
+                <div class="ct-bar-label">{{ label }}</div>
+                <div class="ct-bar-track">
+                    <div class="ct-bar-fill" style="width: {{ '%.1f'|format(pct_of_sniffed) }}%; background: {{ ct_colors.get(label, '#6366f1') }};"></div>
+                </div>
+                <div class="ct-bar-val">{{ count|comma }} &nbsp;<span style="color:#aaa">({{ '%.1f'|format(pct_of_sniffed) }}%)</span></div>
+            </div>
+            {% endfor %}
+            {% endif %}
         </div>
     </section>
 
@@ -397,7 +411,7 @@
                     </div>
                 </div>
                 <div class="discovery-note" style="margin-top:0.85rem;">
-                    Site count is an estimated lower bound from sampled source sites per feed URL.
+                    Sites with feed links is the autodiscovery subset: unique registrable sites exposing at least one RSS/Atom link in HTML.
                 </div>
             </div>
 
@@ -422,7 +436,7 @@
             </div>
             <div class="chart-card">
                 <div class="chart-title">Autodiscovery Links per Site</div>
-                <p class="chart-sub">Unique feed URLs per registrable site. Based on sampled source sites retained for each discovered feed URL. Sites with zero links omitted: {{ zero_sites_f }}.</p>
+                <p class="chart-sub">Unique feed URLs per registrable site. Sites with zero links omitted: {{ zero_sites_f }}.</p>
                 <canvas id="feedsPerSiteHistogram"></canvas>
             </div>
         </div>
@@ -491,6 +505,15 @@
                     <div class="row"><span>Broken/unparseable</span> <strong>{{ stats.unparsed_feeds|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.unparsed_pct) }}%)</span></strong></div>
                     <div class="row"><span>With autodiscovery link</span> <strong>{{ stats.feeds_with_autodiscovery|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.feeds_with_autodiscovery / total_parsed * 100 if total_parsed else 0) }}%)</span></strong></div>
                     <div class="row"><span>Without autodiscovery link</span> <strong>{{ stats.feeds_without_autodiscovery|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.feeds_without_autodiscovery / total_parsed * 100 if total_parsed else 0) }}%)</span></strong></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">Sites with Feeds Found</div>
+                <div class="card-value">{{ sites_with_feeds_f }}</div>
+                <div class="card-sub">
+                    <div style="margin-bottom:0.5rem;">Unique registrable sites that host at least one successfully parsed feed URL.</div>
+                    <div class="row"><span>Share of analyzed sites</span> <strong>{{ "%.2f"|format(stats.sites_with_feeds_found / stats.sites_seen * 100 if stats.sites_seen else 0) }}%</strong></div>
+                    <div class="row"><span>Analyzed sites</span> <strong>{{ stats.sites_seen|comma }}</strong></div>
                 </div>
             </div>
             <div class="card">

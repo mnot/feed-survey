@@ -86,18 +86,18 @@ class WarcProcessor:
         request_time_str: Optional[str],
     ) -> None:
         try:
-            if (
-                hasattr(record.reader, "peek")
-                and guess_feed_format(record.reader.peek(1024)) != "unknown"
-            ):
-                self.stats.feeds_sniffed += 1
-                self._process_feed(
-                    record,
-                    normalize_url(url),
-                    status_code,
-                    request_time_str,
-                    candidate_source="sniffed",
-                )
+            content = record.reader.read(10 * 1024 * 1024)
+            if not content or guess_feed_format(content[:1024]) == "unknown":
+                return
+            self.stats.feeds_sniffed += 1
+            self.feed_analyzer.process_content(
+                record,
+                normalize_url(url),
+                status_code=status_code,
+                content=content,
+                request_time_str=request_time_str,
+                candidate_source="sniffed",
+            )
         except (AttributeError, OSError, RuntimeError, TypeError, ValueError):
             pass
 

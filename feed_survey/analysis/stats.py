@@ -11,7 +11,7 @@ class _StatsUnpickler(pickle.Unpickler):
         return super().find_class(module, name)
 
 
-class Stats:
+class Stats:  # pylint: disable=too-many-instance-attributes
     def __init__(self) -> None:
         self.pages_seen: int = 0
         self.responses_processed: int = 0
@@ -30,6 +30,10 @@ class Stats:
         self.total_entries: int = 0
         self.content_length_counts: Dict[int, int] = {}
         self.discovery_domain_counts: Dict[str, int] = {}
+        self.discovery_sites: Dict[str, Set[str]] = {}
+        self.discovery_site_counts: Dict[str, int] = {}
+        self.site_discovered_feeds: Dict[str, Set[str]] = {}
+        self.discovery_feeds_per_site_counts: Dict[int, int] = {}
 
         self.discovery_rel_alternate: int = 0
         self.discovery_rel_feed: int = 0
@@ -125,19 +129,7 @@ class Stats:
         self.sites_seen.update(other.sites_seen)
         self.sites_seen_count += getattr(other, "sites_seen_count", 0)
 
-        for feed_url, sites in other.autodiscovery_links.items():
-            if feed_url not in self.autodiscovery_links:
-                self.autodiscovery_links[feed_url] = []
-            existing = set(self.autodiscovery_links[feed_url])
-            for site in sites:
-                if site not in existing and len(existing) < 100:
-                    self.autodiscovery_links[feed_url].append(site)
-                    existing.add(site)
-
-        for feed_url, count in getattr(other, "discovery_domain_counts", {}).items():
-            self.discovery_domain_counts[feed_url] = (
-                self.discovery_domain_counts.get(feed_url, 0) + count
-            )
+        self._merge_discovery_maps(other)
 
         for content_type, count in other.content_type_counts.items():
             self.content_type_counts[content_type] = (
@@ -165,6 +157,38 @@ class Stats:
             self.tranco_include_subdomains = False
 
         self.run_limit = max(self.run_limit, getattr(other, "run_limit", 0))
+
+    def _merge_discovery_maps(self, other: "Stats") -> None:
+        for feed_url, sites in other.autodiscovery_links.items():
+            if feed_url not in self.autodiscovery_links:
+                self.autodiscovery_links[feed_url] = []
+            existing = set(self.autodiscovery_links[feed_url])
+            for site in sites:
+                if site not in existing:
+                    self.autodiscovery_links[feed_url].append(site)
+                    existing.add(site)
+
+        for feed_url, count in getattr(other, "discovery_domain_counts", {}).items():
+            self.discovery_domain_counts[feed_url] = (
+                self.discovery_domain_counts.get(feed_url, 0) + count
+            )
+        for feed_url, sites in getattr(other, "discovery_sites", {}).items():
+            target = self.discovery_sites.setdefault(feed_url, set())
+            target.update(sites)
+            self.discovery_site_counts[feed_url] = len(target)
+        for feed_url, count in getattr(other, "discovery_site_counts", {}).items():
+            self.discovery_site_counts[feed_url] = max(
+                self.discovery_site_counts.get(feed_url, 0), count
+            )
+        for site, feed_urls in getattr(other, "site_discovered_feeds", {}).items():
+            target = self.site_discovered_feeds.setdefault(site, set())
+            target.update(feed_urls)
+        for link_count, sites in getattr(
+            other, "discovery_feeds_per_site_counts", {}
+        ).items():
+            self.discovery_feeds_per_site_counts[link_count] = (
+                self.discovery_feeds_per_site_counts.get(link_count, 0) + sites
+            )
 
     def save(self, path: str) -> None:
         with open(path, "wb") as f_out:

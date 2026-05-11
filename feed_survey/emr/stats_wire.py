@@ -46,6 +46,9 @@ def serialize_stats(stats: Stats) -> Dict[str, Any]:
                 "discovery_link_rel_both_page": stats.discovery_link_rel_both_page,
                 "discovery_pages_count": stats.discovery_pages_count,
                 "discovery_links_per_page_counts": stats.discovery_links_per_page_counts,
+                "discovery_feeds_per_site_counts": (
+                    stats.discovery_feeds_per_site_counts
+                ),
                 "multi_feed_pages": stats.multi_feed_pages,
                 "html_fingerprint_counts": stats.html_fingerprint_counts,
                 "html_fingerprint_auto_counts": (stats.html_fingerprint_auto_counts),
@@ -118,6 +121,7 @@ def merge_serialized_stats(merged: Dict[str, Any], incoming: Dict[str, Any]) -> 
 
     _merge_count_map(merged, incoming, "content_length_counts")
     _merge_count_map(merged, incoming, "discovery_links_per_page_counts")
+    _merge_count_map(merged, incoming, "discovery_feeds_per_site_counts")
 
     if "multi_feed_pages" not in merged:
         merged["multi_feed_pages"] = {}
@@ -158,13 +162,11 @@ def _merge_count_map(
         target[key] = target.get(key, 0) + count
 
 
-def merge_source_samples(values: Generator[Any, None, None]) -> list[Any]:
+def merge_unique_values(values: Generator[Any, None, None]) -> list[Any]:
     sources = set()
     for value in values:
         sources.update(value)
-        if len(sources) >= 100:
-            break
-    return list(sources)[:100]
+    return list(sources)
 
 
 def merge_count_values(values: Generator[Any, None, None]) -> Dict[str, int]:
@@ -215,6 +217,14 @@ def reduce_stats(values: Generator[Any, None, None]) -> Stats:
             final_stats.discovery_links_per_page_counts[link_count_int] = (
                 final_stats.discovery_links_per_page_counts.get(link_count_int, 0)
                 + page_count
+            )
+        for link_count, site_count in value.get(
+            "discovery_feeds_per_site_counts", {}
+        ).items():
+            link_count_int = int(link_count)
+            final_stats.discovery_feeds_per_site_counts[link_count_int] = (
+                final_stats.discovery_feeds_per_site_counts.get(link_count_int, 0)
+                + site_count
             )
 
         other_time = value.get("max_crawl_time_str")
@@ -290,6 +300,7 @@ def summary_record(stats: Stats) -> Dict[str, Any]:
         "discovery_link_rel_both": stats.discovery_link_rel_both,
         "discovery_link_rel_both_page": stats.discovery_link_rel_both_page,
         "discovery_links_per_page_counts": stats.discovery_links_per_page_counts,
+        "discovery_feeds_per_site_counts": stats.discovery_feeds_per_site_counts,
         "multi_feed_pages": stats.multi_feed_pages,
         "html_fingerprint_counts": stats.html_fingerprint_counts,
         "html_fingerprint_auto_counts": (stats.html_fingerprint_auto_counts),
@@ -327,4 +338,22 @@ def feed_discovery_count_record(
     return "feed_discovery_count", {
         "feed_url": feed_url,
         "count": sum(int(value) for value in values),
+    }
+
+
+def feed_auto_site_record(
+    key: str, values: Generator[Any, None, None]
+) -> Tuple[str, Dict[str, Any]]:
+    feed_url = key.split(":", 1)[1]
+    return "feed_discovery_site_count", {
+        "feed_url": feed_url,
+        "count": len(merge_unique_values(values)),
+    }
+
+
+def site_auto_feed_record(
+    _key: str, values: Generator[Any, None, None]
+) -> Tuple[str, Dict[str, Any]]:
+    return "site_discovery_feed_count", {
+        "count": len(merge_unique_values(values)),
     }

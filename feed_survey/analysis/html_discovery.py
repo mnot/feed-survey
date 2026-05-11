@@ -100,11 +100,13 @@ class HtmlDiscovery:
             self.stats.discovery_domain_counts[feed_url] = 0
 
         self.stats.discovery_domain_counts[feed_url] += 1
-        if (
-            site not in self.stats.autodiscovery_links[feed_url]
-            and len(self.stats.autodiscovery_links[feed_url]) < 10
-        ):
+        if site not in self.stats.autodiscovery_links[feed_url]:
             self.stats.autodiscovery_links[feed_url].append(site)
+        self.stats.discovery_sites.setdefault(feed_url, set()).add(site)
+        self.stats.discovery_site_counts[feed_url] = len(
+            self.stats.discovery_sites[feed_url]
+        )
+        self.stats.site_discovered_feeds.setdefault(site, set()).add(feed_url)
 
     def _record_page_stats(
         self,

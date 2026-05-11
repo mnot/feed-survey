@@ -13,7 +13,11 @@ from feed_survey.report.aggregate import (
     source_fingerprint_quality_rows,
     update_cadence_cdf,
 )
-from feed_survey.report.context import ReportContext, build_report_stats
+from feed_survey.report.context import (
+    ReportContext,
+    _sniffed_format_counts,
+    build_report_stats,
+)
 from feed_survey.report.discovery import DiscoverySummary, build_discovery_summary
 from feed_survey.report.distributions import collapse_content_types
 from feed_survey.report.histograms import build_recency_cdf
@@ -581,6 +585,35 @@ def test_content_types_exclude_json() -> None:
     assert collapsed["Other Non-XML"] == 5
 
 
+def test_sniffed_format_counts() -> None:
+    counts = _sniffed_format_counts(
+        {
+            "https://example.com/rss": {
+                "valid": True,
+                "format": "rss2.0",
+                "candidate_sources": {"sniffed"},
+            },
+            "https://example.com/atom": {
+                "valid": True,
+                "format": "atom10",
+                "candidate_sources": {"sniffed"},
+            },
+            "https://example.com/direct": {
+                "valid": True,
+                "format": "rss2.0",
+                "candidate_sources": {"feed_media_type"},
+            },
+            "https://example.com/broken": {
+                "valid": False,
+                "format": "rss",
+                "candidate_sources": {"sniffed"},
+            },
+        }
+    )
+
+    assert counts == {"rss": 1, "atom": 1, "other": 0}
+
+
 def test_report_language_counts() -> None:
     stats = Stats()
     stats.lang_src_http = 7
@@ -611,12 +644,13 @@ def test_report_language_counts() -> None:
     }
     discovery = DiscoverySummary(
         page_to_feeds={},
-        site_to_feeds={},
         per_page_hist={},
         per_site_hist={},
         total_sites=0,
         zero_pages=0,
         zero_sites=0,
+        sites_with_discovery=0,
+        site_names=set(),
         stacked_page={},
         site_chart={},
         pages_with_duplicates=0,
@@ -666,8 +700,9 @@ def test_report_language_counts() -> None:
             html_fingerprints=[],
             source_fingerprint_quality=[],
             extension_prevalence=[],
-            errors=[],
-        )
+        errors=[],
+        sites_with_feeds_found=0,
+    )
     )
 
     assert report_stats["lang_src_http"] == 1

@@ -30,6 +30,46 @@ class FeedAnalyzer:
         *,
         candidate_source: str = "feed_media_type",
     ) -> None:
+        try:
+            content = record.reader.read(10 * 1024 * 1024)
+        except (OSError, RuntimeError, SyntaxError, TypeError, ValueError) as exc:
+            request_time = _parse_request_time(
+                request_time_str or record.headers.get("WARC-Date")
+            )
+            url = normalize_url(url)
+            content_type, charset = _content_type_parts(
+                record.http_headers.get("Content-Type", "")
+            )
+            feed_info = _init_feed_info(
+                status_code, request_time, url, content_type, charset
+            )
+            feed_info["candidate_sources"].add(candidate_source)
+            feed_info["fingerprints"].update(
+                fingerprint_http_headers(record.http_headers)
+            )
+            self._handle_process_error(feed_info, url, exc)
+            self.stats.feed_results[url] = feed_info
+            return
+
+        self.process_content(
+            record,
+            url,
+            status_code=status_code,
+            content=content,
+            request_time_str=request_time_str,
+            candidate_source=candidate_source,
+        )
+
+    def process_content(
+        self,
+        record: Any,
+        url: str,
+        *,
+        status_code: int,
+        content: bytes,
+        request_time_str: Optional[str] = None,
+        candidate_source: str = "feed_media_type",
+    ) -> None:
         request_time = _parse_request_time(
             request_time_str or record.headers.get("WARC-Date")
         )
@@ -48,7 +88,6 @@ class FeedAnalyzer:
             return
 
         try:
-            content = record.reader.read(10 * 1024 * 1024)
             if not content:
                 feed_info["error"] = "Empty response"
                 self._record_parse_error(feed_info, self._error_type(feed_info))
