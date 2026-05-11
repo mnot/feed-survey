@@ -17,6 +17,7 @@ by analysis tools without scraping the visual report.
 - **Automatic Result Sync**: The build system automatically syncs results from S3 back to your local machine upon completion.
 - **Tranco Filtering**: Built-in support for filtering analysis to the Tranco Top-1M, using Tranco's subdomain-inclusive list by default and Public Suffix List site normalization.
 - **Platform Fingerprints**: Conservative CMS/framework hints from HTML pages, feed headers, and feed generator elements, with report-time quality comparisons.
+- **OPML Feed-List Reports**: Planned local reporting for a user's own OPML subscription list, using the same feed parsing, quality, autodiscovery, and HTML/Markdown report machinery as crawl reports.
 
 ## Quick Start (EMR)
 
@@ -71,6 +72,26 @@ feed-survey-probe --recursive https://example.com/
 Recursive probing follows only the RSS/Atom URLs found in the page's
 autodiscovery links, and checks at most 10 unique feed URLs by default. Use
 `--max-feeds N` to change that cap.
+
+### Analyze an OPML Feed List
+For personal or ecosystem-specific audits, the planned `feed-survey-opml` command
+will turn an OPML subscription file into a full HTML and Markdown report without
+using Common Crawl or EMR:
+
+```bash
+feed-survey-opml subscriptions.opml --output feeds-report.html
+```
+
+The OPML path is intended for answering questions like "how healthy are the
+feeds I already subscribe to?" or "what formats, languages, extensions, and
+quality signals show up in this curated list?" It should reuse the same parser,
+quality scoring, extension analysis, platform fingerprinting, and report
+renderer as the crawl pipeline.
+
+OPML `xmlUrl` values are the primary feed inputs. When an outline also has
+`url` or `htmlUrl`, the command should fetch that page as HTML and report
+RSS/Atom autodiscovery properties too, so the report can distinguish feeds that
+are explicitly listed in OPML from feeds that the linked site advertises.
 
 ### 3. Run a Smoke Test (EMR)
 The `test-emr` target runs a single WARC file through a small EMR cluster to verify your AWS environment is ready.
@@ -137,6 +158,7 @@ Run `make help` for the local development, report, EMR, and wheel targets.
 - `feed_survey/analysis/`: Core logic for parsing WARC records and extracting feed metadata.
 - `feed_survey/report/`: Report-time aggregation, quality scoring, and HTML/Markdown rendering.
 - `feed_survey/probe.py`: Single-URL Markdown diagnostics for feeds and HTML autodiscovery.
+- `feed_survey/opml.py`: Planned OPML input path for local feed-list reports.
 - `feed_survey/commoncrawl.py`: Common Crawl metadata and WARC path discovery.
 - `feed_survey/tranco.py`: Tranco list loading for top-site scoping.
 - `feed_survey/url.py`: URL normalization, host extraction, and registrable-site helpers.

@@ -68,7 +68,7 @@ def render_report_html(context: ReportContext) -> str:
         discovery_per_page_hist=discovery.per_page_hist,
         discovery_per_site_hist=discovery.per_site_hist,
         stacked_page_json=json.dumps(discovery.stacked_page),
-        stacked_site_json=json.dumps(discovery.stacked_site),
+        site_links_json=json.dumps(discovery.site_chart),
         charsets_per_format=aggregate["charsets_per_format"],
         content_length_hist=make_histogram(stats.content_length_counts, bins="natural"),
         entry_counts_hist=make_histogram(aggregate["entry_counts"], bins="entries"),

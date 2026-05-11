@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from itertools import combinations
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from feed_survey.analysis import Stats
 from feed_survey.analysis.feed_helpers import normalize_entry_title
@@ -18,7 +18,7 @@ class DiscoverySummary:
     zero_pages: int
     zero_sites: int
     stacked_page: Dict[str, Any]
-    stacked_site: Dict[str, Any]
+    site_chart: Dict[str, Any]
     pages_with_duplicates: int
     duplicate_prevalence_pct: float
     multi_feed_pages_total: int
@@ -61,8 +61,7 @@ def build_discovery_summary(stats: Stats) -> DiscoverySummary:
     )
 
     stacked_page = build_page_chart_data(per_page_hist)
-    stacked_site = build_stacked_data(stats, site_to_feeds, zero_sites)
-    _remove_zero_bucket(stacked_site)
+    site_chart = build_page_chart_data(per_site_hist)
 
     return DiscoverySummary(
         page_to_feeds=page_to_feeds,
@@ -73,7 +72,7 @@ def build_discovery_summary(stats: Stats) -> DiscoverySummary:
         zero_pages=zero_pages,
         zero_sites=zero_sites,
         stacked_page=stacked_page,
-        stacked_site=stacked_site,
+        site_chart=site_chart,
         pages_with_duplicates=pages_with_duplicates,
         duplicate_prevalence_pct=duplicate_prevalence_pct,
         multi_feed_pages_total=multi_feed_pages_total,
@@ -171,78 +170,3 @@ def _duplicate_feed_groups(
                 link_to_feeds[key] = set()
             link_to_feeds[key].add(url)
     return [feeds for feeds in link_to_feeds.values() if len(feeds) > 1]
-
-
-def build_stacked_data(
-    stats: Stats, mapping: Dict[str, Set[str]], zero_count: int
-) -> Dict[str, Any]:
-    labels = [str(i) for i in range(11)] + [
-        "11-15",
-        "16-20",
-        "21-50",
-        "51-100",
-        "100+",
-    ]
-    thresholds: List[Union[int, float]] = list(range(11)) + [
-        16,
-        21,
-        51,
-        101,
-        float("inf"),
-    ]
-    stacked: Dict[str, Any] = {
-        "labels": labels,
-        "has_entries": [0] * len(labels),
-        "valid_only": [0] * len(labels),
-        "success_only": [0] * len(labels),
-        "other": [0] * len(labels),
-    }
-    stacked["other"][0] = zero_count
-
-    for feeds in mapping.values():
-        count = len(feeds)
-        bin_idx = -1
-        for idx, threshold in enumerate(thresholds):
-            if idx < 11:
-                if count == threshold:
-                    bin_idx = idx
-                    break
-            elif count < threshold:
-                bin_idx = idx
-                break
-        if bin_idx == -1:
-            continue
-
-        has_entries = False
-        valid_only = False
-        success_only = False
-        for feed_url in feeds:
-            res = stats.feed_results.get(feed_url, {})
-            if res.get("entries_count", 0) > 0:
-                has_entries = True
-                break
-            if res.get("valid"):
-                valid_only = True
-            elif res.get("status", 0) < 400 and res.get("status", 0) > 0:
-                success_only = True
-
-        if has_entries:
-            stacked["has_entries"][bin_idx] += 1
-        elif valid_only:
-            stacked["valid_only"][bin_idx] += 1
-        elif success_only:
-            stacked["success_only"][bin_idx] += 1
-        else:
-            stacked["other"][bin_idx] += 1
-    return stacked
-
-
-def _remove_zero_bucket(stacked: Dict[str, Any]) -> None:
-    if "0" not in stacked["labels"]:
-        return
-    idx = stacked["labels"].index("0")
-    stacked["labels"].pop(idx)
-    stacked["has_entries"].pop(idx)
-    stacked["valid_only"].pop(idx)
-    stacked["success_only"].pop(idx)
-    stacked["other"].pop(idx)

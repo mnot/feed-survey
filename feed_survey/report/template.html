@@ -400,7 +400,7 @@
             </div>
             <div class="chart-card">
                 <div class="chart-title">Autodiscovery Links per Site</div>
-                <p class="chart-sub">Unique feed URLs per registrable site. Based on a sample of up to 100 source sites per feed URL. Sites with zero links omitted: {{ zero_sites_f }}.</p>
+                <p class="chart-sub">Unique feed URLs per registrable site. Based on sampled source sites retained for each discovered feed URL. Sites with zero links omitted: {{ zero_sites_f }}.</p>
                 <canvas id="feedsPerSiteHistogram"></canvas>
             </div>
         </div>
@@ -970,16 +970,6 @@
         }
     };
 
-    // Stacked bar options
-    const stackedOpts = {
-        ...baseOpts(),
-        plugins: { legend: { display: true, position: 'bottom' } },
-        scales: {
-            x: { ...baseScales().x, stacked: true },
-            y: { ...baseScales().y, stacked: true }
-        }
-    };
-
     // ── Discovery charts ──────────────────────────────────────────────────────
     const stackedPageData = {{ stacked_page_json|safe }};
     new Chart(document.getElementById('feedsPerPageHistogram'), {
@@ -993,19 +983,16 @@
         options: baseOpts()
     });
 
-    const stackedSiteData = {{ stacked_site_json|safe }};
+    const siteLinksData = {{ site_links_json|safe }};
     new Chart(document.getElementById('feedsPerSiteHistogram'), {
         type: 'bar',
         data: {
-            labels: stackedSiteData.labels,
+            labels: siteLinksData.labels,
             datasets: [
-                { label: 'Has Entries',   data: stackedSiteData.has_entries,  backgroundColor: '#10b981' },
-                { label: 'Valid Only',    data: stackedSiteData.valid_only,   backgroundColor: '#3b82f6' },
-                { label: 'Success Only',  data: stackedSiteData.success_only, backgroundColor: '#6366f1' },
-                { label: 'Other / Failed',data: stackedSiteData.other,        backgroundColor: '#e2e8f0' }
+                { label: 'Sites', data: siteLinksData.counts, backgroundColor: 'rgba(16,185,129,0.55)', borderColor: '#10b981', borderWidth: 1 }
             ]
         },
-        options: stackedOpts
+        options: baseOpts()
     });
 
     // ── Autodiscovery quality comparison ─────────────────────────────────────

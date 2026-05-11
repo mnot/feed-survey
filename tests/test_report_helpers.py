@@ -618,7 +618,7 @@ def test_report_language_counts() -> None:
         zero_pages=0,
         zero_sites=0,
         stacked_page={},
-        stacked_site={},
+        site_chart={},
         pages_with_duplicates=0,
         duplicate_prevalence_pct=0.0,
         multi_feed_pages_total=0,
