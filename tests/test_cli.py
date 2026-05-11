@@ -1,12 +1,13 @@
 from pathlib import Path
+from threading import Barrier, Lock
 from types import SimpleNamespace
 
 from _pytest.capture import CaptureFixture
 from _pytest.monkeypatch import MonkeyPatch
-from requests import PreparedRequest
+from requests import PreparedRequest, Response
 from requests.exceptions import ConnectionError as RequestsConnectionError
 
-from feed_survey import probe
+from feed_survey import opml, probe
 from feed_survey.emr import finalize, split_paths
 from feed_survey.report import mock
 
@@ -193,3 +194,205 @@ def test_probe_fetch_failure(monkeypatch: MonkeyPatch) -> None:
     assert "- Attempted URL: `https://www.example.com/feed.xml`" in output
     assert "- Error type: `ConnectionError`" in output
     assert "Traceback" not in output
+
+
+def test_opml_parse_dedupes() -> None:
+    body = b"""
+    <opml version="2.0"><body>
+      <outline text="Example" htmlUrl="https://example.com/" xmlUrl="https://example.com/feed.xml"/>
+      <outline text="Duplicate" url="https://example.com/blog" xmlUrl="https://example.com/feed.xml"/>
+      <outline text="No feed" htmlUrl="https://example.net/"/>
+    </body></opml>
+    """
+
+    entries = opml.parse_opml_entries(body)
+
+    assert entries == [
+        opml.OpmlEntry(
+            feed_url="https://example.com/feed.xml",
+            html_url="https://example.com/",
+            title="Example",
+        )
+    ]
+
+
+def test_opml_checks_html(tmp_path: Path) -> None:
+    source = tmp_path / "feeds.opml"
+    source.write_text(
+        """
+        <opml version="2.0"><body>
+          <outline
+            text="Example"
+            htmlUrl="https://example.com/"
+            xmlUrl="https://example.com/feed.xml"
+          />
+        </body></opml>
+        """,
+        encoding="utf-8",
+    )
+    html = b"""
+    <html><head>
+      <link rel="alternate" type="application/rss+xml" href="/feed.xml">
+    </head><body></body></html>
+    """
+    feed = b"""
+    <rss version="2.0"><channel>
+      <title>Example Feed</title>
+      <link>https://example.com/</link>
+      <item><title>Entry</title><link>https://example.com/entry</link></item>
+    </channel></rss>
+    """
+
+    def fake_fetch(url: str, _timeout: float) -> Response:
+        if url == "https://example.com/":
+            return _response(url, html, "text/html")
+        return _response(url, feed, "application/rss+xml")
+
+    stats = opml.analyze_opml(str(source), fetcher=fake_fetch)
+
+    assert stats.responses_processed == 2
+    assert stats.discovery_pages_count == 1
+    assert stats.autodiscovery_links == {
+        "https://example.com/feed.xml": ["example.com"]
+    }
+    assert stats.feed_results["https://example.com/feed.xml"]["valid"] is True
+    assert stats.feed_results["https://example.com/feed.xml"]["format"] == "rss2.0"
+
+
+def test_opml_cli_generates_report(
+    monkeypatch: MonkeyPatch, tmp_path: Path, capsys: CaptureFixture[str]
+) -> None:
+    source = tmp_path / "feeds.opml"
+    source.write_text(
+        '<opml version="2.0"><body><outline xmlUrl="https://example.com/feed.xml"/></body></opml>',
+        encoding="utf-8",
+    )
+    calls: list[tuple[object, str, str]] = []
+
+    def fake_analyze(source_arg: str, **_kwargs: object) -> object:
+        assert source_arg == str(source)
+        return SimpleNamespace()
+
+    def fake_generate_report(stats: object, crawl_id: str, output_path: str) -> None:
+        calls.append((stats, crawl_id, output_path))
+
+    monkeypatch.setattr(opml, "analyze_opml", fake_analyze)
+    monkeypatch.setattr(opml, "generate_report", fake_generate_report)
+    monkeypatch.setattr(
+        "sys.argv", ["opml", str(source), "--output", "feeds-report.html"]
+    )
+
+    opml.main()
+
+    assert calls == [(calls[0][0], "OPML: feeds.opml", "feeds-report.html")]
+    assert len(calls) == 1
+    assert "Reports generated: feeds-report.html and feeds-report.md" in (
+        capsys.readouterr().out
+    )
+
+
+def test_opml_cli_interrupt(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    source = tmp_path / "feeds.opml"
+    source.write_text("<opml />", encoding="utf-8")
+
+    def fake_analyze(*_args: object, **_kwargs: object) -> object:
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(opml, "analyze_opml", fake_analyze)
+    monkeypatch.setattr("sys.argv", ["opml", str(source)])
+
+    try:
+        opml.main()
+    except SystemExit as exc:
+        assert exc.code == 130
+    else:
+        raise AssertionError("Expected SystemExit")
+
+
+def test_opml_status_quiet(tmp_path: Path, capsys: CaptureFixture[str]) -> None:
+    source = tmp_path / "feeds.opml"
+    source.write_text(
+        '<opml version="2.0"><body><outline xmlUrl="https://example.com/feed.xml"/></body></opml>',
+        encoding="utf-8",
+    )
+    feed = b"<rss version='2.0'><channel><title>Example</title></channel></rss>"
+
+    def fake_fetch(url: str, _timeout: float) -> Response:
+        return _response(url, feed, "application/rss+xml")
+
+    opml.analyze_opml(str(source), check_html=False, fetcher=fake_fetch)
+    assert "Fetching 1 feed URLs with concurrency 1" in capsys.readouterr().err
+
+    opml.analyze_opml(str(source), check_html=False, quiet=True, fetcher=fake_fetch)
+    assert capsys.readouterr().err == ""
+
+
+def test_opml_fetches_in_parallel(tmp_path: Path) -> None:
+    source = tmp_path / "feeds.opml"
+    source.write_text(
+        """
+        <opml version="2.0"><body>
+          <outline xmlUrl="https://example.com/one.xml"/>
+          <outline xmlUrl="https://example.com/two.xml"/>
+        </body></opml>
+        """,
+        encoding="utf-8",
+    )
+    feed = b"<rss version='2.0'><channel><title>Example</title></channel></rss>"
+    active = 0
+    peak = 0
+    barrier = Barrier(2)
+    lock = Lock()
+
+    def fake_fetch(url: str, _timeout: float) -> Response:
+        nonlocal active, peak
+        with lock:
+            active += 1
+            peak = max(peak, active)
+        barrier.wait(timeout=5)
+        with lock:
+            active -= 1
+        return _response(url, feed, "application/rss+xml")
+
+    opml.analyze_opml(
+        str(source),
+        check_html=False,
+        concurrency=2,
+        quiet=True,
+        fetcher=fake_fetch,
+    )
+
+    assert peak == 2
+
+
+def test_opml_oversized_feed(tmp_path: Path) -> None:
+    source = tmp_path / "feeds.opml"
+    source.write_text(
+        '<opml version="2.0"><body><outline xmlUrl="https://example.com/feed.xml"/></body></opml>',
+        encoding="utf-8",
+    )
+
+    def fake_fetch(_url: str, _timeout: float) -> Response:
+        raise opml.ResponseTooLarge("Response exceeded 10 bytes")
+
+    stats = opml.analyze_opml(
+        str(source),
+        check_html=False,
+        quiet=True,
+        fetcher=fake_fetch,
+    )
+
+    result = stats.feed_results["https://example.com/feed.xml"]
+    assert result["valid"] is False
+    assert result["error_type"] == "ResponseTooLarge"
+
+
+def _response(
+    url: str, content: bytes, content_type: str, status: int = 200
+) -> Response:
+    response = Response()
+    response.url = url
+    response.status_code = status
+    response._content = content  # pylint: disable=protected-access
+    response.headers["Content-Type"] = content_type
+    return response

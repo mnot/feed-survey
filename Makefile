@@ -16,6 +16,7 @@ help:
 	@echo "  make check         Run test, typecheck, lint, and mock report render"
 	@echo "  make mock-report   Render synthetic HTML/Markdown reports at MOCK_REPORT"
 	@echo "  make local-report  Run a one-WARC local analysis report"
+	@echo "  make opml-report OPML=feeds.opml  Render an OPML feed-list report"
 	@echo "  make test-emr      Run an EMR smoke test"
 	@echo "  make emr           Run the full EMR analysis"
 	@echo "  make emr-timing EMR_LOG_CLUSTER_ID=j-...  Summarize preserved EMR timing logs"
@@ -35,7 +36,7 @@ clean: clean_py clean-local
 .PHONY: clean-local
 clean-local:
 	rm -rf .pytest_cache .coverage htmlcov
-	rm -f mock_report.html mock_report.md test_report.html test_report.md
+	rm -f mock_report.html mock_report.md opml_report.html opml_report.md test_report.html test_report.md
 
 .PHONY: lint
 lint: lint_py
@@ -55,6 +56,13 @@ check: test typecheck lint mock-report
 .PHONY: local-report
 local-report: venv
 	PYTHONPATH=$(VENV) $(VENV)/python -m $(PROJECT).main --limit=1 --topn=$(LOCAL_TOP_N) --crawl-id=$(LOCAL_CRAWL_ID) --output=test_report.html
+
+OPML_REPORT ?= opml_report.html
+
+.PHONY: opml-report
+opml-report: venv
+	@test -n "$(OPML)" || (echo "Usage: make opml-report OPML=feeds.opml [OPML_REPORT=opml_report.html]" && exit 1)
+	$(VENV)/python -m $(PROJECT).opml "$(OPML)" --output "$(OPML_REPORT)"
 
 # Use := to ensure RUN_ID is fixed for the entire make execution
 RUN_ID := $(shell date +%Y%m%d-%H%M%S)

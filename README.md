@@ -17,7 +17,7 @@ by analysis tools without scraping the visual report.
 - **Automatic Result Sync**: The build system automatically syncs results from S3 back to your local machine upon completion.
 - **Tranco Filtering**: Built-in support for filtering analysis to the Tranco Top-1M, using Tranco's subdomain-inclusive list by default and Public Suffix List site normalization.
 - **Platform Fingerprints**: Conservative CMS/framework hints from HTML pages, feed headers, and feed generator elements, with report-time quality comparisons.
-- **OPML Feed-List Reports**: Planned local reporting for a user's own OPML subscription list, using the same feed parsing, quality, autodiscovery, and HTML/Markdown report machinery as crawl reports.
+- **OPML Feed-List Reports**: Local reporting for a user's own OPML subscription list, using the same feed parsing, quality, autodiscovery, and HTML/Markdown report machinery as crawl reports.
 
 ## Quick Start (EMR)
 
@@ -74,24 +74,36 @@ autodiscovery links, and checks at most 10 unique feed URLs by default. Use
 `--max-feeds N` to change that cap.
 
 ### Analyze an OPML Feed List
-For personal or ecosystem-specific audits, the planned `feed-survey-opml` command
-will turn an OPML subscription file into a full HTML and Markdown report without
-using Common Crawl or EMR:
+For personal or ecosystem-specific audits, `feed-survey-opml` turns an OPML
+subscription file into a full HTML and Markdown report without using Common
+Crawl or EMR:
 
 ```bash
 feed-survey-opml subscriptions.opml --output feeds-report.html
 ```
 
+The same command is available through make:
+
+```bash
+make opml-report OPML=subscriptions.opml OPML_REPORT=feeds-report.html
+```
+
 The OPML path is intended for answering questions like "how healthy are the
 feeds I already subscribe to?" or "what formats, languages, extensions, and
-quality signals show up in this curated list?" It should reuse the same parser,
-quality scoring, extension analysis, platform fingerprinting, and report
-renderer as the crawl pipeline.
+quality signals show up in this curated list?" It reuses the same parser,
+quality scoring, extension analysis, platform fingerprinting, and report renderer
+as the crawl pipeline.
 
 OPML `xmlUrl` values are the primary feed inputs. When an outline also has
-`url` or `htmlUrl`, the command should fetch that page as HTML and report
-RSS/Atom autodiscovery properties too, so the report can distinguish feeds that
-are explicitly listed in OPML from feeds that the linked site advertises.
+`url` or `htmlUrl`, the command fetches that page as HTML and reports RSS/Atom
+autodiscovery properties too, so the report can distinguish feeds that are
+explicitly listed in OPML from feeds that the linked site advertises. Pass
+`--skip-html` if you only want to fetch the `xmlUrl` feeds. Progress is written
+to standard error while feeds and pages are fetched; pass `-q` / `--quiet` to
+suppress it. Fetches run in parallel by default; use `--concurrency N` to tune
+the maximum number of simultaneous feed/page requests. The default is 32. Each
+feed/page fetch is capped at 10 MiB by default; use `--max-bytes N` to change the
+cap, or `--max-bytes 0` to disable it.
 
 ### 3. Run a Smoke Test (EMR)
 The `test-emr` target runs a single WARC file through a small EMR cluster to verify your AWS environment is ready.
@@ -158,7 +170,7 @@ Run `make help` for the local development, report, EMR, and wheel targets.
 - `feed_survey/analysis/`: Core logic for parsing WARC records and extracting feed metadata.
 - `feed_survey/report/`: Report-time aggregation, quality scoring, and HTML/Markdown rendering.
 - `feed_survey/probe.py`: Single-URL Markdown diagnostics for feeds and HTML autodiscovery.
-- `feed_survey/opml.py`: Planned OPML input path for local feed-list reports.
+- `feed_survey/opml.py`: OPML input path for local feed-list reports.
 - `feed_survey/commoncrawl.py`: Common Crawl metadata and WARC path discovery.
 - `feed_survey/tranco.py`: Tranco list loading for top-site scoping.
 - `feed_survey/url.py`: URL normalization, host extraction, and registrable-site helpers.

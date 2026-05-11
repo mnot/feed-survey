@@ -253,7 +253,7 @@
     <header>
         <div class="logo-group">
             <h1>Web Feed Survey</h1>
-            <p>Common Crawl Archive: <strong>{{ crawl_id }}</strong></p>
+            <p>{{ stats.source_label }}: <strong>{{ crawl_id }}</strong></p>
         </div>
         <div class="run-context">
             {% if stats.run_limit %}
@@ -270,7 +270,13 @@
                 <span class="pill-value">{{ stats.max_crawl_time.strftime('%Y-%m-%d') }}</span>
             </div>
             {% endif %}
-            {% if stats.top_n %}
+            {% if stats.is_opml %}
+            <div class="run-pill">
+                <span class="pill-icon">📄</span>
+                <span class="pill-value">OPML report</span>
+                <span class="pill-label">local feed list</span>
+            </div>
+            {% elif stats.top_n %}
             <div class="run-pill pill-warning">
                 <span class="pill-icon">⚠️</span>
                 <span class="pill-label">Filtered to top</span>
@@ -289,15 +295,23 @@
 
     <!-- ═══════════════════════════════════════════════════════════ 1. THE CRAWL -->
     <section id="crawl-section">
-        <h2 class="main-section-title">1. The Crawl</h2>
+        <h2 class="main-section-title">1. {% if stats.is_opml %}The Feed List{% else %}The Crawl{% endif %}</h2>
         <div class="note-box" style="margin-bottom: 1.5rem;">
+            {% if stats.is_opml %}
+            Percentages describe this OPML feed-list report, not the entire Web. Metrics reflect the feeds listed in the OPML file and any HTML autodiscovery checks from outline <code>url</code> or <code>htmlUrl</code> values.
+            {% else %}
             Percentages describe this Common Crawl result set, not the entire Web. Metrics reflect what Common Crawl fetched, what sites allowed it to fetch, and the configured Tranco list/sample limits for this run. Site counts and TOP_N scoping use the Tranco {{ stats.tranco_list_label }} list, normalized to registrable sites with the Public Suffix List, including private suffixes for hosted sub-sites.
+            {% endif %}
         </div>
         <div class="stats-grid">
             <div class="card">
                 <div class="card-title">Responses Processed</div>
                 <div class="card-value">{{ total_pages_f }}</div>
+                {% if stats.is_opml %}
+                <div class="card-sub">Fetched OPML feed URLs and, when available, associated HTML pages checked for autodiscovery.</div>
+                {% else %}
                 <div class="card-sub">All responses after Tranco filtering; {{ stats.pages_seen|comma }} had HTML, feed, XML, or sniffable content types and were analyzed further.</div>
+                {% endif %}
             </div>
             <div class="card">
                 <div class="card-title">HTML Pages Processed</div>
@@ -307,12 +321,20 @@
             <div class="card">
                 <div class="card-title">Unique Sites</div>
                 <div class="card-value">{{ total_sites_f }}</div>
+                {% if stats.is_opml %}
+                <div class="card-sub">Distinct registrable sites among fetched OPML feed and HTML URLs.</div>
+                {% else %}
                 <div class="card-sub">Distinct registrable sites among processed responses (HyperLogLog estimate).</div>
+                {% endif %}
             </div>
             <div class="card">
                 <div class="card-title">Feed URLs Checked</div>
                 <div class="card-value">{{ stats.feed_results_count|comma }}</div>
+                {% if stats.is_opml %}
+                <div class="card-sub">Feed URLs listed in OPML <code>xmlUrl</code> attributes and fetched for parsing.</div>
+                {% else %}
                 <div class="card-sub">{{ stats.feeds_sniffed|comma }} generic XML/text/plain/octet-stream responses sniffed as feeds; the rest had exact RSS/Atom media types.</div>
+                {% endif %}
             </div>
         </div>
 

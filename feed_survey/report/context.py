@@ -115,15 +115,29 @@ def render_report_markdown(context: ReportContext) -> str:
     ]
     if stats["run_limit"]:
         lines.extend([f"**Limited test run:** LIMIT={stats['run_limit']}", ""])
+    if stats["is_opml"]:
+        lines.extend(
+            [
+                "Percentages describe this OPML feed-list report, not the entire Web. "
+                "The report reflects the feeds listed in the OPML file, plus any "
+                "HTML autodiscovery checks from outline `url` or `htmlUrl` values.",
+                "",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                "Percentages describe this Common Crawl result set, not the entire Web. "
+                "Common Crawl reflects what its crawler fetched, what sites allowed, and "
+                "the response-type prefilter and Tranco list/sample limits for this run. "
+                "Site counts and TOP_N scoping use the Tranco "
+                f"{stats['tranco_list_label']} list, normalized to registrable sites with the "
+                "Public Suffix List, including private suffixes for hosted sub-sites.",
+                "",
+            ]
+        )
     lines.extend(
         [
-            "Percentages describe this Common Crawl result set, not the entire Web. "
-            "Common Crawl reflects what its crawler fetched, what sites allowed, and "
-            "the response-type prefilter and Tranco list/sample limits for this run. "
-            "Site counts and TOP_N scoping use the Tranco "
-            f"{stats['tranco_list_label']} list, normalized to registrable sites with the "
-            "Public Suffix List, including private suffixes for hosted sub-sites.",
-            "",
             "## Method Notes",
             "",
             _markdown_table(
@@ -146,7 +160,7 @@ def render_report_markdown(context: ReportContext) -> str:
                     ],
                     [
                         "Freshness age",
-                        "Computed relative to the WARC response time for the crawl "
+                        "Computed relative to the response time for the crawl or fetch "
                         "record, falling back to report generation time only if that "
                         "timestamp is unavailable.",
                     ],
@@ -639,6 +653,12 @@ def build_report_stats(context: ReportContext) -> Dict[str, Any]:
         if str(feed_format).lower().startswith("atom")
     )
     return {
+        "is_opml": context.crawl_id.startswith("OPML:"),
+        "source_label": (
+            "OPML feed list"
+            if context.crawl_id.startswith("OPML:")
+            else "Common Crawl Archive"
+        ),
         "pages_seen": stats.pages_seen,
         "responses_processed": stats.responses_processed or stats.pages_seen,
         "html_responses": context.content_types_collapsed.get("HTML", 0),
