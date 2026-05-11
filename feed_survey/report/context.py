@@ -442,15 +442,23 @@ def render_report_markdown(context: ReportContext) -> str:
             "Missing fingerprints mean not identified. Parenthetical percentages "
             "in the all-feeds column use successfully parsed feeds as the "
             "denominator. The quality column shows prevalence among "
-            f"{format_number(stats['quality_split_count'])} high-quality feeds.",
+            f"{format_number(stats['quality_split_count'])} high-quality feeds. "
+            "The final column shows the share of feeds in that fingerprint row "
+            "that clear the quality threshold.",
             "",
             _markdown_table(
-                ["Fingerprint", "All parsed feeds", quality_prevalence_label],
+                [
+                    "Fingerprint",
+                    "All parsed feeds",
+                    quality_prevalence_label,
+                    "Quality within fingerprint",
+                ],
                 [
                     [
                         row["fingerprint"],
                         f"{format_number(row['all_count'])} ({row['all_pct']:.1f}%)",
                         _quality_count_pct(row),
+                        f"{row['within_label_quality_pct']:.1f}%",
                     ]
                     for row in context.fingerprint_prevalence
                 ],

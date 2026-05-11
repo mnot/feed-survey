@@ -560,9 +560,10 @@
                 <div class="card-sub" style="margin-top:-0.5rem;margin-bottom:0.6rem;">mean score, 0-1, across successfully parsed feeds</div>
                 <div class="card-sub">
                     <div style="margin-bottom:0.5rem;">Parenthetical percentages use successfully parsed feeds as the denominator.</div>
+                    <div class="row"><span>Quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}</span> <strong>{{ stats.quality_split_count|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.quality_split_count / stats.parsed_feeds * 100 if stats.parsed_feeds else 0) }}%)</span></strong></div>
                     <div class="row"><span>Freshness signal within cutoff</span> <strong>{{ stats.active_quality.n|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.active_quality.pct) }}%)</span></strong></div>
                     <div class="row"><span>Mean among those feeds</span> <strong>{{ "%.3f"|format(stats.active_quality.mean) }}</strong></div>
-                    <div class="row"><span>Active with entries</span> <strong>{{ stats.active_quality.with_entries|comma }}</strong></div>
+                    <div class="row"><span>Active with entries</span> <strong>{{ stats.active_quality.with_entries|comma }} <span style="font-weight:400;color:var(--text-muted)">({{ "%.1f"|format(stats.active_quality.with_entries / stats.parsed_feeds * 100 if stats.parsed_feeds else 0) }}%)</span></strong></div>
                     <div class="row divider"><span>Undated or stale</span> <strong>{{ stats.inactive_quality.n|comma }}</strong></div>
                 </div>
             </div>
@@ -829,16 +830,17 @@
             </div>
             <div class="chart-card">
                 <div class="chart-title">Platform Fingerprints</div>
-                <div class="chart-sub">Known feed generators or platform headers observed on parsed feeds. This is intentionally conservative; absent fingerprints mean “not identified,” not “custom-built.” Parenthetical percentages in the first count column use all successfully parsed feeds as the denominator. High-quality feeds have operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}.</div>
+                <div class="chart-sub">Known feed generators or platform headers observed on parsed feeds. This is intentionally conservative; absent fingerprints mean “not identified,” not “custom-built.” Parenthetical percentages in the first count column use all successfully parsed feeds as the denominator. High-quality feeds have operational quality &gt; {{ "%.1f"|format(stats.quality_split_threshold) }}; the final column shows the share of feeds in that fingerprint row that clear the threshold.</div>
                 <div class="table-container">
                     <table class="data-table">
-                        <thead><tr><th>Fingerprint</th><th>All parsed feeds</th><th>Among {{ stats.quality_split_count|comma }} high-quality feeds</th></tr></thead>
+                        <thead><tr><th>Fingerprint</th><th>All parsed feeds</th><th>Among {{ stats.quality_split_count|comma }} high-quality feeds</th><th>Quality within fingerprint</th></tr></thead>
                         <tbody>
                             {% for row in stats.fingerprint_prevalence %}
                             <tr>
                                 <td>{{ row.fingerprint }}</td>
                                 <td>{{ row.all_count|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.all_pct) }}%)</span></td>
                                 <td>{{ row.quality_count|comma }} <span style="color:var(--text-muted)">({{ "%.1f"|format(row.quality_pct) }}%)</span></td>
+                                <td>{{ "%.1f"|format(row.within_label_quality_pct) }}%</td>
                             </tr>
                             {% endfor %}
                         </tbody>

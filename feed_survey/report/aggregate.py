@@ -405,6 +405,7 @@ def _quality_prevalence_rows(
             "quality_count": quality_counts.get(label, 0),
             "quality_denominator": quality_feed_count,
             "quality_pct": _pct(quality_counts.get(label, 0), quality_feed_count),
+            "within_label_quality_pct": _pct(quality_counts.get(label, 0), count),
         }
         for label, count in all_counts.items()
     ]
