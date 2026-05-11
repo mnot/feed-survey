@@ -426,7 +426,7 @@
             </div>
             <div class="chart-card">
                 <div class="chart-title">Autodiscovery Links per Site</div>
-                <p class="chart-sub">Unique feed URLs per registrable site. Based on a sample of up to 100 source sites per feed URL. Sites with zero links omitted: 125,965.</p>
+                <p class="chart-sub">Unique feed URLs per registrable site. Based on sampled source sites retained for each discovered feed URL. Sites with zero links omitted: 125,965.</p>
                 <canvas id="feedsPerSiteHistogram"></canvas>
             </div>
         </div>
@@ -1461,6 +1461,18 @@
                                 <td>
                                     <code>
                                         
+                                        <a href="https://github.com/dewitt/opensearch/blob/master/opensearch-1-1-draft-6.md">opensearch</a>:totalResults
+                                        
+                                    </code>
+                                </td>
+                                <td>17,585 <span style="color:var(--text-muted)">(5.8%)</span></td>
+                                <td>613 <span style="color:var(--text-muted)">(1.1%)</span></td>
+                            </tr>
+                            
+                            <tr>
+                                <td>
+                                    <code>
+                                        
                                         <a href="https://github.com/dewitt/opensearch/blob/master/opensearch-1-1-draft-6.md">opensearch</a>:startIndex
                                         
                                     </code>
@@ -1474,18 +1486,6 @@
                                     <code>
                                         
                                         <a href="https://github.com/dewitt/opensearch/blob/master/opensearch-1-1-draft-6.md">opensearch</a>:itemsPerPage
-                                        
-                                    </code>
-                                </td>
-                                <td>17,585 <span style="color:var(--text-muted)">(5.8%)</span></td>
-                                <td>613 <span style="color:var(--text-muted)">(1.1%)</span></td>
-                            </tr>
-                            
-                            <tr>
-                                <td>
-                                    <code>
-                                        
-                                        <a href="https://github.com/dewitt/opensearch/blob/master/opensearch-1-1-draft-6.md">opensearch</a>:totalResults
                                         
                                     </code>
                                 </td>
@@ -1833,16 +1833,6 @@
         }
     };
 
-    // Stacked bar options
-    const stackedOpts = {
-        ...baseOpts(),
-        plugins: { legend: { display: true, position: 'bottom' } },
-        scales: {
-            x: { ...baseScales().x, stacked: true },
-            y: { ...baseScales().y, stacked: true }
-        }
-    };
-
     // ── Discovery charts ──────────────────────────────────────────────────────
     const stackedPageData = {"labels": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11-15", "16-20", "21-50", "51-100"], "counts": [42381076, 20371513, 12138687, 1355844, 417865, 267196, 209883, 211030, 116122, 36939, 4177130, 123551, 120940, 17539]};
     new Chart(document.getElementById('feedsPerPageHistogram'), {
@@ -1856,19 +1846,16 @@
         options: baseOpts()
     });
 
-    const stackedSiteData = {"labels": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11-15", "16-20", "21-50", "51-100", "100+"], "has_entries": [100, 413, 103, 110, 53, 51, 39, 44, 38, 27, 148, 86, 408, 376, 2349], "valid_only": [9, 13, 6, 7, 5, 8, 2, 5, 3, 4, 13, 10, 47, 52, 201], "success_only": [2, 2, 2, 1, 0, 0, 0, 2, 3, 0, 157, 5, 12, 12, 41], "other": [8757, 8604, 3628, 3047, 1868, 1779, 1344, 1270, 1023, 1075, 3991, 2608, 7945, 5151, 13574]};
+    const siteLinksData = {"labels": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11-15", "16-20", "21-50", "51-100", "100+"], "counts": [8868, 9032, 3739, 3165, 1926, 1838, 1385, 1321, 1067, 1106, 4309, 2709, 8412, 5591, 16165]};
     new Chart(document.getElementById('feedsPerSiteHistogram'), {
         type: 'bar',
         data: {
-            labels: stackedSiteData.labels,
+            labels: siteLinksData.labels,
             datasets: [
-                { label: 'Has Entries',   data: stackedSiteData.has_entries,  backgroundColor: '#10b981' },
-                { label: 'Valid Only',    data: stackedSiteData.valid_only,   backgroundColor: '#3b82f6' },
-                { label: 'Success Only',  data: stackedSiteData.success_only, backgroundColor: '#6366f1' },
-                { label: 'Other / Failed',data: stackedSiteData.other,        backgroundColor: '#e2e8f0' }
+                { label: 'Sites', data: siteLinksData.counts, backgroundColor: 'rgba(16,185,129,0.55)', borderColor: '#10b981', borderWidth: 1 }
             ]
         },
-        options: stackedOpts
+        options: baseOpts()
     });
 
     // ── Autodiscovery quality comparison ─────────────────────────────────────
