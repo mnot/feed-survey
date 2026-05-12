@@ -206,7 +206,7 @@
             background: #fffbeb; border-color: #fcd34d; color: #92400e;
         }
 
-        /* Inline bar for collapsed content-type */
+        /* Inline bar for collapsed Content-Type buckets */
         .ct-bar-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
         .ct-bar-label { width: 9rem; font-size: 0.85rem; font-weight: 600; flex-shrink: 0; }
         .ct-bar-track {
@@ -279,35 +279,44 @@
     <section id="crawl-section">
         <h2 class="main-section-title">1. The Crawl</h2>
         <div class="note-box" style="margin-bottom: 1.5rem;">
+            
             Percentages describe this Common Crawl result set, not the entire Web. Metrics reflect what Common Crawl fetched, what sites allowed it to fetch, and the configured Tranco list/sample limits for this run. Site counts and TOP_N scoping use the Tranco subdomain-inclusive list, normalized to registrable sites with the Public Suffix List, including private suffixes for hosted sub-sites.
+            
         </div>
         <div class="stats-grid">
             <div class="card">
                 <div class="card-title">Responses Processed</div>
-                <div class="card-value">425,471,592</div>
-                <div class="card-sub">All responses after Tranco filtering; 418,132,532 had HTML, feed, XML, or sniffable content types and were analyzed further.</div>
+                <div class="card-value">425,459,512</div>
+                
+                <div class="card-sub">All responses after Tranco filtering; 418,120,515 had HTML, feed, XML, or sniffable Content-Type values and were analyzed further.</div>
+                
             </div>
             <div class="card">
                 <div class="card-title">HTML Pages Processed</div>
-                <div class="card-value">416,048,595</div>
+                <div class="card-value">416,036,676</div>
                 <div class="card-sub">HTML/XHTML responses; used as the denominator for autodiscovery page rates.</div>
             </div>
             <div class="card">
                 <div class="card-title">Unique Sites</div>
                 <div class="card-value">196,598</div>
+                
                 <div class="card-sub">Distinct registrable sites among processed responses (HyperLogLog estimate).</div>
+                
             </div>
             <div class="card">
                 <div class="card-title">Feed URLs Checked</div>
-                <div class="card-value">311,382</div>
-                <div class="card-sub">0 generic XML/text/plain/octet-stream responses sniffed as feeds; the rest had exact RSS/Atom media types.</div>
+                <div class="card-value">543,577</div>
+                
+                <div class="card-sub">232,910 generic XML/text/plain/octet-stream responses sniffed as feeds; the rest had exact RSS/Atom media types.</div>
+                
             </div>
         </div>
 
         <!-- Content-Type distribution (collapsed) -->
         <div class="chart-card" style="margin-bottom: 2rem;">
             <div class="chart-title">Analyzed Response Content-Type Distribution</div>
-            <div class="chart-sub">HTTP <code>Content-Type</code> header values among responses that passed the analysis prefilter. “Other XML” is XML content without an exact RSS/Atom media type, such as <code>application/xml</code> or <code>text/xml</code>. “Other Non-XML” is sniffable non-XML content such as <code>text/plain</code> or <code>application/octet-stream</code>. Either is only counted as a feed URL if sniffing finds RSS/Atom. Parenthetical percentages use all analyzed responses as the denominator.</div>
+            <div class="chart-sub">HTTP <code>Content-Type</code> header values among responses that passed the analysis prefilter. “Other XML” is XML content without an exact RSS/Atom media type, such as <code>application/xml</code> or <code>text/xml</code>. “Other Non-XML” is sniffable non-XML content such as <code>text/plain</code> or <code>application/octet-stream</code>. Either is only counted as a feed URL if sniffing finds RSS/Atom. Parenthetical Content-Type percentages use all analyzed responses as the denominator; sniffed outcome percentages use sniffed feeds as the denominator.</div>
+            
             
             
             
@@ -318,7 +327,7 @@
             <div style="display:flex; align-items:center; gap:1.5rem; margin-bottom:1.25rem; padding:0.75rem 1rem; background:#f1f5f9; border-radius:10px;">
                 <div style="width:12px; height:12px; border-radius:50%; background:#94a3b8; flex-shrink:0;"></div>
                 <div style="flex:1; font-size:0.9rem; font-weight:600;">HTML</div>
-                <div style="font-size:0.85rem; color:var(--text-muted);">416,048,595</div>
+                <div style="font-size:0.85rem; color:var(--text-muted);">416,036,676</div>
                 <div style="font-size:0.85rem; color:var(--text-muted); width:5rem; text-align:right;">99.50% of total</div>
             </div>
 
@@ -335,7 +344,7 @@
                 <div class="ct-bar-track">
                     <div class="ct-bar-fill" style="width: 5.4%; background: #6366f1;"></div>
                 </div>
-                <div class="ct-bar-val">113,064 &nbsp;<span style="color:#aaa">(0.0270%)</span></div>
+                <div class="ct-bar-val">113,060 &nbsp;<span style="color:#aaa">(0.0270%)</span></div>
             </div>
             
             
@@ -347,7 +356,7 @@
                 <div class="ct-bar-track">
                     <div class="ct-bar-fill" style="width: 9.5%; background: #10b981;"></div>
                 </div>
-                <div class="ct-bar-val">198,759 &nbsp;<span style="color:#aaa">(0.0475%)</span></div>
+                <div class="ct-bar-val">198,747 &nbsp;<span style="color:#aaa">(0.0475%)</span></div>
             </div>
             
             
@@ -359,7 +368,7 @@
                 <div class="ct-bar-track">
                     <div class="ct-bar-fill" style="width: 46.4%; background: #8b5cf6;"></div>
                 </div>
-                <div class="ct-bar-val">966,177 &nbsp;<span style="color:#aaa">(0.2311%)</span></div>
+                <div class="ct-bar-val">966,142 &nbsp;<span style="color:#aaa">(0.2311%)</span></div>
             </div>
             
             
@@ -371,7 +380,38 @@
                 <div class="ct-bar-track">
                     <div class="ct-bar-fill" style="width: 38.7%; background: #64748b;"></div>
                 </div>
-                <div class="ct-bar-val">805,937 &nbsp;<span style="color:#aaa">(0.1927%)</span></div>
+                <div class="ct-bar-val">805,890 &nbsp;<span style="color:#aaa">(0.1927%)</span></div>
+            </div>
+            
+            
+            
+            <div class="chart-sub" style="margin:1rem 0 0.75rem;">Sniffed feed outcomes (bars scaled relative to sniffed feeds):</div>
+            
+            
+            <div class="ct-bar-row">
+                <div class="ct-bar-label">RSS (sniffed)</div>
+                <div class="ct-bar-track">
+                    <div class="ct-bar-fill" style="width: 92.1%; background: #34d399;"></div>
+                </div>
+                <div class="ct-bar-val">212,171 &nbsp;<span style="color:#aaa">(92.1%)</span></div>
+            </div>
+            
+            
+            <div class="ct-bar-row">
+                <div class="ct-bar-label">Atom (sniffed)</div>
+                <div class="ct-bar-track">
+                    <div class="ct-bar-fill" style="width: 7.9%; background: #818cf8;"></div>
+                </div>
+                <div class="ct-bar-val">18,253 &nbsp;<span style="color:#aaa">(7.9%)</span></div>
+            </div>
+            
+            
+            <div class="ct-bar-row">
+                <div class="ct-bar-label">Other parsed (sniffed)</div>
+                <div class="ct-bar-track">
+                    <div class="ct-bar-fill" style="width: 0.0%; background: #94a3b8;"></div>
+                </div>
+                <div class="ct-bar-val">0 &nbsp;<span style="color:#aaa">(0.0%)</span></div>
             </div>
             
             
@@ -387,31 +427,31 @@
                 <div class="discovery-headline-grid">
                     <div class="discovery-metric">
                         <div class="discovery-metric-label">Pages with feed links</div>
-                        <div class="discovery-metric-value">81,945,315</div>
+                        <div class="discovery-metric-value">81,943,367</div>
                         <div class="discovery-metric-note">
                             19.70% of analyzed HTML responses
                         </div>
                     </div>
                     <div class="discovery-metric">
                         <div class="discovery-metric-label">Sites with feed links</div>
-                        <div class="discovery-metric-value">70,633</div>
+                        <div class="discovery-metric-value">70,636</div>
                         <div class="discovery-metric-note">
                             35.93% of analyzed registrable sites
                         </div>
                     </div>
                 </div>
                 <div class="discovery-note" style="margin-top:0.85rem;">
-                    Site count is an estimated lower bound from sampled source sites per feed URL.
+                    Sites with feed links is the autodiscovery subset: unique registrable sites exposing at least one RSS/Atom link in HTML.
                 </div>
             </div>
 
             <div class="discovery-relations">
                 <div class="discovery-rel-title">Discovery link relations</div>
-                <div class="discovery-row"><span>Pages with feed rel="alternate"</span> <strong>81,942,184</strong></div>
-                <div class="discovery-row"><span>Pages with feed rel="feed"</span> <strong>12,793</strong></div>
-                <div class="discovery-row"><span>Pages using both relations</span> <strong>9,662</strong></div>
-                <div class="discovery-row"><span>Pages with a multi-rel link</span> <strong>9,544</strong></div>
-                <div class="discovery-row"><span>Multi-rel links</span> <strong>16,970</strong></div>
+                <div class="discovery-row"><span>Pages with feed rel="alternate"</span> <strong>81,940,235</strong></div>
+                <div class="discovery-row"><span>Pages with feed rel="feed"</span> <strong>12,796</strong></div>
+                <div class="discovery-row"><span>Pages using both relations</span> <strong>9,664</strong></div>
+                <div class="discovery-row"><span>Pages with a multi-rel link</span> <strong>9,546</strong></div>
+                <div class="discovery-row"><span>Multi-rel links</span> <strong>16,977</strong></div>
                 <div class="discovery-note" style="margin-top:0.75rem;">
                     These counts include only RSS/Atom autodiscovery links: HTML <code>&lt;link&gt;</code> elements whose <code>type</code> is RSS, Atom, or RDF feed XML. Other uses of <code>rel="alternate"</code> are not counted. Pages using both relations includes pages with separate <code>alternate</code> and <code>feed</code> links, plus pages with a single link whose <code>rel</code> contains both. Multi-rel links counts those single link elements.
                 </div>
@@ -421,12 +461,12 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Autodiscovery Links per Page</div>
-                <p class="chart-sub">Unique feed URLs per discovered HTML page (analyzed HTML responses with zero feed links omitted: 334,103,280).</p>
+                <p class="chart-sub">Unique feed URLs per discovered HTML page (analyzed HTML responses with zero feed links omitted: 334,093,309).</p>
                 <canvas id="feedsPerPageHistogram"></canvas>
             </div>
             <div class="chart-card">
                 <div class="chart-title">Autodiscovery Links per Site</div>
-                <p class="chart-sub">Unique feed URLs per registrable site. Based on sampled source sites retained for each discovered feed URL. Sites with zero links omitted: 125,965.</p>
+                <p class="chart-sub">Unique feed URLs per registrable site. Sites with zero links omitted: 125,962.</p>
                 <canvas id="feedsPerSiteHistogram"></canvas>
             </div>
         </div>
@@ -434,19 +474,23 @@
         <div class="chart-grid">
             <div class="chart-card" style="display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
                 <div class="chart-title">Pages with Duplicate Feeds</div>
-                <div style="font-size:2.8rem;font-weight:700;color:var(--danger);margin:0.5rem 0;">7</div>
-                <div style="font-size:1.4rem;font-weight:600;color:var(--muted);margin-bottom:0.5rem;">0.0% of 25,079 multi-feed pages</div>
+                <div style="font-size:2.8rem;font-weight:700;color:var(--danger);margin:0.5rem 0;">127</div>
+                <div style="font-size:1.4rem;font-weight:600;color:var(--muted);margin-bottom:0.5rem;">0.5% of 24,317 multi-feed pages</div>
                 <p class="chart-sub">Pages that link to redundant format variants of the same feed (same internal title and link after light normalization).</p>
                 
                 <table class="data-table" style="margin-top:1rem;text-align:left;">
                     <thead><tr><th>Coincident formats</th><th>Pages</th></tr></thead>
                     <tbody>
                         
-                        <tr><td>atom10 and rss2.0</td><td>4</td></tr>
+                        <tr><td>rss2.0 and rss2.0</td><td>181</td></tr>
                         
-                        <tr><td>rss2.0 and rss2.0</td><td>2</td></tr>
+                        <tr><td>atom10 and rss2.0</td><td>100</td></tr>
                         
-                        <tr><td>atom10 and atom10</td><td>1</td></tr>
+                        <tr><td>atom10 and rss10</td><td>13</td></tr>
+                        
+                        <tr><td>rss10 and rss2.0</td><td>8</td></tr>
+                        
+                        <tr><td>atom10 and atom10</td><td>5</td></tr>
                         
                     </tbody>
                 </table>
@@ -456,8 +500,8 @@
                 <div class="chart-title">Quality: Autodiscovered vs. Not</div>
                 <p class="chart-sub">
                     Distribution of quality scores among successfully parsed feeds (% of each group per decile).
-                    With autodiscovery: 53,096 feeds, mean <strong>0.251</strong>.
-                    Without: 250,694 feeds, mean <strong>0.179</strong>.
+                    With autodiscovery: 94,824 feeds, mean <strong>0.246</strong>.
+                    Without: 439,371 feeds, mean <strong>0.220</strong>.
                 </p>
                 <canvas id="autodiscoveryQualityChart"></canvas>
             </div>
@@ -474,67 +518,67 @@
                             
                             <tr>
                                 <td>unknown</td>
-                                <td>353,984,603</td>
-                                <td>53,146,358 <span style="color:var(--text-muted)">(15.0%)</span></td>
+                                <td>353,974,158</td>
+                                <td>53,145,055 <span style="color:var(--text-muted)">(15.0%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>wordpress</td>
-                                <td>45,451,537</td>
-                                <td>26,802,985 <span style="color:var(--text-muted)">(59.0%)</span></td>
+                                <td>45,450,449</td>
+                                <td>26,802,369 <span style="color:var(--text-muted)">(59.0%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>drupal</td>
-                                <td>13,190,932</td>
-                                <td>758,482 <span style="color:var(--text-muted)">(5.8%)</span></td>
+                                <td>13,190,628</td>
+                                <td>758,470 <span style="color:var(--text-muted)">(5.8%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>shopify</td>
-                                <td>1,097,730</td>
-                                <td>99,413 <span style="color:var(--text-muted)">(9.1%)</span></td>
+                                <td>1,097,732</td>
+                                <td>99,423 <span style="color:var(--text-muted)">(9.1%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>joomla</td>
-                                <td>930,272</td>
-                                <td>203,431 <span style="color:var(--text-muted)">(21.9%)</span></td>
+                                <td>930,240</td>
+                                <td>203,428 <span style="color:var(--text-muted)">(21.9%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>substack</td>
-                                <td>490,578</td>
+                                <td>490,567</td>
                                 <td>389,821 <span style="color:var(--text-muted)">(79.5%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>wix</td>
-                                <td>430,754</td>
-                                <td>82,764 <span style="color:var(--text-muted)">(19.2%)</span></td>
+                                <td>430,723</td>
+                                <td>82,752 <span style="color:var(--text-muted)">(19.2%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>blogger</td>
-                                <td>335,819</td>
-                                <td>305,604 <span style="color:var(--text-muted)">(91.0%)</span></td>
+                                <td>335,807</td>
+                                <td>305,603 <span style="color:var(--text-muted)">(91.0%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>ghost</td>
-                                <td>229,444</td>
-                                <td>218,342 <span style="color:var(--text-muted)">(95.2%)</span></td>
+                                <td>229,434</td>
+                                <td>218,332 <span style="color:var(--text-muted)">(95.2%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>squarespace</td>
-                                <td>20,792</td>
+                                <td>20,798</td>
                                 <td>1,017 <span style="color:var(--text-muted)">(4.9%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>medium</td>
-                                <td>2,995</td>
+                                <td>2,994</td>
                                 <td>41 <span style="color:var(--text-muted)">(1.4%)</span></td>
                             </tr>
                             
@@ -551,39 +595,48 @@
         <div class="stats-grid">
             <div class="card">
                 <div class="card-title">Successfully Parsed Feeds</div>
-                <div class="card-value">303,790</div>
+                <div class="card-value">534,195</div>
                 <div class="card-sub">
                     
                     <div style="margin-bottom:0.5rem;">Percentages use feed URLs checked as the denominator for parse results, and successfully parsed feeds as the denominator for autodiscovery rows.</div>
-                    <div class="row"><span>Parse success rate</span> <strong>97.6%</strong></div>
-                    <div class="row"><span>Broken/unparseable</span> <strong>7,592 <span style="font-weight:400;color:var(--text-muted)">(2.4%)</span></strong></div>
-                    <div class="row"><span>With autodiscovery link</span> <strong>53,096 <span style="font-weight:400;color:var(--text-muted)">(17.5%)</span></strong></div>
-                    <div class="row"><span>Without autodiscovery link</span> <strong>250,694 <span style="font-weight:400;color:var(--text-muted)">(82.5%)</span></strong></div>
+                    <div class="row"><span>Parse success rate</span> <strong>98.3%</strong></div>
+                    <div class="row"><span>Broken/unparseable</span> <strong>9,382 <span style="font-weight:400;color:var(--text-muted)">(1.7%)</span></strong></div>
+                    <div class="row"><span>With autodiscovery link</span> <strong>94,824 <span style="font-weight:400;color:var(--text-muted)">(17.8%)</span></strong></div>
+                    <div class="row"><span>Without autodiscovery link</span> <strong>439,371 <span style="font-weight:400;color:var(--text-muted)">(82.2%)</span></strong></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">Sites with Feeds Found</div>
+                <div class="card-value">13,796</div>
+                <div class="card-sub">
+                    <div style="margin-bottom:0.5rem;">Unique registrable sites that host at least one successfully parsed feed URL.</div>
+                    <div class="row"><span>Share of analyzed sites</span> <strong>7.02%</strong></div>
+                    <div class="row"><span>Analyzed sites</span> <strong>196,598</strong></div>
                 </div>
             </div>
             <div class="card">
                 <div class="card-title">Feeds with Entry Content</div>
-                <div class="card-value">237,123</div>
+                <div class="card-value">413,346</div>
                 <div class="card-sub">
-                    <div class="row"><span>Coverage rate</span> <strong>78.1%</strong></div>
-                    <div class="row"><span>Full content</span> <strong>90,416 <span style="font-weight:400;color:var(--text-muted)">(29.8%)</span></strong></div>
-                    <div class="row"><span>Summary only</span> <strong>146,707 <span style="font-weight:400;color:var(--text-muted)">(48.3%)</span></strong></div>
-                    <div class="row"><span>Neither</span> <strong>66,667 <span style="font-weight:400;color:var(--text-muted)">(21.9%)</span></strong></div>
+                    <div class="row"><span>Coverage rate</span> <strong>77.4%</strong></div>
+                    <div class="row"><span>Full content</span> <strong>127,484 <span style="font-weight:400;color:var(--text-muted)">(23.9%)</span></strong></div>
+                    <div class="row"><span>Summary only</span> <strong>285,862 <span style="font-weight:400;color:var(--text-muted)">(53.5%)</span></strong></div>
+                    <div class="row"><span>Neither</span> <strong>120,849 <span style="font-weight:400;color:var(--text-muted)">(22.6%)</span></strong></div>
                     <div style="margin-top:0.35rem;color:var(--text-muted);">Denominator: successfully parsed feeds.</div>
                 </div>
             </div>
             <div class="card">
                 <div class="card-title">Entries Found</div>
-                <div class="card-value">3,189,317</div>
+                <div class="card-value">7,996,206</div>
                 <div class="card-sub">
                     <div style="margin-bottom:0.5rem;">Percentages use successfully parsed feeds as the denominator, except dated entries use parsed feeds with entries.</div>
-                    <div class="row"><span>Mean entries per parsed feed</span> <strong>10.5</strong></div>
-                    <div class="row"><span>Parsed feeds with entries</span> <strong>239,438 <span style="font-weight:400;color:var(--text-muted)">(78.8%)</span></strong></div>
-                    <div class="row"><span>Feeds with dated entries</span> <strong>232,646 <span style="font-weight:400;color:var(--text-muted)">(97.2%)</span></strong></div>
-                    <div class="row"><span>Feeds with feed-level dates</span> <strong>222,276 <span style="font-weight:400;color:var(--text-muted)">(73.2%)</span></strong></div>
-                    <div class="row divider"><span>Feeds with repeated entry titles</span> <strong>27,674</strong></div>
-                    <div class="row"><span>Feeds with default entry titles</span> <strong>79</strong></div>
-                    <div class="row"><span>Feeds with repeated entry links</span> <strong>24,211</strong></div>
+                    <div class="row"><span>Mean entries per parsed feed</span> <strong>15.0</strong></div>
+                    <div class="row"><span>Parsed feeds with entries</span> <strong>420,978 <span style="font-weight:400;color:var(--text-muted)">(78.8%)</span></strong></div>
+                    <div class="row"><span>Feeds with dated entries</span> <strong>395,919 <span style="font-weight:400;color:var(--text-muted)">(94.0%)</span></strong></div>
+                    <div class="row"><span>Feeds with feed-level dates</span> <strong>372,724 <span style="font-weight:400;color:var(--text-muted)">(69.8%)</span></strong></div>
+                    <div class="row divider"><span>Feeds with repeated entry titles</span> <strong>54,426</strong></div>
+                    <div class="row"><span>Feeds with default entry titles</span> <strong>95</strong></div>
+                    <div class="row"><span>Feeds with repeated entry links</span> <strong>63,440</strong></div>
                     <div style="margin-top:0.35rem;color:var(--text-muted);">Default entry titles are generic placeholder-like values such as “Default Title”.</div>
                 </div>
             </div>
@@ -593,10 +646,10 @@
         
         <div class="error-strip">
             <div>
-                <div class="err-count">7,592</div>
+                <div class="err-count">9,382</div>
                 <div class="err-label">feed parse errors</div>
                 
-                <div class="err-label" style="margin-top:0.2rem;">2.4% of 311,382 feed URLs checked</div>
+                <div class="err-label" style="margin-top:0.2rem;">1.7% of 543,577 feed URLs checked</div>
                 
                 <div class="err-label" style="margin-top:0.2rem;">Error-row percentages use total parse errors as the denominator.</div>
             </div>
@@ -604,92 +657,92 @@
                 
                 <tr>
                     <td>XML declaration allowed only at the start of the document</td>
-                    <td>3,971</td>
-                    <td style="color:var(--text-muted);padding-left:0.25rem;">52.3%</td>
-                    <td>Malformed declaration expecting version</td>
-                    <td>64</td>
-                    <td style="color:var(--text-muted);padding-left:0.25rem;">0.8%</td>
+                    <td>4,258</td>
+                    <td style="color:var(--text-muted);padding-left:0.25rem;">45.4%</td>
+                    <td>Blank needed here</td>
+                    <td>100</td>
+                    <td style="color:var(--text-muted);padding-left:0.25rem;">1.1%</td>
                 </tr>
                 
                 <tr>
                     <td>EntityRef: expecting ';'</td>
-                    <td>1,001</td>
-                    <td style="color:var(--text-muted);padding-left:0.25rem;">13.2%</td>
-                    <td>Namespace prefix rdf for resource on license is not defined</td>
-                    <td>52</td>
-                    <td style="color:var(--text-muted);padding-left:0.25rem;">0.7%</td>
+                    <td>1,137</td>
+                    <td style="color:var(--text-muted);padding-left:0.25rem;">12.1%</td>
+                    <td>Not XML</td>
+                    <td>97</td>
+                    <td style="color:var(--text-muted);padding-left:0.25rem;">1.0%</td>
                 </tr>
                 
                 <tr>
                     <td>CData section not finished</td>
-                    <td>601</td>
-                    <td style="color:var(--text-muted);padding-left:0.25rem;">7.9%</td>
-                    <td>Invalid bytes in character encoding</td>
-                    <td>50</td>
+                    <td>794</td>
+                    <td style="color:var(--text-muted);padding-left:0.25rem;">8.5%</td>
+                    <td>Namespace prefix owl on sameAs is not defined</td>
+                    <td>77</td>
+                    <td style="color:var(--text-muted);padding-left:0.25rem;">0.8%</td>
+                </tr>
+                
+                <tr>
+                    <td>no element found (line 0)</td>
+                    <td>364</td>
+                    <td style="color:var(--text-muted);padding-left:0.25rem;">3.9%</td>
+                    <td>Start tag expected</td>
+                    <td>67</td>
+                    <td style="color:var(--text-muted);padding-left:0.25rem;">0.7%</td>
+                </tr>
+                
+                <tr>
+                    <td>xmlParseEntityRef: no name</td>
+                    <td>327</td>
+                    <td style="color:var(--text-muted);padding-left:0.25rem;">3.5%</td>
+                    <td>Malformed declaration expecting version</td>
+                    <td>64</td>
                     <td style="color:var(--text-muted);padding-left:0.25rem;">0.7%</td>
                 </tr>
                 
                 <tr>
                     <td>Unknown root tag: div</td>
-                    <td>277</td>
-                    <td style="color:var(--text-muted);padding-left:0.25rem;">3.6%</td>
-                    <td>Namespace prefix sn on type is not defined</td>
-                    <td>46</td>
-                    <td style="color:var(--text-muted);padding-left:0.25rem;">0.6%</td>
+                    <td>286</td>
+                    <td style="color:var(--text-muted);padding-left:0.25rem;">3.0%</td>
+                    <td>Unknown root tag: br</td>
+                    <td>63</td>
+                    <td style="color:var(--text-muted);padding-left:0.25rem;">0.7%</td>
                 </tr>
                 
                 <tr>
-                    <td>xmlParseEntityRef: no name</td>
-                    <td>219</td>
-                    <td style="color:var(--text-muted);padding-left:0.25rem;">2.9%</td>
-                    <td>Unknown root tag: entry</td>
-                    <td>45</td>
+                    <td>Invalid bytes in character encoding</td>
+                    <td>188</td>
+                    <td style="color:var(--text-muted);padding-left:0.25rem;">2.0%</td>
+                    <td>Namespace prefix rdf for resource on license is not defined</td>
+                    <td>52</td>
                     <td style="color:var(--text-muted);padding-left:0.25rem;">0.6%</td>
                 </tr>
                 
                 <tr>
                     <td>Unknown root tag: quakeml</td>
                     <td>177</td>
-                    <td style="color:var(--text-muted);padding-left:0.25rem;">2.3%</td>
-                    <td>Unknown root tag: style</td>
-                    <td>45</td>
-                    <td style="color:var(--text-muted);padding-left:0.25rem;">0.6%</td>
+                    <td style="color:var(--text-muted);padding-left:0.25rem;">1.9%</td>
+                    <td>Namespace prefix sn on type is not defined</td>
+                    <td>46</td>
+                    <td style="color:var(--text-muted);padding-left:0.25rem;">0.5%</td>
                 </tr>
                 
                 <tr>
                     <td>Opening and ending tag mismatch: title line 4 and feed</td>
-                    <td>137</td>
-                    <td style="color:var(--text-muted);padding-left:0.25rem;">1.8%</td>
-                    <td>PCDATA invalid Char value 12</td>
-                    <td>44</td>
-                    <td style="color:var(--text-muted);padding-left:0.25rem;">0.6%</td>
-                </tr>
-                
-                <tr>
-                    <td>no element found (line 0)</td>
-                    <td>105</td>
-                    <td style="color:var(--text-muted);padding-left:0.25rem;">1.4%</td>
-                    <td>Empty response</td>
-                    <td>32</td>
-                    <td style="color:var(--text-muted);padding-left:0.25rem;">0.4%</td>
+                    <td>139</td>
+                    <td style="color:var(--text-muted);padding-left:0.25rem;">1.5%</td>
+                    <td>Unknown root tag: entry</td>
+                    <td>45</td>
+                    <td style="color:var(--text-muted);padding-left:0.25rem;">0.5%</td>
                 </tr>
                 
                 <tr>
                     <td>Extra content at the end of the document</td>
-                    <td>80</td>
+                    <td>104</td>
                     <td style="color:var(--text-muted);padding-left:0.25rem;">1.1%</td>
-                    <td>Start tag expected</td>
-                    <td>30</td>
-                    <td style="color:var(--text-muted);padding-left:0.25rem;">0.4%</td>
-                </tr>
-                
-                <tr>
-                    <td>Not XML</td>
-                    <td>73</td>
-                    <td style="color:var(--text-muted);padding-left:0.25rem;">1.0%</td>
-                    <td>Unknown root tag: head</td>
-                    <td>29</td>
-                    <td style="color:var(--text-muted);padding-left:0.25rem;">0.4%</td>
+                    <td>Unknown root tag: style</td>
+                    <td>45</td>
+                    <td style="color:var(--text-muted);padding-left:0.25rem;">0.5%</td>
                 </tr>
                 
             </table>
@@ -703,22 +756,22 @@
                 <div class="funnel-row">
                     <div class="funnel-label">Feed URLs checked</div>
                     <div class="funnel-track"><div class="funnel-fill" style="width:100%;"></div></div>
-                    <div class="funnel-value">311,382</div>
+                    <div class="funnel-value">543,577</div>
                 </div>
                 <div class="funnel-row">
                     <div class="funnel-label">Parsed RSS/Atom</div>
-                    <div class="funnel-track"><div class="funnel-fill" style="width:97.6%;"></div></div>
-                    <div class="funnel-value">303,790</div>
+                    <div class="funnel-track"><div class="funnel-fill" style="width:98.3%;"></div></div>
+                    <div class="funnel-value">534,195</div>
                 </div>
                 <div class="funnel-row">
                     <div class="funnel-label">Freshness signal within cutoff</div>
-                    <div class="funnel-track"><div class="funnel-fill" style="width:32.3%;"></div></div>
-                    <div class="funnel-value">100,643</div>
+                    <div class="funnel-track"><div class="funnel-fill" style="width:37.4%;"></div></div>
+                    <div class="funnel-value">203,483</div>
                 </div>
                 <div class="funnel-row">
                     <div class="funnel-label">Active with entries</div>
-                    <div class="funnel-track"><div class="funnel-fill" style="width:21.8%;"></div></div>
-                    <div class="funnel-value">67,997</div>
+                    <div class="funnel-track"><div class="funnel-fill" style="width:26.0%;"></div></div>
+                    <div class="funnel-value">141,380</div>
                 </div>
             </div>
         </div>
@@ -727,15 +780,15 @@
         <div class="chart-grid" style="margin-bottom: 2rem;">
             <div class="chart-card">
                 <div class="card-title">Operational Quality</div>
-                <div class="card-value">0.191</div>
+                <div class="card-value">0.225</div>
                 <div class="card-sub" style="margin-top:-0.5rem;margin-bottom:0.6rem;">mean score, 0-1, across successfully parsed feeds</div>
                 <div class="card-sub">
                     <div style="margin-bottom:0.5rem;">Parenthetical percentages use successfully parsed feeds as the denominator.</div>
-                    <div class="row"><span>Quality &gt; 0.5</span> <strong>57,995 <span style="font-weight:400;color:var(--text-muted)">(19.1%)</span></strong></div>
-                    <div class="row"><span>Freshness signal within cutoff</span> <strong>100,643 <span style="font-weight:400;color:var(--text-muted)">(33.1%)</span></strong></div>
-                    <div class="row"><span>Mean among those feeds</span> <strong>0.578</strong></div>
-                    <div class="row"><span>Active with entries</span> <strong>67,997 <span style="font-weight:400;color:var(--text-muted)">(22.4%)</span></strong></div>
-                    <div class="row divider"><span>Undated or stale</span> <strong>203,147</strong></div>
+                    <div class="row"><span>Quality &gt; 0.5</span> <strong>120,832 <span style="font-weight:400;color:var(--text-muted)">(22.6%)</span></strong></div>
+                    <div class="row"><span>Freshness signal within cutoff</span> <strong>203,483 <span style="font-weight:400;color:var(--text-muted)">(38.1%)</span></strong></div>
+                    <div class="row"><span>Mean among those feeds</span> <strong>0.590</strong></div>
+                    <div class="row"><span>Active with entries</span> <strong>141,380 <span style="font-weight:400;color:var(--text-muted)">(26.5%)</span></strong></div>
+                    <div class="row divider"><span>Undated or stale</span> <strong>330,712</strong></div>
                 </div>
             </div>
             <div class="chart-card">
@@ -750,8 +803,8 @@
                     365 days, score 0 here;
                     the card above also shows the mean after
                     counting those feeds out. Excluded from the freshness-filtered mean:
-                    26,891 undated and
-                    176,256 stale feeds.
+                    57,319 undated and
+                    273,393 stale feeds.
                 </div>
                 <div class="chart-container">
                     <canvas id="qualityHistogram"></canvas>
@@ -787,93 +840,106 @@
         <div class="chart-grid">
             <div class="chart-card">
                 <div class="chart-title">Feed Formats</div>
-                <div class="chart-sub">Successfully parsed feeds only. RSS-family feeds: 199,853; Atom feeds: 103,937. Parenthetical percentages use feeds in that format as the denominator and show the share with operational quality &gt; 0.5.</div>
+                <div class="chart-sub">Successfully parsed feeds only. RSS-family feeds: 412,014; Atom feeds: 122,181. Parenthetical percentages use feeds in that format as the denominator and show the share with operational quality &gt; 0.5.</div>
                 <table class="data-table">
                     <thead><tr><th>Format</th><th>Count</th><th>Quality &gt; 0.5</th><th>Mean quality</th></tr></thead>
                     <tbody>
                         
                         <tr>
                             <td><span class="badge badge-primary">rss1.0</span></td>
-                            <td>1</td>
-                            <td>1/1 <span style="color:var(--text-muted)">(100.0%)</span></td>
+                            <td>2</td>
+                            <td>2/2 <span style="color:var(--text-muted)">(100.0%)</span></td>
                             <td>
                                 <span style="font-weight:700; color:
                                     var(--success)
                                     ;">
-                                    0.782
+                                    0.732
                                 </span>
                             </td>
                         </tr>
                         
                         <tr>
-                            <td><span class="badge badge-primary">rss</span></td>
+                            <td><span class="badge badge-primary">rss0.93</span></td>
                             <td>1</td>
                             <td>1/1 <span style="color:var(--text-muted)">(100.0%)</span></td>
                             <td>
                                 <span style="font-weight:700; color:
                                     var(--primary)
                                     ;">
-                                    0.650
+                                    0.682
+                                </span>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td><span class="badge badge-primary">rss</span></td>
+                            <td>5</td>
+                            <td>5/5 <span style="color:var(--text-muted)">(100.0%)</span></td>
+                            <td>
+                                <span style="font-weight:700; color:
+                                    var(--primary)
+                                    ;">
+                                    0.622
                                 </span>
                             </td>
                         </tr>
                         
                         <tr>
                             <td><span class="badge badge-primary">rss0.92</span></td>
-                            <td>3,200</td>
-                            <td>1,209/3,200 <span style="color:var(--text-muted)">(37.8%)</span></td>
+                            <td>3,224</td>
+                            <td>1,220/3,224 <span style="color:var(--text-muted)">(37.8%)</span></td>
                             <td>
                                 <span style="font-weight:700; color:
                                     var(--text-muted);">
-                                    0.286
-                                </span>
-                            </td>
-                        </tr>
-                        
-                        <tr>
-                            <td><span class="badge badge-primary">atom10</span></td>
-                            <td>103,937</td>
-                            <td>14,520/103,937 <span style="color:var(--text-muted)">(14.0%)</span></td>
-                            <td>
-                                <span style="font-weight:700; color:
-                                    var(--text-muted);">
-                                    0.195
+                                    0.287
                                 </span>
                             </td>
                         </tr>
                         
                         <tr>
                             <td><span class="badge badge-primary">rss2.0</span></td>
-                            <td>181,975</td>
-                            <td>40,508/181,975 <span style="color:var(--text-muted)">(22.3%)</span></td>
+                            <td>378,287</td>
+                            <td>92,687/378,287 <span style="color:var(--text-muted)">(24.5%)</span></td>
                             <td>
                                 <span style="font-weight:700; color:
                                     var(--text-muted);">
-                                    0.191
-                                </span>
-                            </td>
-                        </tr>
-                        
-                        <tr>
-                            <td><span class="badge badge-primary">rss0.91</span></td>
-                            <td>106</td>
-                            <td>23/106 <span style="color:var(--text-muted)">(21.7%)</span></td>
-                            <td>
-                                <span style="font-weight:700; color:
-                                    var(--text-muted);">
-                                    0.167
+                                    0.230
                                 </span>
                             </td>
                         </tr>
                         
                         <tr>
                             <td><span class="badge badge-primary">rss10</span></td>
-                            <td>14,552</td>
-                            <td>1,732/14,552 <span style="color:var(--text-muted)">(11.9%)</span></td>
+                            <td>28,256</td>
+                            <td>6,608/28,256 <span style="color:var(--text-muted)">(23.4%)</span></td>
                             <td>
                                 <span style="font-weight:700; color:
                                     var(--text-muted);">
-                                    0.143
+                                    0.217
+                                </span>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td><span class="badge badge-primary">atom10</span></td>
+                            <td>122,181</td>
+                            <td>19,940/122,181 <span style="color:var(--text-muted)">(16.3%)</span></td>
+                            <td>
+                                <span style="font-weight:700; color:
+                                    var(--text-muted);">
+                                    0.209
+                                </span>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td><span class="badge badge-primary">rss0.91</span></td>
+                            <td>2,217</td>
+                            <td>368/2,217 <span style="color:var(--text-muted)">(16.6%)</span></td>
+                            <td>
+                                <span style="font-weight:700; color:
+                                    var(--text-muted);">
+                                    0.150
                                 </span>
                             </td>
                         </tr>
@@ -886,6 +952,18 @@
                                 <span style="font-weight:700; color:
                                     var(--text-muted);">
                                     0.052
+                                </span>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td><span class="badge badge-primary">rss.92</span></td>
+                            <td>4</td>
+                            <td>0/4 <span style="color:var(--text-muted)">(0.0%)</span></td>
+                            <td>
+                                <span style="font-weight:700; color:
+                                    var(--text-muted);">
+                                    0.000
                                 </span>
                             </td>
                         </tr>
@@ -903,27 +981,93 @@
                             
                             
                             <tr>
-                                <td rowspan="11"><span class="badge badge-primary">rss2.0</span></td>
+                                <td rowspan="19"><span class="badge badge-primary">rss2.0</span></td>
                                 <td><code>utf-8</code></td>
-                                <td>164,428</td>
+                                <td>316,850</td>
                             </tr>
                             
                             <tr>
                                 
                                 <td><code>unknown</code></td>
-                                <td>16,544</td>
+                                <td>54,486</td>
                             </tr>
                             
                             <tr>
                                 
                                 <td><code>iso-8859-1</code></td>
-                                <td>549</td>
+                                <td>4,203</td>
                             </tr>
                             
                             <tr>
                                 
                                 <td><code>windows-1251</code></td>
-                                <td>446</td>
+                                <td>1,267</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>iso-8859-15</code></td>
+                                <td>914</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>windows-1252</code></td>
+                                <td>231</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>utf8</code></td>
+                                <td>152</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>windows-1256</code></td>
+                                <td>69</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>$charset</code></td>
+                                <td>36</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>iso-8859-9</code></td>
+                                <td>18</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>iso-8859-2</code></td>
+                                <td>16</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>gb2312</code></td>
+                                <td>16</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>euc-kr</code></td>
+                                <td>12</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>windows-1250</code></td>
+                                <td>9</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>big5</code></td>
+                                <td>3</td>
                             </tr>
                             
                             <tr>
@@ -934,25 +1078,7 @@
                             
                             <tr>
                                 
-                                <td><code>iso-8859-2</code></td>
-                                <td>1</td>
-                            </tr>
-                            
-                            <tr>
-                                
-                                <td><code>windows-1250</code></td>
-                                <td>1</td>
-                            </tr>
-                            
-                            <tr>
-                                
-                                <td><code>utf8</code></td>
-                                <td>1</td>
-                            </tr>
-                            
-                            <tr>
-                                
-                                <td><code>windows-1252</code></td>
+                                <td><code>gbk</code></td>
                                 <td>1</td>
                             </tr>
                             
@@ -971,29 +1097,141 @@
                             
                             
                             <tr>
-                                <td rowspan="3"><span class="badge badge-primary">atom10</span></td>
+                                <td rowspan="4"><span class="badge badge-primary">atom10</span></td>
                                 <td><code>utf-8</code></td>
-                                <td>78,892</td>
+                                <td>89,909</td>
                             </tr>
                             
                             <tr>
                                 
                                 <td><code>unknown</code></td>
-                                <td>25,033</td>
+                                <td>31,945</td>
                             </tr>
                             
                             <tr>
                                 
                                 <td><code>iso-8859-1</code></td>
+                                <td>315</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>iso-8859-15</code></td>
                                 <td>12</td>
                             </tr>
                             
                             
                             
                             <tr>
-                                <td rowspan="4"><span class="badge badge-primary">rss0.92</span></td>
+                                <td rowspan="10"><span class="badge badge-primary">rss10</span></td>
                                 <td><code>utf-8</code></td>
-                                <td>2,483</td>
+                                <td>20,106</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>unknown</code></td>
+                                <td>7,960</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>iso-8859-1</code></td>
+                                <td>161</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>iso-8859-15</code></td>
+                                <td>13</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>euc-jp</code></td>
+                                <td>9</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>utf8</code></td>
+                                <td>3</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>gb2312</code></td>
+                                <td>1</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>windows-1251</code></td>
+                                <td>1</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>windows-1250</code></td>
+                                <td>1</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>gbk</code></td>
+                                <td>1</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td rowspan="7"><span class="badge badge-primary">rss0.91</span></td>
+                                <td><code>iso-8859-2</code></td>
+                                <td>787</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>unknown</code></td>
+                                <td>764</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>utf-8</code></td>
+                                <td>629</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>koi8-r</code></td>
+                                <td>31</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>gb2312</code></td>
+                                <td>3</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>iso-8859-1</code></td>
+                                <td>2</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>windows-1250</code></td>
+                                <td>1</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td rowspan="5"><span class="badge badge-primary">rss0.92</span></td>
+                                <td><code>utf-8</code></td>
+                                <td>2,501</td>
                             </tr>
                             
                             <tr>
@@ -1004,60 +1242,20 @@
                             
                             <tr>
                                 
+                                <td><code>unknown</code></td>
+                                <td>6</td>
+                            </tr>
+                            
+                            <tr>
+                                
                                 <td><code>windows-1251</code></td>
                                 <td>2</td>
                             </tr>
                             
                             <tr>
                                 
-                                <td><code>unknown</code></td>
+                                <td><code>iso-8859-15</code></td>
                                 <td>1</td>
-                            </tr>
-                            
-                            
-                            
-                            <tr>
-                                <td rowspan="4"><span class="badge badge-primary">rss0.91</span></td>
-                                <td><code>utf-8</code></td>
-                                <td>88</td>
-                            </tr>
-                            
-                            <tr>
-                                
-                                <td><code>unknown</code></td>
-                                <td>15</td>
-                            </tr>
-                            
-                            <tr>
-                                
-                                <td><code>iso-8859-1</code></td>
-                                <td>2</td>
-                            </tr>
-                            
-                            <tr>
-                                
-                                <td><code>gb2312</code></td>
-                                <td>1</td>
-                            </tr>
-                            
-                            
-                            
-                            <tr>
-                                <td rowspan="3"><span class="badge badge-primary">rss10</span></td>
-                                <td><code>utf-8</code></td>
-                                <td>11,281</td>
-                            </tr>
-                            
-                            <tr>
-                                
-                                <td><code>unknown</code></td>
-                                <td>3,252</td>
-                            </tr>
-                            
-                            <tr>
-                                
-                                <td><code>iso-8859-1</code></td>
-                                <td>19</td>
                             </tr>
                             
                             
@@ -1071,7 +1269,35 @@
                             
                             
                             <tr>
-                                <td rowspan="1"><span class="badge badge-primary">rss</span></td>
+                                <td rowspan="1"><span class="badge badge-primary">rss.92</span></td>
+                                <td><code>utf-8</code></td>
+                                <td>4</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td rowspan="2"><span class="badge badge-primary">rss</span></td>
+                                <td><code>unknown</code></td>
+                                <td>3</td>
+                            </tr>
+                            
+                            <tr>
+                                
+                                <td><code>utf-8</code></td>
+                                <td>2</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td rowspan="2"><span class="badge badge-primary">rss1.0</span></td>
+                                <td><code>utf-8</code></td>
+                                <td>1</td>
+                            </tr>
+                            
+                            <tr>
+                                
                                 <td><code>unknown</code></td>
                                 <td>1</td>
                             </tr>
@@ -1079,7 +1305,7 @@
                             
                             
                             <tr>
-                                <td rowspan="1"><span class="badge badge-primary">rss1.0</span></td>
+                                <td rowspan="1"><span class="badge badge-primary">rss0.93</span></td>
                                 <td><code>utf-8</code></td>
                                 <td>1</td>
                             </tr>
@@ -1101,37 +1327,37 @@
                 </div>
                 <div class="table-container">
                     <table class="data-table">
-                        <thead><tr><th>Profile</th><th>All parsed feeds</th><th>Among 57,995 high-quality feeds</th></tr></thead>
+                        <thead><tr><th>Profile</th><th>All parsed feeds</th><th>Among 120,832 high-quality feeds</th></tr></thead>
                         <tbody>
                             
                             <tr>
                                 <td>html</td>
-                                <td>132,524 <span style="color:var(--text-muted)">(43.6%)</span></td>
-                                <td>31,651 <span style="color:var(--text-muted)">(54.6%)</span></td>
+                                <td>210,747 <span style="color:var(--text-muted)">(39.5%)</span></td>
+                                <td>58,025 <span style="color:var(--text-muted)">(48.0%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>unknown</td>
-                                <td>66,667 <span style="color:var(--text-muted)">(21.9%)</span></td>
-                                <td>272 <span style="color:var(--text-muted)">(0.5%)</span></td>
+                                <td>120,849 <span style="color:var(--text-muted)">(22.6%)</span></td>
+                                <td>1,401 <span style="color:var(--text-muted)">(1.2%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>plain</td>
-                                <td>50,672 <span style="color:var(--text-muted)">(16.7%)</span></td>
-                                <td>13,525 <span style="color:var(--text-muted)">(23.3%)</span></td>
+                                <td>119,857 <span style="color:var(--text-muted)">(22.4%)</span></td>
+                                <td>38,246 <span style="color:var(--text-muted)">(31.7%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>mixed</td>
-                                <td>49,074 <span style="color:var(--text-muted)">(16.2%)</span></td>
-                                <td>12,153 <span style="color:var(--text-muted)">(21.0%)</span></td>
+                                <td>77,791 <span style="color:var(--text-muted)">(14.6%)</span></td>
+                                <td>22,759 <span style="color:var(--text-muted)">(18.8%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>xhtml</td>
-                                <td>4,853 <span style="color:var(--text-muted)">(1.6%)</span></td>
-                                <td>394 <span style="color:var(--text-muted)">(0.7%)</span></td>
+                                <td>4,951 <span style="color:var(--text-muted)">(0.9%)</span></td>
+                                <td>401 <span style="color:var(--text-muted)">(0.3%)</span></td>
                             </tr>
                             
                         </tbody>
@@ -1153,127 +1379,127 @@
                 <div class="chart-sub">Top feed language declarations across successfully parsed feeds. Parenthetical percentages in the first count column use all successfully parsed feeds as the denominator. High-quality feeds have operational quality &gt; 0.5.</div>
                 <div class="table-container">
                     <table class="data-table">
-                        <thead><tr><th>Language</th><th>All parsed feeds</th><th>Among 57,995 high-quality feeds</th></tr></thead>
+                        <thead><tr><th>Language</th><th>All parsed feeds</th><th>Among 120,832 high-quality feeds</th></tr></thead>
                         <tbody>
                             
                             <tr>
                                 <td>unknown</td>
-                                <td>145,914 <span style="color:var(--text-muted)">(48.0%)</span></td>
-                                <td>15,240 <span style="color:var(--text-muted)">(26.3%)</span></td>
+                                <td>250,463 <span style="color:var(--text-muted)">(46.9%)</span></td>
+                                <td>32,683 <span style="color:var(--text-muted)">(27.0%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>en</td>
-                                <td>58,749 <span style="color:var(--text-muted)">(19.3%)</span></td>
-                                <td>11,608 <span style="color:var(--text-muted)">(20.0%)</span></td>
+                                <td>83,341 <span style="color:var(--text-muted)">(15.6%)</span></td>
+                                <td>22,163 <span style="color:var(--text-muted)">(18.3%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>en-us</td>
-                                <td>42,865 <span style="color:var(--text-muted)">(14.1%)</span></td>
-                                <td>14,029 <span style="color:var(--text-muted)">(24.2%)</span></td>
-                            </tr>
-                            
-                            <tr>
-                                <td>es</td>
-                                <td>7,941 <span style="color:var(--text-muted)">(2.6%)</span></td>
-                                <td>2,330 <span style="color:var(--text-muted)">(4.0%)</span></td>
-                            </tr>
-                            
-                            <tr>
-                                <td>fr</td>
-                                <td>6,633 <span style="color:var(--text-muted)">(2.2%)</span></td>
-                                <td>1,853 <span style="color:var(--text-muted)">(3.2%)</span></td>
-                            </tr>
-                            
-                            <tr>
-                                <td>de</td>
-                                <td>4,898 <span style="color:var(--text-muted)">(1.6%)</span></td>
-                                <td>1,464 <span style="color:var(--text-muted)">(2.5%)</span></td>
-                            </tr>
-                            
-                            <tr>
-                                <td>ru</td>
-                                <td>3,550 <span style="color:var(--text-muted)">(1.2%)</span></td>
-                                <td>1,182 <span style="color:var(--text-muted)">(2.0%)</span></td>
-                            </tr>
-                            
-                            <tr>
-                                <td>en-gb</td>
-                                <td>3,441 <span style="color:var(--text-muted)">(1.1%)</span></td>
-                                <td>890 <span style="color:var(--text-muted)">(1.5%)</span></td>
-                            </tr>
-                            
-                            <tr>
-                                <td>pt-br</td>
-                                <td>3,275 <span style="color:var(--text-muted)">(1.1%)</span></td>
-                                <td>971 <span style="color:var(--text-muted)">(1.7%)</span></td>
+                                <td>77,634 <span style="color:var(--text-muted)">(14.5%)</span></td>
+                                <td>25,184 <span style="color:var(--text-muted)">(20.8%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>ja</td>
-                                <td>1,867 <span style="color:var(--text-muted)">(0.6%)</span></td>
-                                <td>664 <span style="color:var(--text-muted)">(1.1%)</span></td>
+                                <td>13,340 <span style="color:var(--text-muted)">(2.5%)</span></td>
+                                <td>6,038 <span style="color:var(--text-muted)">(5.0%)</span></td>
                             </tr>
                             
                             <tr>
-                                <td>it-it</td>
-                                <td>1,338 <span style="color:var(--text-muted)">(0.4%)</span></td>
-                                <td>367 <span style="color:var(--text-muted)">(0.6%)</span></td>
+                                <td>fr</td>
+                                <td>11,981 <span style="color:var(--text-muted)">(2.2%)</span></td>
+                                <td>3,488 <span style="color:var(--text-muted)">(2.9%)</span></td>
                             </tr>
                             
                             <tr>
-                                <td>de-de</td>
-                                <td>1,335 <span style="color:var(--text-muted)">(0.4%)</span></td>
-                                <td>722 <span style="color:var(--text-muted)">(1.2%)</span></td>
+                                <td>es</td>
+                                <td>9,764 <span style="color:var(--text-muted)">(1.8%)</span></td>
+                                <td>3,208 <span style="color:var(--text-muted)">(2.7%)</span></td>
                             </tr>
                             
                             <tr>
-                                <td>es-es</td>
-                                <td>1,274 <span style="color:var(--text-muted)">(0.4%)</span></td>
-                                <td>312 <span style="color:var(--text-muted)">(0.5%)</span></td>
+                                <td>de</td>
+                                <td>8,528 <span style="color:var(--text-muted)">(1.6%)</span></td>
+                                <td>3,051 <span style="color:var(--text-muted)">(2.5%)</span></td>
                             </tr>
                             
                             <tr>
-                                <td>uk</td>
-                                <td>1,191 <span style="color:var(--text-muted)">(0.4%)</span></td>
-                                <td>388 <span style="color:var(--text-muted)">(0.7%)</span></td>
+                                <td>ru</td>
+                                <td>6,420 <span style="color:var(--text-muted)">(1.2%)</span></td>
+                                <td>1,841 <span style="color:var(--text-muted)">(1.5%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>fr-fr</td>
-                                <td>1,027 <span style="color:var(--text-muted)">(0.3%)</span></td>
-                                <td>542 <span style="color:var(--text-muted)">(0.9%)</span></td>
+                                <td>5,979 <span style="color:var(--text-muted)">(1.1%)</span></td>
+                                <td>1,946 <span style="color:var(--text-muted)">(1.6%)</span></td>
                             </tr>
                             
                             <tr>
-                                <td>fi</td>
-                                <td>1,001 <span style="color:var(--text-muted)">(0.3%)</span></td>
-                                <td>150 <span style="color:var(--text-muted)">(0.3%)</span></td>
+                                <td>en-gb</td>
+                                <td>5,843 <span style="color:var(--text-muted)">(1.1%)</span></td>
+                                <td>2,214 <span style="color:var(--text-muted)">(1.8%)</span></td>
+                            </tr>
+                            
+                            <tr>
+                                <td>pt-br</td>
+                                <td>4,175 <span style="color:var(--text-muted)">(0.8%)</span></td>
+                                <td>1,318 <span style="color:var(--text-muted)">(1.1%)</span></td>
+                            </tr>
+                            
+                            <tr>
+                                <td>de-de</td>
+                                <td>3,821 <span style="color:var(--text-muted)">(0.7%)</span></td>
+                                <td>1,927 <span style="color:var(--text-muted)">(1.6%)</span></td>
+                            </tr>
+                            
+                            <tr>
+                                <td>pt</td>
+                                <td>2,801 <span style="color:var(--text-muted)">(0.5%)</span></td>
+                                <td>795 <span style="color:var(--text-muted)">(0.7%)</span></td>
+                            </tr>
+                            
+                            <tr>
+                                <td>cs</td>
+                                <td>2,740 <span style="color:var(--text-muted)">(0.5%)</span></td>
+                                <td>831 <span style="color:var(--text-muted)">(0.7%)</span></td>
+                            </tr>
+                            
+                            <tr>
+                                <td>utf-8</td>
+                                <td>2,543 <span style="color:var(--text-muted)">(0.5%)</span></td>
+                                <td>5 <span style="color:var(--text-muted)">(0.0%)</span></td>
+                            </tr>
+                            
+                            <tr>
+                                <td>it-it</td>
+                                <td>2,469 <span style="color:var(--text-muted)">(0.5%)</span></td>
+                                <td>686 <span style="color:var(--text-muted)">(0.6%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>ja-jp</td>
-                                <td>915 <span style="color:var(--text-muted)">(0.3%)</span></td>
-                                <td>374 <span style="color:var(--text-muted)">(0.6%)</span></td>
-                            </tr>
-                            
-                            <tr>
-                                <td>nl</td>
-                                <td>886 <span style="color:var(--text-muted)">(0.3%)</span></td>
-                                <td>349 <span style="color:var(--text-muted)">(0.6%)</span></td>
+                                <td>2,335 <span style="color:var(--text-muted)">(0.4%)</span></td>
+                                <td>1,250 <span style="color:var(--text-muted)">(1.0%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>zh-tw</td>
-                                <td>842 <span style="color:var(--text-muted)">(0.3%)</span></td>
-                                <td>190 <span style="color:var(--text-muted)">(0.3%)</span></td>
+                                <td>2,328 <span style="color:var(--text-muted)">(0.4%)</span></td>
+                                <td>502 <span style="color:var(--text-muted)">(0.4%)</span></td>
                             </tr>
                             
                             <tr>
-                                <td>km</td>
-                                <td>794 <span style="color:var(--text-muted)">(0.3%)</span></td>
-                                <td>62 <span style="color:var(--text-muted)">(0.1%)</span></td>
+                                <td>es-es</td>
+                                <td>2,066 <span style="color:var(--text-muted)">(0.4%)</span></td>
+                                <td>672 <span style="color:var(--text-muted)">(0.6%)</span></td>
+                            </tr>
+                            
+                            <tr>
+                                <td>zh-cn</td>
+                                <td>1,634 <span style="color:var(--text-muted)">(0.3%)</span></td>
+                                <td>323 <span style="color:var(--text-muted)">(0.3%)</span></td>
                             </tr>
                             
                         </tbody>
@@ -1284,14 +1510,14 @@
                 <div class="chart-title">Language Tagging</div>
                 <div class="chart-sub">Feed-internal language signals are read from <code>xml:lang</code> attributes, RSS <code>&lt;language&gt;</code>, Dublin Core <code>dc:language</code>, and Atom link <code>hreflang</code>. Counts are successfully parsed feeds; categories can overlap except the no-language row. HTTP/feed mismatches are only counted when an HTTP language conflicts with a feed-level language.</div>
                 <div class="card-sub" style="margin-top: 1.5rem;">
-                    <div class="row"><span>No language information</span> <strong>145,812 <span style="color:var(--text-muted);font-weight:400">(48.0%)</span></strong></div>
-                    <div class="row"><span>HTTP <code>Content-Language</code></span> <strong>58,387 <span style="color:var(--text-muted);font-weight:400">(19.2%)</span></strong></div>
-                    <div class="row"><span>Feed-level language</span> <strong>151,815 <span style="color:var(--text-muted);font-weight:400">(50.0%)</span></strong></div>
-                    <div class="row"><span>Entry-level language</span> <strong>3,571 <span style="color:var(--text-muted);font-weight:400">(1.2%)</span></strong></div>
-                    <div class="row"><span>Both HTTP and feed-level language</span> <strong>52,559 <span style="color:var(--text-muted);font-weight:400">(17.3%)</span></strong></div>
-                    <div class="row divider"><span style="color:var(--danger)">Mismatching HTTP and feed-level language</span> <strong style="color:var(--danger)">2,384 <span style="color:var(--text-muted);font-weight:400">(0.8%)</span></strong></div>
-                    <div class="row"><span>Multiple entry languages</span> <strong>2,527 <span style="color:var(--text-muted);font-weight:400">(0.8%)</span></strong></div>
-                    <div class="row"><span>Uses <code>hreflang</code></span> <strong>116 <span style="color:var(--text-muted);font-weight:400">(0.0%)</span></strong></div>
+                    <div class="row"><span>No language information</span> <strong>249,759 <span style="color:var(--text-muted);font-weight:400">(46.8%)</span></strong></div>
+                    <div class="row"><span>HTTP <code>Content-Language</code></span> <strong>72,201 <span style="color:var(--text-muted);font-weight:400">(13.5%)</span></strong></div>
+                    <div class="row"><span>Feed-level language</span> <strong>269,430 <span style="color:var(--text-muted);font-weight:400">(50.4%)</span></strong></div>
+                    <div class="row"><span>Entry-level language</span> <strong>5,698 <span style="color:var(--text-muted);font-weight:400">(1.1%)</span></strong></div>
+                    <div class="row"><span>Both HTTP and feed-level language</span> <strong>59,294 <span style="color:var(--text-muted);font-weight:400">(11.1%)</span></strong></div>
+                    <div class="row divider"><span style="color:var(--danger)">Mismatching HTTP and feed-level language</span> <strong style="color:var(--danger)">6,806 <span style="color:var(--text-muted);font-weight:400">(1.3%)</span></strong></div>
+                    <div class="row"><span>Multiple entry languages</span> <strong>5,645 <span style="color:var(--text-muted);font-weight:400">(1.1%)</span></strong></div>
+                    <div class="row"><span>Uses <code>hreflang</code></span> <strong>1,343 <span style="color:var(--text-muted);font-weight:400">(0.3%)</span></strong></div>
                     <div style="margin-top:0.75rem;color:var(--text-muted);">Multiple entry languages includes direct entry tags plus feed/HTTP languages that untagged entries inherit.</div>
                 </div>
             </div>
@@ -1308,7 +1534,7 @@
             </div>
             <div class="chart-card">
                 <div class="chart-title">Newest Entry Recency (CDF)</div>
-                <div class="chart-sub">% of feeds <em>with at least one entry</em> whose most recent entry falls within the given age. 64,352 zero-entry feeds excluded from denominator.</div>
+                <div class="chart-sub">% of feeds <em>with at least one entry</em> whose most recent entry falls within the given age. 113,217 zero-entry feeds excluded from denominator.</div>
                 <div class="chart-container">
                     <canvas id="entryRecencyCdf"></canvas>
                 </div>
@@ -1322,7 +1548,7 @@
                 <div class="chart-sub">
                     % of feeds <em>with at least one entry</em> whose oldest entry is at most the given age — i.e. how far back the feed's window reaches.
                     A client polling every N days will miss entries in feeds whose oldest entry is &lt; N days old when the poll fires.
-                    64,352 zero-entry feeds excluded from denominator.
+                    113,217 zero-entry feeds excluded from denominator.
                 </div>
                 <div class="chart-container">
                     <canvas id="oldestEntryCdf"></canvas>
@@ -1333,7 +1559,7 @@
                 <div class="chart-sub">
                     % of feeds <em>with enough dated entries</em> whose average interval between entries is at most the given time.
                     Cadence is inferred from the span between oldest and newest entry dates divided by entry count.
-                    159,690 feeds lack enough dated entries to infer cadence.
+                    269,909 feeds lack enough dated entries to infer cadence.
                 </div>
                 <div class="chart-container">
                     <canvas id="updateCadenceCdf"></canvas>
@@ -1354,31 +1580,31 @@
                 <div class="chart-sub">Feed-level Atom link relations, including Atom links embedded in RSS channels. Self/canonical means <code>rel=self</code>; hub covers WebSub/PubSubHubbub discovery; paging and archive cover feed navigation and archived-feed links. Parenthetical percentages use all successfully parsed feeds as the denominator.</div>
                 <div class="table-container">
                     <table class="data-table">
-                        <thead><tr><th>Signal</th><th>All parsed feeds</th><th>Among 57,995 high-quality feeds</th></tr></thead>
+                        <thead><tr><th>Signal</th><th>All parsed feeds</th><th>Among 120,832 high-quality feeds</th></tr></thead>
                         <tbody>
                             
                             <tr>
                                 <td>self/canonical URL</td>
-                                <td>190,131 <span style="color:var(--text-muted)">(62.6%)</span></td>
-                                <td>36,487 <span style="color:var(--text-muted)">(62.9%)</span></td>
+                                <td>293,773 <span style="color:var(--text-muted)">(55.0%)</span></td>
+                                <td>67,874 <span style="color:var(--text-muted)">(56.2%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>paging links</td>
-                                <td>31,150 <span style="color:var(--text-muted)">(10.3%)</span></td>
-                                <td>3,601 <span style="color:var(--text-muted)">(6.2%)</span></td>
+                                <td>34,939 <span style="color:var(--text-muted)">(6.5%)</span></td>
+                                <td>4,240 <span style="color:var(--text-muted)">(3.5%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>WebSub/PubSubHubbub hub</td>
-                                <td>27,329 <span style="color:var(--text-muted)">(9.0%)</span></td>
-                                <td>3,776 <span style="color:var(--text-muted)">(6.5%)</span></td>
+                                <td>33,941 <span style="color:var(--text-muted)">(6.4%)</span></td>
+                                <td>7,818 <span style="color:var(--text-muted)">(6.5%)</span></td>
                             </tr>
                             
                             <tr>
                                 <td>archive links</td>
-                                <td>5 <span style="color:var(--text-muted)">(0.0%)</span></td>
-                                <td>0 <span style="color:var(--text-muted)">(0.0%)</span></td>
+                                <td>8 <span style="color:var(--text-muted)">(0.0%)</span></td>
+                                <td>1 <span style="color:var(--text-muted)">(0.0%)</span></td>
                             </tr>
                             
                         </tbody>
@@ -1394,7 +1620,7 @@
                 <div class="chart-sub">Non-core namespace elements encountered across successfully parsed feeds. Parenthetical percentages in the first count column use all successfully parsed feeds as the denominator. High-quality feeds have operational quality &gt; 0.5.</div>
                 <div class="table-container">
                     <table class="data-table">
-                        <thead><tr><th>Element</th><th>All parsed feeds</th><th>Among 57,995 high-quality feeds</th></tr></thead>
+                        <thead><tr><th>Element</th><th>All parsed feeds</th><th>Among 120,832 high-quality feeds</th></tr></thead>
                         <tbody>
                             
                             <tr>
@@ -1405,32 +1631,8 @@
                                         
                                     </code>
                                 </td>
-                                <td>87,143 <span style="color:var(--text-muted)">(28.7%)</span></td>
-                                <td>23,287 <span style="color:var(--text-muted)">(40.2%)</span></td>
-                            </tr>
-                            
-                            <tr>
-                                <td>
-                                    <code>
-                                        
-                                        <a href="https://web.resource.org/rss/1.0/modules/syndication/">sy</a>:updatePeriod
-                                        
-                                    </code>
-                                </td>
-                                <td>37,823 <span style="color:var(--text-muted)">(12.5%)</span></td>
-                                <td>7,557 <span style="color:var(--text-muted)">(13.0%)</span></td>
-                            </tr>
-                            
-                            <tr>
-                                <td>
-                                    <code>
-                                        
-                                        <a href="https://web.resource.org/rss/1.0/modules/syndication/">sy</a>:updateFrequency
-                                        
-                                    </code>
-                                </td>
-                                <td>37,749 <span style="color:var(--text-muted)">(12.4%)</span></td>
-                                <td>7,486 <span style="color:var(--text-muted)">(12.9%)</span></td>
+                                <td>142,073 <span style="color:var(--text-muted)">(26.6%)</span></td>
+                                <td>38,730 <span style="color:var(--text-muted)">(32.1%)</span></td>
                             </tr>
                             
                             <tr>
@@ -1441,8 +1643,32 @@
                                         
                                     </code>
                                 </td>
-                                <td>29,140 <span style="color:var(--text-muted)">(9.6%)</span></td>
-                                <td>8,829 <span style="color:var(--text-muted)">(15.2%)</span></td>
+                                <td>59,448 <span style="color:var(--text-muted)">(11.1%)</span></td>
+                                <td>23,124 <span style="color:var(--text-muted)">(19.1%)</span></td>
+                            </tr>
+                            
+                            <tr>
+                                <td>
+                                    <code>
+                                        
+                                        <a href="https://web.resource.org/rss/1.0/modules/syndication/">sy</a>:updatePeriod
+                                        
+                                    </code>
+                                </td>
+                                <td>50,606 <span style="color:var(--text-muted)">(9.5%)</span></td>
+                                <td>12,441 <span style="color:var(--text-muted)">(10.3%)</span></td>
+                            </tr>
+                            
+                            <tr>
+                                <td>
+                                    <code>
+                                        
+                                        <a href="https://web.resource.org/rss/1.0/modules/syndication/">sy</a>:updateFrequency
+                                        
+                                    </code>
+                                </td>
+                                <td>50,529 <span style="color:var(--text-muted)">(9.5%)</span></td>
+                                <td>12,366 <span style="color:var(--text-muted)">(10.2%)</span></td>
                             </tr>
                             
                             <tr>
@@ -1453,68 +1679,8 @@
                                         
                                     </code>
                                 </td>
-                                <td>19,770 <span style="color:var(--text-muted)">(6.5%)</span></td>
-                                <td>4,289 <span style="color:var(--text-muted)">(7.4%)</span></td>
-                            </tr>
-                            
-                            <tr>
-                                <td>
-                                    <code>
-                                        
-                                        <a href="https://github.com/dewitt/opensearch/blob/master/opensearch-1-1-draft-6.md">opensearch</a>:totalResults
-                                        
-                                    </code>
-                                </td>
-                                <td>17,585 <span style="color:var(--text-muted)">(5.8%)</span></td>
-                                <td>613 <span style="color:var(--text-muted)">(1.1%)</span></td>
-                            </tr>
-                            
-                            <tr>
-                                <td>
-                                    <code>
-                                        
-                                        <a href="https://github.com/dewitt/opensearch/blob/master/opensearch-1-1-draft-6.md">opensearch</a>:startIndex
-                                        
-                                    </code>
-                                </td>
-                                <td>17,585 <span style="color:var(--text-muted)">(5.8%)</span></td>
-                                <td>613 <span style="color:var(--text-muted)">(1.1%)</span></td>
-                            </tr>
-                            
-                            <tr>
-                                <td>
-                                    <code>
-                                        
-                                        <a href="https://github.com/dewitt/opensearch/blob/master/opensearch-1-1-draft-6.md">opensearch</a>:itemsPerPage
-                                        
-                                    </code>
-                                </td>
-                                <td>17,585 <span style="color:var(--text-muted)">(5.8%)</span></td>
-                                <td>613 <span style="color:var(--text-muted)">(1.1%)</span></td>
-                            </tr>
-                            
-                            <tr>
-                                <td>
-                                    <code>
-                                        
-                                        <a href="https://developers.google.com/gdata/docs/1.0/elements">gd</a>:image
-                                        
-                                    </code>
-                                </td>
-                                <td>17,583 <span style="color:var(--text-muted)">(5.8%)</span></td>
-                                <td>613 <span style="color:var(--text-muted)">(1.1%)</span></td>
-                            </tr>
-                            
-                            <tr>
-                                <td>
-                                    <code>
-                                        
-                                        <a href="https://podcasters.apple.com/support/823-podcast-requirements">itunes</a>:author
-                                        
-                                    </code>
-                                </td>
-                                <td>12,386 <span style="color:var(--text-muted)">(4.1%)</span></td>
-                                <td>4,323 <span style="color:var(--text-muted)">(7.5%)</span></td>
+                                <td>45,539 <span style="color:var(--text-muted)">(8.5%)</span></td>
+                                <td>13,092 <span style="color:var(--text-muted)">(10.8%)</span></td>
                             </tr>
                             
                             <tr>
@@ -1525,8 +1691,20 @@
                                         
                                     </code>
                                 </td>
-                                <td>12,360 <span style="color:var(--text-muted)">(4.1%)</span></td>
-                                <td>4,319 <span style="color:var(--text-muted)">(7.4%)</span></td>
+                                <td>30,681 <span style="color:var(--text-muted)">(5.7%)</span></td>
+                                <td>14,266 <span style="color:var(--text-muted)">(11.8%)</span></td>
+                            </tr>
+                            
+                            <tr>
+                                <td>
+                                    <code>
+                                        
+                                        <a href="https://podcasters.apple.com/support/823-podcast-requirements">itunes</a>:author
+                                        
+                                    </code>
+                                </td>
+                                <td>30,286 <span style="color:var(--text-muted)">(5.7%)</span></td>
+                                <td>14,124 <span style="color:var(--text-muted)">(11.7%)</span></td>
                             </tr>
                             
                             <tr>
@@ -1537,8 +1715,8 @@
                                         
                                     </code>
                                 </td>
-                                <td>12,334 <span style="color:var(--text-muted)">(4.1%)</span></td>
-                                <td>4,315 <span style="color:var(--text-muted)">(7.4%)</span></td>
+                                <td>29,996 <span style="color:var(--text-muted)">(5.6%)</span></td>
+                                <td>14,013 <span style="color:var(--text-muted)">(11.6%)</span></td>
                             </tr>
                             
                             <tr>
@@ -1549,8 +1727,8 @@
                                         
                                     </code>
                                 </td>
-                                <td>12,292 <span style="color:var(--text-muted)">(4.0%)</span></td>
-                                <td>4,286 <span style="color:var(--text-muted)">(7.4%)</span></td>
+                                <td>29,466 <span style="color:var(--text-muted)">(5.5%)</span></td>
+                                <td>13,840 <span style="color:var(--text-muted)">(11.5%)</span></td>
                             </tr>
                             
                             <tr>
@@ -1561,8 +1739,32 @@
                                         
                                     </code>
                                 </td>
-                                <td>12,248 <span style="color:var(--text-muted)">(4.0%)</span></td>
-                                <td>4,260 <span style="color:var(--text-muted)">(7.3%)</span></td>
+                                <td>28,616 <span style="color:var(--text-muted)">(5.4%)</span></td>
+                                <td>13,621 <span style="color:var(--text-muted)">(11.3%)</span></td>
+                            </tr>
+                            
+                            <tr>
+                                <td>
+                                    <code>
+                                        
+                                        <a href="https://podcasters.apple.com/support/823-podcast-requirements">itunes</a>:category
+                                        
+                                    </code>
+                                </td>
+                                <td>28,268 <span style="color:var(--text-muted)">(5.3%)</span></td>
+                                <td>13,406 <span style="color:var(--text-muted)">(11.1%)</span></td>
+                            </tr>
+                            
+                            <tr>
+                                <td>
+                                    <code>
+                                        
+                                        <a href="https://podcasters.apple.com/support/823-podcast-requirements">itunes</a>:duration
+                                        
+                                    </code>
+                                </td>
+                                <td>26,876 <span style="color:var(--text-muted)">(5.0%)</span></td>
+                                <td>13,165 <span style="color:var(--text-muted)">(10.9%)</span></td>
                             </tr>
                             
                             <tr>
@@ -1573,8 +1775,32 @@
                                         
                                     </code>
                                 </td>
-                                <td>11,881 <span style="color:var(--text-muted)">(3.9%)</span></td>
-                                <td>4,025 <span style="color:var(--text-muted)">(6.9%)</span></td>
+                                <td>26,867 <span style="color:var(--text-muted)">(5.0%)</span></td>
+                                <td>12,577 <span style="color:var(--text-muted)">(10.4%)</span></td>
+                            </tr>
+                            
+                            <tr>
+                                <td>
+                                    <code>
+                                        
+                                        <a href="https://podcasters.apple.com/support/823-podcast-requirements">itunes</a>:email
+                                        
+                                    </code>
+                                </td>
+                                <td>22,625 <span style="color:var(--text-muted)">(4.2%)</span></td>
+                                <td>9,672 <span style="color:var(--text-muted)">(8.0%)</span></td>
+                            </tr>
+                            
+                            <tr>
+                                <td>
+                                    <code>
+                                        
+                                        <a href="https://podcasters.apple.com/support/823-podcast-requirements">itunes</a>:type
+                                        
+                                    </code>
+                                </td>
+                                <td>22,511 <span style="color:var(--text-muted)">(4.2%)</span></td>
+                                <td>10,902 <span style="color:var(--text-muted)">(9.0%)</span></td>
                             </tr>
                             
                         </tbody>
@@ -1586,60 +1812,74 @@
                 <div class="chart-sub">Known feed generators or platform headers observed on parsed feeds. This is intentionally conservative; absent fingerprints mean “not identified,” not “custom-built.” Parenthetical percentages in the first count column use all successfully parsed feeds as the denominator. High-quality feeds have operational quality &gt; 0.5; the final column shows the share of feeds in that fingerprint row that clear the threshold.</div>
                 <div class="table-container">
                     <table class="data-table">
-                        <thead><tr><th>Fingerprint</th><th>All parsed feeds</th><th>Among 57,995 high-quality feeds</th><th>Quality within fingerprint</th></tr></thead>
+                        <thead><tr><th>Fingerprint</th><th>All parsed feeds</th><th>Among 120,832 high-quality feeds</th><th>Quality within fingerprint</th></tr></thead>
                         <tbody>
                             
                             <tr>
                                 <td>unknown</td>
-                                <td>230,473 <span style="color:var(--text-muted)">(75.9%)</span></td>
-                                <td>45,239 <span style="color:var(--text-muted)">(78.0%)</span></td>
-                                <td>19.6%</td>
+                                <td>450,091 <span style="color:var(--text-muted)">(84.3%)</span></td>
+                                <td>104,636 <span style="color:var(--text-muted)">(86.6%)</span></td>
+                                <td>23.2%</td>
                             </tr>
                             
                             <tr>
                                 <td>wordpress</td>
-                                <td>29,009 <span style="color:var(--text-muted)">(9.5%)</span></td>
-                                <td>5,588 <span style="color:var(--text-muted)">(9.6%)</span></td>
-                                <td>19.3%</td>
+                                <td>36,821 <span style="color:var(--text-muted)">(6.9%)</span></td>
+                                <td>8,142 <span style="color:var(--text-muted)">(6.7%)</span></td>
+                                <td>22.1%</td>
                             </tr>
                             
                             <tr>
                                 <td>drupal</td>
-                                <td>22,613 <span style="color:var(--text-muted)">(7.4%)</span></td>
-                                <td>5,625 <span style="color:var(--text-muted)">(9.7%)</span></td>
-                                <td>24.9%</td>
+                                <td>22,830 <span style="color:var(--text-muted)">(4.3%)</span></td>
+                                <td>5,722 <span style="color:var(--text-muted)">(4.7%)</span></td>
+                                <td>25.1%</td>
                             </tr>
                             
                             <tr>
                                 <td>blogger</td>
-                                <td>17,585 <span style="color:var(--text-muted)">(5.8%)</span></td>
-                                <td>613 <span style="color:var(--text-muted)">(1.1%)</span></td>
-                                <td>3.5%</td>
+                                <td>19,954 <span style="color:var(--text-muted)">(3.7%)</span></td>
+                                <td>1,177 <span style="color:var(--text-muted)">(1.0%)</span></td>
+                                <td>5.9%</td>
                             </tr>
                             
                             <tr>
                                 <td>joomla</td>
-                                <td>3,901 <span style="color:var(--text-muted)">(1.3%)</span></td>
-                                <td>868 <span style="color:var(--text-muted)">(1.5%)</span></td>
-                                <td>22.3%</td>
+                                <td>3,988 <span style="color:var(--text-muted)">(0.7%)</span></td>
+                                <td>898 <span style="color:var(--text-muted)">(0.7%)</span></td>
+                                <td>22.5%</td>
                             </tr>
                             
                             <tr>
                                 <td>ghost</td>
-                                <td>207 <span style="color:var(--text-muted)">(0.1%)</span></td>
-                                <td>60 <span style="color:var(--text-muted)">(0.1%)</span></td>
-                                <td>29.0%</td>
+                                <td>237 <span style="color:var(--text-muted)">(0.0%)</span></td>
+                                <td>76 <span style="color:var(--text-muted)">(0.1%)</span></td>
+                                <td>32.1%</td>
                             </tr>
                             
                             <tr>
-                                <td>feedburner</td>
-                                <td>1 <span style="color:var(--text-muted)">(0.0%)</span></td>
-                                <td>1 <span style="color:var(--text-muted)">(0.0%)</span></td>
-                                <td>100.0%</td>
+                                <td>substack</td>
+                                <td>191 <span style="color:var(--text-muted)">(0.0%)</span></td>
+                                <td>152 <span style="color:var(--text-muted)">(0.1%)</span></td>
+                                <td>79.6%</td>
                             </tr>
                             
                             <tr>
                                 <td>squarespace</td>
+                                <td>46 <span style="color:var(--text-muted)">(0.0%)</span></td>
+                                <td>17 <span style="color:var(--text-muted)">(0.0%)</span></td>
+                                <td>37.0%</td>
+                            </tr>
+                            
+                            <tr>
+                                <td>medium</td>
+                                <td>36 <span style="color:var(--text-muted)">(0.0%)</span></td>
+                                <td>11 <span style="color:var(--text-muted)">(0.0%)</span></td>
+                                <td>30.6%</td>
+                            </tr>
+                            
+                            <tr>
+                                <td>feedburner</td>
                                 <td>1 <span style="color:var(--text-muted)">(0.0%)</span></td>
                                 <td>1 <span style="color:var(--text-muted)">(0.0%)</span></td>
                                 <td>100.0%</td>
@@ -1663,23 +1903,23 @@
                             
                             <tr>
                                 <td>unknown</td>
-                                <td>31,873</td>
-                                <td>8,619/31,873 <span style="color:var(--text-muted)">(27.0%)</span></td>
-                                <td>0.257</td>
+                                <td>72,571</td>
+                                <td>18,912/72,571 <span style="color:var(--text-muted)">(26.1%)</span></td>
+                                <td>0.247</td>
                             </tr>
                             
                             <tr>
                                 <td>drupal</td>
-                                <td>10,634</td>
-                                <td>2,676/10,634 <span style="color:var(--text-muted)">(25.2%)</span></td>
-                                <td>0.180</td>
+                                <td>10,721</td>
+                                <td>2,734/10,721 <span style="color:var(--text-muted)">(25.5%)</span></td>
+                                <td>0.183</td>
                             </tr>
                             
                             <tr>
                                 <td>wordpress</td>
-                                <td>8,205</td>
-                                <td>3,049/8,205 <span style="color:var(--text-muted)">(37.2%)</span></td>
-                                <td>0.331</td>
+                                <td>9,258</td>
+                                <td>3,376/9,258 <span style="color:var(--text-muted)">(36.5%)</span></td>
+                                <td>0.322</td>
                             </tr>
                             
                             <tr>
@@ -1691,44 +1931,51 @@
                             
                             <tr>
                                 <td>joomla</td>
-                                <td>563</td>
-                                <td>286/563 <span style="color:var(--text-muted)">(50.8%)</span></td>
-                                <td>0.397</td>
+                                <td>636</td>
+                                <td>317/636 <span style="color:var(--text-muted)">(49.8%)</span></td>
+                                <td>0.384</td>
                             </tr>
                             
                             <tr>
                                 <td>substack</td>
-                                <td>40</td>
-                                <td>34/40 <span style="color:var(--text-muted)">(85.0%)</span></td>
-                                <td>0.740</td>
-                            </tr>
-                            
-                            <tr>
-                                <td>ghost</td>
-                                <td>30</td>
-                                <td>21/30 <span style="color:var(--text-muted)">(70.0%)</span></td>
-                                <td>0.579</td>
-                            </tr>
-                            
-                            <tr>
-                                <td>shopify</td>
-                                <td>12</td>
-                                <td>7/12 <span style="color:var(--text-muted)">(58.3%)</span></td>
-                                <td>0.432</td>
+                                <td>180</td>
+                                <td>162/180 <span style="color:var(--text-muted)">(90.0%)</span></td>
+                                <td>0.768</td>
                             </tr>
                             
                             <tr>
                                 <td>wix</td>
-                                <td>9</td>
-                                <td>8/9 <span style="color:var(--text-muted)">(88.9%)</span></td>
-                                <td>0.719</td>
+                                <td>49</td>
+                                <td>21/49 <span style="color:var(--text-muted)">(42.9%)</span></td>
+                                <td>0.350</td>
+                            </tr>
+                            
+                            <tr>
+                                <td>ghost</td>
+                                <td>39</td>
+                                <td>26/39 <span style="color:var(--text-muted)">(66.7%)</span></td>
+                                <td>0.553</td>
+                            </tr>
+                            
+                            <tr>
+                                <td>shopify</td>
+                                <td>24</td>
+                                <td>15/24 <span style="color:var(--text-muted)">(62.5%)</span></td>
+                                <td>0.474</td>
                             </tr>
                             
                             <tr>
                                 <td>squarespace</td>
-                                <td>5</td>
-                                <td>4/5 <span style="color:var(--text-muted)">(80.0%)</span></td>
-                                <td>0.676</td>
+                                <td>10</td>
+                                <td>9/10 <span style="color:var(--text-muted)">(90.0%)</span></td>
+                                <td>0.732</td>
+                            </tr>
+                            
+                            <tr>
+                                <td>medium</td>
+                                <td>1</td>
+                                <td>1/1 <span style="color:var(--text-muted)">(100.0%)</span></td>
+                                <td>0.717</td>
                             </tr>
                             
                         </tbody>
@@ -1834,7 +2081,7 @@
     };
 
     // ── Discovery charts ──────────────────────────────────────────────────────
-    const stackedPageData = {"labels": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11-15", "16-20", "21-50", "51-100"], "counts": [42381076, 20371513, 12138687, 1355844, 417865, 267196, 209883, 211030, 116122, 36939, 4177130, 123551, 120940, 17539]};
+    const stackedPageData = {"labels": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11-15", "16-20", "21-50", "51-100"], "counts": [42380129, 20371066, 12138400, 1355781, 417859, 267227, 209888, 211026, 116128, 36931, 4176957, 123519, 120925, 17531]};
     new Chart(document.getElementById('feedsPerPageHistogram'), {
         type: 'bar',
         data: {
@@ -1846,7 +2093,7 @@
         options: baseOpts()
     });
 
-    const siteLinksData = {"labels": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11-15", "16-20", "21-50", "51-100", "100+"], "counts": [8868, 9032, 3739, 3165, 1926, 1838, 1385, 1321, 1067, 1106, 4309, 2709, 8412, 5591, 16165]};
+    const siteLinksData = {"labels": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11-15", "16-20", "21-50", "51-100", "100+"], "counts": [8866, 9035, 3738, 3172, 1927, 1837, 1385, 1321, 1065, 1106, 4306, 2708, 8416, 5587, 16167]};
     new Chart(document.getElementById('feedsPerSiteHistogram'), {
         type: 'bar',
         data: {
@@ -1859,8 +2106,8 @@
     });
 
     // ── Autodiscovery quality comparison ─────────────────────────────────────
-    const autoQual   = {"labels": ["0.0\u20130.1", "0.1\u20130.2", "0.2\u20130.3", "0.3\u20130.4", "0.4\u20130.5", "0.5\u20130.6", "0.6\u20130.7", "0.7\u20130.8", "0.8\u20130.9", "0.9\u20131.0"], "pct": [59.8, 0.3, 0.4, 4.1, 7.9, 4.5, 7.0, 7.9, 6.6, 1.5], "mean": 0.251, "n": 53096};
-    const noAutoQual = {"labels": ["0.0\u20130.1", "0.1\u20130.2", "0.2\u20130.3", "0.3\u20130.4", "0.4\u20130.5", "0.5\u20130.6", "0.6\u20130.7", "0.7\u20130.8", "0.8\u20130.9", "0.9\u20131.0"], "pct": [68.4, 0.4, 0.5, 4.5, 8.9, 4.1, 4.7, 4.6, 3.5, 0.4], "mean": 0.179, "n": 250694};
+    const autoQual   = {"labels": ["0.0\u20130.1", "0.1\u20130.2", "0.2\u20130.3", "0.3\u20130.4", "0.4\u20130.5", "0.5\u20130.6", "0.6\u20130.7", "0.7\u20130.8", "0.8\u20130.9", "0.9\u20131.0"], "pct": [60.7, 0.2, 0.2, 2.7, 9.6, 4.4, 6.7, 7.9, 6.0, 1.6], "mean": 0.246, "n": 94824};
+    const noAutoQual = {"labels": ["0.0\u20130.1", "0.1\u20130.2", "0.2\u20130.3", "0.3\u20130.4", "0.4\u20130.5", "0.5\u20130.6", "0.6\u20130.7", "0.7\u20130.8", "0.8\u20130.9", "0.9\u20131.0"], "pct": [62.2, 0.2, 0.4, 3.4, 12.0, 4.5, 6.7, 5.2, 4.3, 1.0], "mean": 0.22, "n": 439371};
     new Chart(document.getElementById('autodiscoveryQualityChart'), {
         type: 'bar',
         data: {
@@ -1896,7 +2143,7 @@
     });
 
     // ── Content profile ───────────────────────────────────────────────────────
-    const profileData = {"html": 132524, "mixed": 49074, "plain": 50672, "unknown": 66667, "xhtml": 4853};
+    const profileData = {"html": 210747, "mixed": 77791, "plain": 119857, "unknown": 120849, "xhtml": 4951};
     new Chart(document.getElementById('contentProfileChart'), {
         type: 'doughnut',
         data: {
@@ -1911,7 +2158,7 @@
     });
 
     // ── Entry counts ──────────────────────────────────────────────────────────
-    const entriesData = {'0': 64352, '1': 85661, '2': 22021, '3': 13380, '4': 9732, '5': 8429, '6': 5998, '7': 4541, '8': 4409, '9': 3431, '10': 34636, '11-15': 12472, '16-20': 10252, '21-30': 11407, '31-50': 5337, '51-100': 3316, '100+': 4416};
+    const entriesData = {'0': 113217, '1': 126616, '2': 39233, '3': 22505, '4': 20594, '5': 16791, '6': 10281, '7': 8003, '8': 7610, '9': 5827, '10': 47411, '11-15': 30901, '16-20': 24537, '21-30': 25717, '31-50': 14102, '51-100': 9496, '100+': 11354};
     new Chart(document.getElementById('entriesHistogram'), {
         type: 'bar',
         data: {
@@ -1922,10 +2169,10 @@
     });
 
     // ── Recency CDFs ──────────────────────────────────────────────────────────
-    const feedRecencyData   = {"labels": ["Today", "1 day", "3 days", "1 week", "2 weeks", "1 month", "3 months", "6 months", "1 year", "2 years", "All"], "data": [4.6, 9.1, 18.5, 38.1, 62.7, 65.1, 69.1, 71.8, 74.6, 78.7, 99.3], "no_date": 81530};
-    const entryRecencyData  = {"labels": ["Today", "1 day", "3 days", "1 week", "2 weeks", "1 month", "3 months", "6 months", "1 year", "2 years", "All"], "data": [0.4, 0.8, 1.5, 4.5, 9.5, 12.6, 18.1, 22.7, 28.7, 38.7, 99.3], "no_date": 7125};
-    const oldestEntryData   = {"labels": ["Today", "1 day", "3 days", "1 week", "2 weeks", "1 month", "3 months", "6 months", "1 year", "2 years", "All"], "data": [0.1, 0.2, 0.4, 1.3, 3.2, 4.5, 7.8, 11.3, 16.4, 26.1, 99.2], "no_date": 6880};
-    const updateCadenceData = {"labels": ["12 hours", "1 day", "2 days", "1 week", "2 weeks", "1 month", "3 months", "1 year", "All"], "data": [20.6, 24.6, 28.5, 38.3, 46.5, 55.9, 70.7, 90.1, 100.0], "no_cadence": 159690};
+    const feedRecencyData   = {"labels": ["Today", "1 day", "3 days", "1 week", "2 weeks", "1 month", "3 months", "6 months", "1 year", "2 years", "All"], "data": [4.9, 10.0, 20.1, 40.7, 66.4, 68.8, 72.3, 74.7, 77.4, 80.9, 98.8], "no_date": 161544};
+    const entryRecencyData  = {"labels": ["Today", "1 day", "3 days", "1 week", "2 weeks", "1 month", "3 months", "6 months", "1 year", "2 years", "All"], "data": [0.4, 1.0, 2.1, 6.2, 13.0, 17.2, 23.6, 28.7, 34.8, 44.1, 99.3], "no_date": 26312};
+    const oldestEntryData   = {"labels": ["Today", "1 day", "3 days", "1 week", "2 weeks", "1 month", "3 months", "6 months", "1 year", "2 years", "All"], "data": [0.1, 0.4, 0.7, 2.0, 4.6, 6.7, 11.0, 15.4, 20.8, 29.9, 99.0], "no_date": 25377};
+    const updateCadenceData = {"labels": ["12 hours", "1 day", "2 days", "1 week", "2 weeks", "1 month", "3 months", "1 year", "All"], "data": [18.5, 23.1, 27.8, 38.2, 48.3, 58.6, 73.5, 91.0, 100.0], "no_cadence": 269909};
 
     function makeCdfDataset(d, color) {
         return {
@@ -1941,7 +2188,7 @@
     new Chart(document.getElementById('updateCadenceCdf'), { type:'line', data: makeCdfDataset(updateCadenceData, '#6366f1'), options: cdfOpts });
 
     // ── Quality by format (horizontal stacked % bar + mean dot) ──────────────
-    const qByFmt = [{"fmt": "rss1.0", "count": 1, "quality_count": 1, "quality_denominator": 1, "quality_pct": 100.0, "mean": 0.782, "high_pct": 100.0, "mid_pct": 0.0, "low_pct": 0.0}, {"fmt": "rss", "count": 1, "quality_count": 1, "quality_denominator": 1, "quality_pct": 100.0, "mean": 0.65, "high_pct": 0.0, "mid_pct": 100.0, "low_pct": 0.0}, {"fmt": "rss0.92", "count": 3200, "quality_count": 1209, "quality_denominator": 3200, "quality_pct": 37.8, "mean": 0.286, "high_pct": 5.7, "mid_pct": 41.1, "low_pct": 53.2}, {"fmt": "atom10", "count": 103937, "quality_count": 14520, "quality_denominator": 103937, "quality_pct": 14.0, "mean": 0.195, "high_pct": 5.3, "mid_pct": 22.1, "low_pct": 72.6}, {"fmt": "rss2.0", "count": 181975, "quality_count": 40508, "quality_denominator": 181975, "quality_pct": 22.3, "mean": 0.191, "high_pct": 12.9, "mid_pct": 15.0, "low_pct": 72.1}, {"fmt": "rss0.91", "count": 106, "quality_count": 23, "quality_denominator": 106, "quality_pct": 21.7, "mean": 0.167, "high_pct": 14.2, "mid_pct": 8.5, "low_pct": 77.4}, {"fmt": "rss10", "count": 14552, "quality_count": 1732, "quality_denominator": 14552, "quality_pct": 11.9, "mean": 0.143, "high_pct": 5.1, "mid_pct": 20.4, "low_pct": 74.5}, {"fmt": "rss2.00", "count": 18, "quality_count": 1, "quality_denominator": 18, "quality_pct": 5.6, "mean": 0.052, "high_pct": 0.0, "mid_pct": 11.1, "low_pct": 88.9}];
+    const qByFmt = [{"fmt": "rss1.0", "count": 2, "quality_count": 2, "quality_denominator": 2, "quality_pct": 100.0, "mean": 0.732, "high_pct": 50.0, "mid_pct": 50.0, "low_pct": 0.0}, {"fmt": "rss0.93", "count": 1, "quality_count": 1, "quality_denominator": 1, "quality_pct": 100.0, "mean": 0.682, "high_pct": 0.0, "mid_pct": 100.0, "low_pct": 0.0}, {"fmt": "rss", "count": 5, "quality_count": 5, "quality_denominator": 5, "quality_pct": 100.0, "mean": 0.622, "high_pct": 0.0, "mid_pct": 100.0, "low_pct": 0.0}, {"fmt": "rss0.92", "count": 3224, "quality_count": 1220, "quality_denominator": 3224, "quality_pct": 37.8, "mean": 0.287, "high_pct": 5.8, "mid_pct": 41.1, "low_pct": 53.1}, {"fmt": "rss2.0", "count": 378287, "quality_count": 92687, "quality_denominator": 378287, "quality_pct": 24.5, "mean": 0.23, "high_pct": 13.1, "mid_pct": 22.5, "low_pct": 64.4}, {"fmt": "rss10", "count": 28256, "quality_count": 6608, "quality_denominator": 28256, "quality_pct": 23.4, "mean": 0.217, "high_pct": 11.8, "mid_pct": 23.0, "low_pct": 65.2}, {"fmt": "atom10", "count": 122181, "quality_count": 19940, "quality_denominator": 122181, "quality_pct": 16.3, "mean": 0.209, "high_pct": 6.0, "mid_pct": 23.6, "low_pct": 70.4}, {"fmt": "rss0.91", "count": 2217, "quality_count": 368, "quality_denominator": 2217, "quality_pct": 16.6, "mean": 0.15, "high_pct": 5.4, "mid_pct": 19.8, "low_pct": 74.8}, {"fmt": "rss2.00", "count": 18, "quality_count": 1, "quality_denominator": 18, "quality_pct": 5.6, "mean": 0.052, "high_pct": 0.0, "mid_pct": 11.1, "low_pct": 88.9}, {"fmt": "rss.92", "count": 4, "quality_count": 0, "quality_denominator": 4, "quality_pct": 0.0, "mean": 0.0, "high_pct": 0.0, "mid_pct": 0.0, "low_pct": 100.0}];
     // qByFmt is [{fmt, count, mean, low_pct, mid_pct, high_pct}, ...] ordered by mean desc
     new Chart(document.getElementById('qualityByFormat'), {
         type: 'bar',
@@ -1995,7 +2242,7 @@
     });
 
     // ── Quality histogram ─────────────────────────────────────────────────────
-    const qualityData = {"0.0\u20130.1": 203148, "0.1\u20130.2": 1183, "0.2\u20130.3": 1570, "0.3\u20130.4": 13397, "0.4\u20130.5": 26490, "0.5\u20130.6": 12575, "0.6\u20130.7": 15398, "0.7\u20130.8": 15840, "0.8\u20130.9": 12340, "0.9\u20131.0": 1849};
+    const qualityData = {"0.0\u20130.1": 330713, "0.1\u20130.2": 1245, "0.2\u20130.3": 1782, "0.3\u20130.4": 17649, "0.4\u20130.5": 61957, "0.5\u20130.6": 24121, "0.6\u20130.7": 35957, "0.7\u20130.8": 30462, "0.8\u20130.9": 24400, "0.9\u20131.0": 5909};
     new Chart(document.getElementById('qualityHistogram'), {
         type: 'bar',
         data: {
@@ -2014,7 +2261,7 @@
         options: baseOpts()
     });
 
-    const qualityComponents = [{"key": "recency", "label": "Recency", "weight": 0.35, "mean": 0.248}, {"key": "content_richness", "label": "Content", "weight": 0.25, "mean": 0.148}, {"key": "entry_count", "label": "Entry count", "weight": 0.15, "mean": 0.117}, {"key": "entry_metadata", "label": "Entry metadata", "weight": 0.15, "mean": 0.161}, {"key": "feed_metadata", "label": "Feed metadata", "weight": 0.1, "mean": 0.275}];
+    const qualityComponents = [{"key": "recency", "label": "Recency", "weight": 0.35, "mean": 0.297}, {"key": "content_richness", "label": "Content", "weight": 0.25, "mean": 0.165}, {"key": "entry_count", "label": "Entry count", "weight": 0.15, "mean": 0.148}, {"key": "entry_metadata", "label": "Entry metadata", "weight": 0.15, "mean": 0.186}, {"key": "feed_metadata", "label": "Feed metadata", "weight": 0.1, "mean": 0.322}];
     new Chart(document.getElementById('qualityComponents'), {
         type: 'bar',
         data: {
@@ -2039,7 +2286,7 @@
     });
 
     // ── Content length ────────────────────────────────────────────────────────
-    const contentLengthData = {'0': 629834, '-127': 410689, '-254': 303731, '-511': 687193, '-1023': 501901, '-2k': 381207, '-4k': 321350, '-8k': 190936, '-16k': 68986, '-32k': 23714, '-64k': 6707, '-128k': 2644, '-256k': 573, '-512k': 169, '-1024k': 80, '-2048k': 21, '-4096k': 7, '-8192k': 1};
+    const contentLengthData = {'0': 1547875, '-127': 1385628, '-254': 928371, '-511': 1705195, '-1023': 1305745, '-2k': 1101521, '-4k': 801336, '-8k': 331927, '-16k': 117664, '-32k': 46435, '-64k': 13184, '-128k': 3860, '-256k': 809, '-512k': 314, '-1024k': 129, '-2048k': 33, '-4096k': 26, '-8192k': 1};
     new Chart(document.getElementById('contentLengthHistogram'), {
         type: 'bar',
         data: {
