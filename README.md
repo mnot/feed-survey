@@ -19,6 +19,21 @@ by analysis tools without scraping the visual report.
 - **Platform Fingerprints**: Conservative CMS/framework hints from HTML pages, feed headers, and feed generator elements, with report-time quality comparisons.
 - **OPML Feed-List Reports**: Local reporting for a user's own OPML subscription list, using the same feed parsing, quality, autodiscovery, and HTML/Markdown report machinery as crawl reports.
 
+## Install
+
+For the standalone CLI tools (`feed-survey-probe`, `feed-survey-opml`), the
+base install is lightweight and pipx-friendly:
+
+```bash
+pipx install feed-survey
+```
+
+The Common Crawl / EMR pipeline is driven by `make`, not the installed CLI:
+it needs the repository's `Makefile`, `mrjob.conf`, and local `feed-survey.mk`
+config. To run it, clone the repo and follow [Quick Start (EMR)](#quick-start-emr)
+below; `make venv` installs the `[dev]` extra, which pulls in the `[emr]`
+extra automatically.
+
 ## Quick Start (EMR)
 
 ### 1. Prerequisites
@@ -39,7 +54,7 @@ git clone https://github.com/mnot/feed-survey.git
 cd feed-survey
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev]"
+pip install -e ".[dev]"   # includes the emr extra
 
 # Create your local run configuration before using EMR targets.
 cp feed-survey.example.mk feed-survey.mk

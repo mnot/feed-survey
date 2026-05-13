@@ -11,7 +11,7 @@ import traceback
 from dataclasses import dataclass
 from typing import Any, cast
 
-from feed_survey.analysis import WarcProcessor
+from feed_survey.analysis.processor import WarcProcessor
 from feed_survey.analysis.stats import Stats
 from feed_survey.emr.warc_source import create_s3_client, iter_response_records
 

@@ -14,20 +14,23 @@ classifiers = [
     "Development Status :: 4 - Beta"
 ]
 dependencies = [
-    "boto3",
-    "fastwarc",
     "beautifulsoup4",
     "jinja2",
     "requests",
-    "tqdm",
-    "mrjob",
     "python-dateutil",
     "lxml",
     "publicsuffix2"
 ]
 
 [project.optional-dependencies]
+emr = [
+    "boto3",
+    "fastwarc",
+    "tqdm",
+    "mrjob"
+]
 dev = [
+    "feed-survey[emr]",
     "mypy",
     "black",
     "isort",
