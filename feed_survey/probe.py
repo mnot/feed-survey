@@ -8,18 +8,14 @@ import lxml.html
 import requests
 from requests.exceptions import RequestException
 
+from feed_survey.analysis.content_types import (
+    feed_content_type,
+    normalized_content_type,
+    sniffable_content_type,
+)
 from feed_survey.analysis.feed_analysis import FeedAnalyzer, parse_error_label
 from feed_survey.analysis.formats import guess_feed_format
 from feed_survey.analysis.html_discovery import HtmlDiscovery
-from feed_survey.analysis.processor import (
-    _feed_content_type,  # pylint: disable=protected-access
-)
-from feed_survey.analysis.processor import (
-    _normalized_content_type,  # pylint: disable=protected-access
-)
-from feed_survey.analysis.processor import (
-    _sniffable_content_type,  # pylint: disable=protected-access
-)
 from feed_survey.analysis.stats import Stats
 from feed_survey.report.formatting import format_extension
 from feed_survey.report.quality import QUALITY_SPLIT_THRESHOLD, score_feed
@@ -90,7 +86,7 @@ def probe_url(
 
     content = response.content
     content_type_header = response.headers.get("Content-Type", "")
-    content_type = _normalized_content_type(content_type_header)
+    content_type = normalized_content_type(content_type_header)
     sniffed_format = guess_feed_format(content[:4096])
 
     lines = [
@@ -429,10 +425,10 @@ def _should_parse_as_feed(
     content_type: str, sniffed_format: str, status_code: int
 ) -> bool:
     if not 200 <= status_code < 400:
-        return _feed_content_type(content_type)
-    if _feed_content_type(content_type):
+        return feed_content_type(content_type)
+    if feed_content_type(content_type):
         return True
-    return _sniffable_content_type(content_type) and sniffed_format != "unknown"
+    return sniffable_content_type(content_type) and sniffed_format != "unknown"
 
 
 def _is_html(content_type: str) -> bool:
@@ -443,7 +439,7 @@ def _classification(content_type: str, sniffed_format: str, status_code: int) ->
     if _is_html(content_type):
         return "HTML page"
     if _should_parse_as_feed(content_type, sniffed_format, status_code):
-        if _feed_content_type(content_type):
+        if feed_content_type(content_type):
             return "RSS/Atom feed media type"
         return "sniffed RSS/Atom feed"
     return "not feed-like"

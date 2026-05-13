@@ -9,7 +9,7 @@ from fastwarc.warc import ArchiveIterator, WarcRecordType
 
 # Ensure feed_survey is in path
 sys.path.insert(0, os.getcwd())
-from feed_survey.analysis import WarcProcessor
+from feed_survey.analysis.processor import WarcProcessor
 
 
 def run_profile(warc_path):

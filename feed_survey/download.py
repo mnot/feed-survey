@@ -1,7 +1,6 @@
 import os
 
 import requests
-from tqdm import tqdm
 
 CACHE_DIR = os.path.expanduser(
     os.environ.get("FEED_SURVEY_CACHE_DIR", "~/.cache/feed-survey")
@@ -10,6 +9,8 @@ CACHE_DIR = os.path.expanduser(
 
 def download_file(url: str, dest_path: str) -> None:
     """Download a file with a progress bar."""
+    from tqdm import tqdm  # pylint: disable=import-outside-toplevel
+
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
     response = requests.get(url, stream=True, timeout=60)
     response.raise_for_status()

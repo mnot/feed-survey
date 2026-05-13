@@ -14,7 +14,7 @@ install_mrjob_pipes_compat()
 from mrjob.job import MRJob
 from mrjob.protocol import JSONProtocol
 
-from feed_survey.analysis import WarcProcessor
+from feed_survey.analysis.processor import WarcProcessor
 from feed_survey.emr.stats_wire import (
     feed_discovery_count_record,
     feed_auto_site_record,

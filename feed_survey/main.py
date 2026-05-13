@@ -10,7 +10,8 @@ from fastwarc.warc import ArchiveIterator  # pylint: disable=no-name-in-module
 from tqdm import tqdm
 
 from . import __version__
-from .analysis import Stats, WarcProcessor
+from .analysis import Stats
+from .analysis.processor import WarcProcessor
 from .commoncrawl import get_latest_crawl_id, get_warc_paths
 from .report import generate_report
 from .report.render import default_markdown_path

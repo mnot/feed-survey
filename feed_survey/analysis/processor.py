@@ -2,6 +2,13 @@ from typing import Any, Optional
 
 from fastwarc.warc import WarcRecordType  # pylint: disable=no-name-in-module
 
+from feed_survey.analysis.content_types import (
+    feed_content_type,
+    interesting_http_content_type,
+    interesting_warc_content_type,
+    normalized_content_type,
+    sniffable_content_type,
+)
 from feed_survey.analysis.feed_analysis import FeedAnalyzer
 from feed_survey.analysis.formats import guess_feed_format
 from feed_survey.analysis.html_discovery import HtmlDiscovery
@@ -34,7 +41,7 @@ class WarcProcessor:
             return
 
         self.stats.responses_processed += 1
-        if not _interesting_warc_content_type(record):
+        if not interesting_warc_content_type(record):
             return
 
         record.parse_http()
@@ -43,10 +50,10 @@ class WarcProcessor:
             return
 
         ct_header = http_headers.get("Content-Type", "")
-        if not _interesting_http_content_type(ct_header):
+        if not interesting_http_content_type(ct_header):
             return
 
-        content_type = _normalized_content_type(ct_header)
+        content_type = normalized_content_type(ct_header)
         request_time_str = record.headers.get("WARC-Date")
         self._record_page_metadata(site, content_type, request_time_str)
 
@@ -56,7 +63,7 @@ class WarcProcessor:
 
         status_code: int = http_headers.status_code
         if status_code == 200:
-            if _feed_content_type(content_type):
+            if feed_content_type(content_type):
                 normalized_url = normalize_url(url)
                 self._process_feed(
                     record,
@@ -65,7 +72,7 @@ class WarcProcessor:
                     request_time_str,
                     candidate_source="feed_media_type",
                 )
-            elif _sniffable_content_type(content_type):
+            elif sniffable_content_type(content_type):
                 self._process_sniffed_feed(record, url, status_code, request_time_str)
 
     def _process_html(self, url: str, content: bytes) -> None:
@@ -139,50 +146,3 @@ class WarcProcessor:
             request_time_str,
             candidate_source=candidate_source,
         )
-
-
-def _interesting_warc_content_type(record: Any) -> bool:
-    warc_ct = record.headers.get("WARC-Identified-Payload-Type", "")
-    return not warc_ct or _interesting_content_type(warc_ct)
-
-
-def _interesting_http_content_type(content_type_header: str) -> bool:
-    return _interesting_content_type(content_type_header)
-
-
-def _interesting_content_type(content_type_header: str) -> bool:
-    content_type = content_type_header.lower()
-    return (
-        "text/html" in content_type
-        or "xml" in content_type
-        or "rss" in content_type
-        or "text/plain" in content_type
-        or "application/octet-stream" in content_type
-    )
-
-
-def _normalized_content_type(content_type_header: str) -> str:
-    return content_type_header.lower().split(";")[0].strip()
-
-
-def _feed_content_type(content_type: str) -> bool:
-    return (
-        content_type
-        in {
-            "application/rss+xml",
-            "application/atom+xml",
-            "application/xml+rss",
-            "text/rss",
-            "text/atom",
-        }
-        or content_type.endswith("+rss")
-        or content_type.endswith("+atom")
-    )
-
-
-def _sniffable_content_type(content_type: str) -> bool:
-    return (
-        "xml" in content_type
-        or "text/plain" in content_type
-        or "application/octet-stream" in content_type
-    )

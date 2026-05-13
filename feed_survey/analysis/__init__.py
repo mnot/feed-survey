@@ -1,4 +1,3 @@
-from feed_survey.analysis.processor import WarcProcessor
 from feed_survey.analysis.stats import Stats
 
-__all__ = ["Stats", "WarcProcessor"]
+__all__ = ["Stats"]
