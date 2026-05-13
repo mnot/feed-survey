@@ -21,8 +21,8 @@ by analysis tools without scraping the visual report.
 
 ## Install
 
-For the standalone CLI tools (`feed-survey-probe`, `feed-survey-opml`), the
-base install is lightweight and pipx-friendly:
+For the standalone [CLI tools](#cli-tools) (`feed-survey-probe`,
+`feed-survey-opml`), the base install is lightweight and pipx-friendly:
 
 ```bash
 pipx install feed-survey
@@ -33,6 +33,55 @@ it needs the repository's `Makefile`, `mrjob.conf`, and local `feed-survey.mk`
 config. To run it, clone the repo and follow [Quick Start (EMR)](#quick-start-emr)
 below; `make venv` installs the `[dev]` extra, which pulls in the `[emr]`
 extra automatically.
+
+## CLI Tools
+
+Two standalone commands ship with the base install and don't require AWS,
+Common Crawl, or any local config. Both reuse the same parser, quality
+scoring, autodiscovery, and HTML/Markdown report machinery as the EMR
+pipeline.
+
+### `feed-survey-probe` — diagnose one URL
+
+Fetch a single URL and print Markdown diagnostics. HTML responses report
+RSS/Atom autodiscovery links; feed responses report parser output,
+language/date/content signals, extensions, fingerprints, and the operational
+quality score.
+
+```bash
+# A single feed
+feed-survey-probe https://example.com/feed.xml
+
+# An HTML page, plus the feeds it advertises
+feed-survey-probe --recursive https://example.com/
+```
+
+Recursive probing follows only RSS/Atom autodiscovery links, capped at 10
+unique feeds by default (`--max-feeds N` to change).
+
+### `feed-survey-opml` — report on an OPML subscription list
+
+Turn an OPML subscription file into a full HTML and Markdown report. Useful
+for "how healthy are the feeds I subscribe to?" and ecosystem audits, without
+touching Common Crawl.
+
+```bash
+feed-survey-opml subscriptions.opml --output feeds-report.html
+```
+
+OPML `xmlUrl` values are the primary feed inputs. When an outline also has
+`url` or `htmlUrl`, that page is fetched as HTML and reported with its
+autodiscovery properties so the report can distinguish explicitly-listed
+feeds from feeds the linked site advertises. Pass `--skip-html` to fetch
+only the `xmlUrl` feeds, `-q`/`--quiet` to silence progress, `--concurrency
+N` to tune parallelism (default 32), and `--max-bytes N` to change the 10
+MiB per-fetch cap (`0` to disable).
+
+The same command is also available through make:
+
+```bash
+make opml-report OPML=subscriptions.opml OPML_REPORT=feeds-report.html
+```
 
 ## Quick Start (EMR)
 
@@ -68,57 +117,8 @@ You can run the analysis on your own machine for debugging. This uses the `local
 make local-report
 ```
 
-You can also inspect one live URL and get Markdown diagnostics:
-
-```bash
-feed-survey-probe https://example.com/feed.xml
-```
-
-HTML responses report RSS/Atom autodiscovery links. Feed responses report
-parser output, language/date/content signals, extensions, fingerprints, and the
-same operational quality score used by the generated reports.
-
-To fetch an HTML page and then inspect the feeds it advertises:
-
-```bash
-feed-survey-probe --recursive https://example.com/
-```
-
-Recursive probing follows only the RSS/Atom URLs found in the page's
-autodiscovery links, and checks at most 10 unique feed URLs by default. Use
-`--max-feeds N` to change that cap.
-
-### Analyze an OPML Feed List
-For personal or ecosystem-specific audits, `feed-survey-opml` turns an OPML
-subscription file into a full HTML and Markdown report without using Common
-Crawl or EMR:
-
-```bash
-feed-survey-opml subscriptions.opml --output feeds-report.html
-```
-
-The same command is available through make:
-
-```bash
-make opml-report OPML=subscriptions.opml OPML_REPORT=feeds-report.html
-```
-
-The OPML path is intended for answering questions like "how healthy are the
-feeds I already subscribe to?" or "what formats, languages, extensions, and
-quality signals show up in this curated list?" It reuses the same parser,
-quality scoring, extension analysis, platform fingerprinting, and report renderer
-as the crawl pipeline.
-
-OPML `xmlUrl` values are the primary feed inputs. When an outline also has
-`url` or `htmlUrl`, the command fetches that page as HTML and reports RSS/Atom
-autodiscovery properties too, so the report can distinguish feeds that are
-explicitly listed in OPML from feeds that the linked site advertises. Pass
-`--skip-html` if you only want to fetch the `xmlUrl` feeds. Progress is written
-to standard error while feeds and pages are fetched; pass `-q` / `--quiet` to
-suppress it. Fetches run in parallel by default; use `--concurrency N` to tune
-the maximum number of simultaneous feed/page requests. The default is 32. Each
-feed/page fetch is capped at 10 MiB by default; use `--max-bytes N` to change the
-cap, or `--max-bytes 0` to disable it.
+For ad-hoc URL/OPML inspection, see the [CLI Tools](#cli-tools) section
+above — those commands work from the same checkout.
 
 ### 3. Run a Smoke Test (EMR)
 The `test-emr` target runs a single WARC file through a small EMR cluster to verify your AWS environment is ready.
