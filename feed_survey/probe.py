@@ -467,12 +467,25 @@ def _bullet_list(items: Iterable[str]) -> str:
 
 
 def _table(headers: List[str], rows: List[List[str]]) -> str:
-    lines = [
-        "| " + " | ".join(_escape(cell) for cell in headers) + " |",
-        "| " + " | ".join("---" for _ in headers) + " |",
+    escaped_headers = [_escape(cell) for cell in headers]
+    escaped_rows = [[_escape(cell) for cell in row] for row in rows]
+    widths = [
+        max(len(escaped_headers[idx]), 3, *(len(row[idx]) for row in escaped_rows))
+        for idx in range(len(headers))
     ]
-    for row in rows:
-        lines.append("| " + " | ".join(_escape(cell) for cell in row) + " |")
+    def _row(cells: List[str]) -> str:
+        return (
+            "| "
+            + " | ".join(cell.ljust(widths[idx]) for idx, cell in enumerate(cells))
+            + " |"
+        )
+
+    lines = [
+        _row(escaped_headers),
+        "| " + " | ".join("-" * widths[idx] for idx in range(len(headers))) + " |",
+    ]
+    for row in escaped_rows:
+        lines.append(_row(row))
     return "\n".join(lines)
 
 

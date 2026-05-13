@@ -858,13 +858,26 @@ def _pct(numerator: int, denominator: int, digits: int = 1) -> str:
 
 def _markdown_table(headers: List[str], rows: List[List[str]]) -> str:
     escaped_headers = [_escape_markdown_cell(header) for header in headers]
-    lines = [
-        "| " + " | ".join(escaped_headers) + " |",
-        "| " + " | ".join("---" for _ in headers) + " |",
+    escaped_rows = [
+        [_escape_markdown_cell(cell) for cell in row] for row in rows
     ]
-    for row in rows:
+    widths = [
+        max(len(escaped_headers[idx]), 3, *(len(row[idx]) for row in escaped_rows))
+        for idx in range(len(headers))
+    ]
+    lines = [
+        "| "
+        + " | ".join(
+            cell.ljust(widths[idx]) for idx, cell in enumerate(escaped_headers)
+        )
+        + " |",
+        "| " + " | ".join("-" * widths[idx] for idx in range(len(headers))) + " |",
+    ]
+    for row in escaped_rows:
         lines.append(
-            "| " + " | ".join(_escape_markdown_cell(cell) for cell in row) + " |"
+            "| "
+            + " | ".join(cell.ljust(widths[idx]) for idx, cell in enumerate(row))
+            + " |"
         )
     return "\n".join(lines)
 
