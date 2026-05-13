@@ -22,25 +22,17 @@ by analysis tools without scraping the visual report.
 ## Install
 
 For the standalone CLI tools (`feed-survey-probe`, `feed-survey-opml`), the
-base install is lightweight and pipx-friendly — it only depends on `requests`,
-`lxml`, `beautifulsoup4`, `jinja2`, `python-dateutil`, and `publicsuffix2`:
+base install is lightweight and pipx-friendly:
 
 ```bash
 pipx install feed-survey
 ```
 
-The Common Crawl / EMR pipeline is driven by `make`, not the installed CLI: it
-needs the repository's `Makefile`, `mrjob.conf`, and local `feed-survey.mk`
-config alongside the heavy runtime deps. To run it, clone the repo and follow
-[Quick Start (EMR)](#quick-start-emr) below. `make venv` installs the `[dev]`
-extra, which pulls in the `[emr]` extra (`boto3`, `fastwarc`, `mrjob`,
-`tqdm`) automatically.
-
-The EMR-only entry points (`feed-survey`, `feed-survey-job`,
-`feed-survey-finalize`, `feed-survey-split-paths`) are always registered, but
-running them outside the make-driven workflow means hand-supplying the cluster
-config and orchestration the Makefile normally provides — not a recommended
-path.
+The Common Crawl / EMR pipeline is driven by `make`, not the installed CLI:
+it needs the repository's `Makefile`, `mrjob.conf`, and local `feed-survey.mk`
+config. To run it, clone the repo and follow [Quick Start (EMR)](#quick-start-emr)
+below; `make venv` installs the `[dev]` extra, which pulls in the `[emr]`
+extra automatically.
 
 ## Quick Start (EMR)
 
