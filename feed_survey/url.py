@@ -1,7 +1,7 @@
 from ipaddress import ip_address
 from urllib.parse import ParseResult, urlparse, urlunparse
 
-from publicsuffix2 import get_sld
+from publicsuffix2 import get_sld  # type: ignore[import-untyped]
 
 
 def normalize_url(url: str) -> str:

@@ -11,8 +11,8 @@ from feed_survey.emr.compat import install_mrjob_pipes_compat
 install_mrjob_pipes_compat()
 
 # pylint: disable=wrong-import-position,wrong-import-order,ungrouped-imports
-from mrjob.job import MRJob
-from mrjob.protocol import JSONProtocol
+from mrjob.job import MRJob  # type: ignore[import-untyped]
+from mrjob.protocol import JSONProtocol  # type: ignore[import-untyped]
 
 from feed_survey.analysis.processor import WarcProcessor
 from feed_survey.emr.stats_wire import (
