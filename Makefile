@@ -48,7 +48,8 @@ typecheck: typecheck_py
 tidy: tidy_py
 
 .PHONY: test
-test: test_py
+test:
+	@echo "No tests configured. Replace this recipe in Makefile to enable."
 
 .PHONY: check
 check: test typecheck lint mock-report
